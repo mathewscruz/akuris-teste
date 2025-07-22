@@ -86,7 +86,7 @@ const menuItems = [
 
 export function AppSidebar() {
   const { state } = useSidebar();
-  const { signOut, company } = useAuth();
+  const { signOut, company, logoUpdateKey } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
   
@@ -141,6 +141,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border h-14">
         <div className="flex items-center justify-center px-1 py-2 h-full">
           <img 
+            key={`sidebar-logo-${logoUpdateKey}`} // Força re-render quando logo muda
             src={getLogoSrc()} 
             alt={getLogoAlt()} 
             className={`object-contain transition-all duration-300 ${

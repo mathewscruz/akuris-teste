@@ -34,9 +34,10 @@ interface Props {
 }
 
 const ConfiguracoesGerais = ({ userRole }: Props) => {
-  const { user, refetchProfile } = useAuth();
+  const { user, refetchProfile, company } = useAuth();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [showPasswords, setShowPasswords] = useState({
     atual: false,
     nova: false,
@@ -88,6 +89,11 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
 
     fetchUserProfile();
   }, [user, form]);
+
+  // Reset preview quando o company logo mudar
+  useEffect(() => {
+    setLogoPreview(null);
+  }, [company?.logo_url]);
 
   const validateImageFile = (file: File): string | null => {
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
@@ -191,8 +197,17 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
 
     try {
       setUploading(true);
+      
+      // Criar preview imediato do arquivo
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setLogoPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+
       const fileExt = file.name.split('.').pop();
-      const fileName = `empresa-${userProfile.empresa_id}.${fileExt}`;
+      const timestamp = Date.now();
+      const fileName = `empresa-${userProfile.empresa_id}-${timestamp}.${fileExt}`;
       const filePath = `${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -205,20 +220,27 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
         .from('empresa-logos')
         .getPublicUrl(filePath);
 
+      // Adicionar cache busting à URL
+      const logoUrlWithCacheBusting = `${urlData.publicUrl}?t=${timestamp}`;
+
       const { error: updateError } = await supabase
         .from('empresas')
-        .update({ logo_url: urlData.publicUrl })
+        .update({ logo_url: logoUrlWithCacheBusting })
         .eq('id', userProfile.empresa_id);
 
       if (updateError) throw updateError;
 
-      // Atualizar o contexto de autenticação para refletir as mudanças
-      await refetchProfile();
+      // Aguardar um pouco e depois atualizar o contexto
+      setTimeout(async () => {
+        await refetchProfile();
+        console.log('Logo atualizado no contexto');
+        toast.success('Logo da empresa atualizado com sucesso');
+      }, 500);
 
-      toast.success('Logo da empresa atualizado com sucesso');
     } catch (error) {
       console.error('Erro ao fazer upload do logo da empresa:', error);
       toast.error('Erro ao fazer upload do logo da empresa');
+      setLogoPreview(null);
     } finally {
       setUploading(false);
     }
@@ -229,6 +251,15 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
       ...prev,
       [field]: !prev[field]
     }));
+  };
+
+  const getCurrentCompanyLogo = () => {
+    // Primeiro mostra o preview se existir
+    if (logoPreview) return logoPreview;
+    // Depois o logo da empresa do contexto
+    if (company?.logo_url) return company.logo_url;
+    // Por último um placeholder
+    return null;
   };
 
   return (
@@ -248,27 +279,49 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
                 Logo da Empresa
               </label>
               <div className="flex items-center gap-4">
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept={ACCEPTED_IMAGE_TYPES.join(',')}
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleCompanyLogoUpload(file);
-                    }}
-                    disabled={uploading}
-                  />
-                  <Button variant="outline" disabled={uploading} asChild>
-                    <span className="flex items-center gap-2">
-                      <Upload className="h-4 w-4" />
-                      {uploading ? 'Enviando...' : 'Alterar Logo'}
-                    </span>
-                  </Button>
-                </label>
-                <div className="text-sm text-muted-foreground">
-                  <p>Será exibido no menu lateral da sua empresa</p>
-                  <p className="text-xs">Formatos aceitos: JPG, PNG, GIF, SVG, WebP (máx. 5MB)</p>
+                {getCurrentCompanyLogo() && (
+                  <div className="relative">
+                    <img
+                      src={getCurrentCompanyLogo()!}
+                      alt="Logo da empresa"
+                      className={`h-16 w-auto max-w-[120px] object-contain border-2 border-border rounded ${
+                        uploading ? 'opacity-50' : ''
+                      }`}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                    />
+                    {uploading && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept={ACCEPTED_IMAGE_TYPES.join(',')}
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleCompanyLogoUpload(file);
+                      }}
+                      disabled={uploading}
+                    />
+                    <Button variant="outline" disabled={uploading} asChild>
+                      <span className="flex items-center gap-2">
+                        <Upload className="h-4 w-4" />
+                        {uploading ? 'Enviando...' : 'Alterar Logo'}
+                      </span>
+                    </Button>
+                  </label>
+                  <div className="text-sm text-muted-foreground">
+                    <p>Será exibido no menu lateral e tela de login</p>
+                    <p className="text-xs">Formatos aceitos: JPG, PNG, GIF, SVG, WebP (máx. 5MB)</p>
+                  </div>
                 </div>
               </div>
             </div>

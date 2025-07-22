@@ -13,7 +13,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import logoImage from '@/assets/governaii-logo-main.png';
 
 const Auth = () => {
-  const { user, loading, getCompanyByEmail } = useAuth();
+  const { user, loading, getCompanyByEmail, logoUpdateKey } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -101,6 +101,7 @@ const Auth = () => {
         <div className="text-center mb-8">
           <div className="relative">
             <img 
+              key={`auth-logo-${logoUpdateKey}-${companyLogo || 'default'}`} // Força re-render quando logo muda
               src={getCurrentLogo()} 
               alt="Logo" 
               className={`h-20 mx-auto object-contain transition-opacity duration-300 ${
