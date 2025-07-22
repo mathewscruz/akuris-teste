@@ -22,7 +22,13 @@ const Auth = () => {
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [isLoadingLogo, setIsLoadingLogo] = useState(false);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated - usando useEffect para evitar loops
+  useEffect(() => {
+    if (!loading && user) {
+      window.location.replace('/');
+    }
+  }, [user, loading]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
@@ -32,10 +38,6 @@ const Auth = () => {
         </div>
       </div>
     );
-  }
-
-  if (user) {
-    return <Navigate to="/" replace />;
   }
 
   // Debounce para buscar logo da empresa

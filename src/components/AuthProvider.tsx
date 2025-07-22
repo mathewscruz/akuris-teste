@@ -193,10 +193,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-            checkTemporaryPassword();
-          }, 0);
+          fetchProfile(session.user.id);
+          checkTemporaryPassword();
         } else {
           setProfile(null);
           setCompany(null);
