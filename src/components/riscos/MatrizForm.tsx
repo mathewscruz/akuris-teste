@@ -5,13 +5,11 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
@@ -47,6 +45,11 @@ interface Matriz {
   id: string;
   nome: string;
   descricao?: string;
+  configuracao?: {
+    escala_probabilidade: EscalaItem[];
+    escala_impacto: EscalaItem[];
+    niveis_risco: NivelRisco[];
+  };
 }
 
 interface Categoria {
@@ -65,7 +68,7 @@ export function MatrizForm({ onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [matrizes, setMatrizes] = useState<Matriz[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [selectedMatriz, setSelectedMatriz] = useState<string>('');
+  const [editingMatriz, setEditingMatriz] = useState<Matriz | null>(null);
   
   // Escalas para configuração da matriz
   const [escalaProbabilidade, setEscalaProbabilidade] = useState<EscalaItem[]>([
@@ -114,13 +117,29 @@ export function MatrizForm({ onSuccess }: Props) {
 
   const fetchData = async () => {
     try {
-      // Buscar matrizes existentes
+      // Buscar matrizes existentes com suas configurações
       const { data: matrizesData } = await supabase
         .from('riscos_matrizes')
-        .select('id, nome, descricao')
+        .select(`
+          id, nome, descricao,
+          configuracao:riscos_matriz_configuracao(
+            escala_probabilidade,
+            escala_impacto,
+            niveis_risco
+          )
+        `)
         .order('created_at', { ascending: false });
 
-      setMatrizes(matrizesData || []);
+      const matrizesComConfig = matrizesData?.map(matriz => ({
+        ...matriz,
+        configuracao: matriz.configuracao?.[0] ? {
+          escala_probabilidade: matriz.configuracao[0].escala_probabilidade as EscalaItem[],
+          escala_impacto: matriz.configuracao[0].escala_impacto as EscalaItem[],
+          niveis_risco: matriz.configuracao[0].niveis_risco as NivelRisco[]
+        } : undefined
+      })) || [];
+
+      setMatrizes(matrizesComConfig);
 
       // Buscar categorias existentes
       const { data: categoriasData } = await supabase
@@ -134,6 +153,43 @@ export function MatrizForm({ onSuccess }: Props) {
     }
   };
 
+  const carregarMatrizParaEdicao = (matriz: Matriz) => {
+    setEditingMatriz(matriz);
+    matrizForm.setValue('nome', matriz.nome);
+    matrizForm.setValue('descricao', matriz.descricao || '');
+    
+    if (matriz.configuracao) {
+      setEscalaProbabilidade(matriz.configuracao.escala_probabilidade);
+      setEscalaImpacto(matriz.configuracao.escala_impacto);
+      setNiveisRisco(matriz.configuracao.niveis_risco);
+    }
+  };
+
+  const limparFormularioMatriz = () => {
+    setEditingMatriz(null);
+    matrizForm.reset();
+    setEscalaProbabilidade([
+      { valor: '1', descricao: 'Muito Raro' },
+      { valor: '2', descricao: 'Raro' },
+      { valor: '3', descricao: 'Ocasional' },
+      { valor: '4', descricao: 'Provável' },
+      { valor: '5', descricao: 'Muito Provável' }
+    ]);
+    setEscalaImpacto([
+      { valor: '1', descricao: 'Insignificante' },
+      { valor: '2', descricao: 'Menor' },
+      { valor: '3', descricao: 'Moderado' },
+      { valor: '4', descricao: 'Maior' },
+      { valor: '5', descricao: 'Catastrófico' }
+    ]);
+    setNiveisRisco([
+      { min: 1, max: 4, nivel: 'Baixo', cor: '#22c55e' },
+      { min: 5, max: 9, nivel: 'Médio', cor: '#eab308' },
+      { min: 10, max: 16, nivel: 'Alto', cor: '#f97316' },
+      { min: 17, max: 25, nivel: 'Crítico', cor: '#dc2626' }
+    ]);
+  };
+
   const onSubmitMatriz = async (data: MatrizForm) => {
     if (!profile?.empresa_id) {
       toast.error('Erro: Empresa não identificada');
@@ -143,66 +199,64 @@ export function MatrizForm({ onSuccess }: Props) {
     setLoading(true);
 
     try {
-      // Criar matriz
-      const { data: novaMatriz, error: matrizError } = await supabase
-        .from('riscos_matrizes')
-        .insert([{
-          nome: data.nome,
-          descricao: data.descricao,
-          empresa_id: profile.empresa_id
-        }])
-        .select()
-        .single();
+      if (editingMatriz) {
+        // Atualizar matriz existente
+        const { error: matrizError } = await supabase
+          .from('riscos_matrizes')
+          .update({
+            nome: data.nome,
+            descricao: data.descricao
+          })
+          .eq('id', editingMatriz.id);
 
-      if (matrizError) throw matrizError;
+        if (matrizError) throw matrizError;
 
-      // Criar configuração da matriz
-      const { error: configError } = await supabase
-        .from('riscos_matriz_configuracao')
-        .insert({
-          matriz_id: novaMatriz.id,
-          escala_probabilidade: escalaProbabilidade as any,
-          escala_impacto: escalaImpacto as any,
-          niveis_risco: niveisRisco as any
-        });
+        // Atualizar configuração da matriz
+        const { error: configError } = await supabase
+          .from('riscos_matriz_configuracao')
+          .update({
+            escala_probabilidade: escalaProbabilidade as any,
+            escala_impacto: escalaImpacto as any,
+            niveis_risco: niveisRisco as any
+          })
+          .eq('matriz_id', editingMatriz.id);
 
-      if (configError) throw configError;
+        if (configError) throw configError;
 
-      toast.success('Matriz de risco criada com sucesso!');
-      matrizForm.reset();
+        toast.success('Matriz de risco atualizada com sucesso!');
+      } else {
+        // Criar nova matriz
+        const { data: novaMatriz, error: matrizError } = await supabase
+          .from('riscos_matrizes')
+          .insert([{
+            nome: data.nome,
+            descricao: data.descricao,
+            empresa_id: profile.empresa_id
+          }])
+          .select()
+          .single();
+
+        if (matrizError) throw matrizError;
+
+        // Criar configuração da matriz
+        const { error: configError } = await supabase
+          .from('riscos_matriz_configuracao')
+          .insert({
+            matriz_id: novaMatriz.id,
+            escala_probabilidade: escalaProbabilidade as any,
+            escala_impacto: escalaImpacto as any,
+            niveis_risco: niveisRisco as any
+          });
+
+        if (configError) throw configError;
+
+        toast.success('Matriz de risco criada com sucesso!');
+      }
+
+      limparFormularioMatriz();
       fetchData();
     } catch (error: any) {
-      toast.error('Erro ao criar matriz: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onSubmitCategoria = async (data: CategoriaForm) => {
-    if (!profile?.empresa_id) {
-      toast.error('Erro: Empresa não identificada');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const { error } = await supabase
-        .from('riscos_categorias')
-        .insert([{
-          nome: data.nome,
-          descricao: data.descricao,
-          cor: data.cor,
-          empresa_id: profile.empresa_id
-        }]);
-
-      if (error) throw error;
-
-      toast.success('Categoria criada com sucesso!');
-      categoriaForm.reset();
-      fetchData();
-    } catch (error: any) {
-      toast.error('Erro ao criar categoria: ' + error.message);
+      toast.error('Erro ao salvar matriz: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -274,6 +328,36 @@ export function MatrizForm({ onSuccess }: Props) {
     }
   };
 
+  const onSubmitCategoria = async (data: CategoriaForm) => {
+    if (!profile?.empresa_id) {
+      toast.error('Erro: Empresa não identificada');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('riscos_categorias')
+        .insert([{
+          nome: data.nome,
+          descricao: data.descricao,
+          cor: data.cor,
+          empresa_id: profile.empresa_id
+        }]);
+
+      if (error) throw error;
+
+      toast.success('Categoria criada com sucesso!');
+      categoriaForm.reset();
+      fetchData();
+    } catch (error: any) {
+      toast.error('Erro ao criar categoria: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const excluirCategoria = async (id: string) => {
     try {
       const { error } = await supabase
@@ -299,10 +383,17 @@ export function MatrizForm({ onSuccess }: Props) {
         </TabsList>
 
         <TabsContent value="matrizes" className="space-y-6">
-          {/* Formulário para nova matriz */}
+          {/* Formulário para nova/editar matriz */}
           <Card>
             <CardHeader>
-              <CardTitle>Nova Matriz de Risco</CardTitle>
+              <CardTitle>
+                {editingMatriz ? 'Editar Matriz de Risco' : 'Nova Matriz de Risco'}
+              </CardTitle>
+              {editingMatriz && (
+                <Button variant="outline" size="sm" onClick={limparFormularioMatriz}>
+                  Cancelar Edição
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <Form {...matrizForm}>
@@ -484,7 +575,7 @@ export function MatrizForm({ onSuccess }: Props) {
 
                   <div className="flex justify-end">
                     <Button type="submit" disabled={loading}>
-                      {loading ? 'Criando...' : 'Criar Matriz'}
+                      {loading ? 'Salvando...' : editingMatriz ? 'Atualizar Matriz' : 'Criar Matriz'}
                     </Button>
                   </div>
                 </form>
@@ -508,13 +599,24 @@ export function MatrizForm({ onSuccess }: Props) {
                           <p className="text-sm text-muted-foreground">{matriz.descricao}</p>
                         )}
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => excluirMatriz(matriz.id)}
-                      >
-                        Excluir
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => carregarMatrizParaEdicao(matriz)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => excluirMatriz(matriz.id)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Excluir
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

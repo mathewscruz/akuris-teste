@@ -30,14 +30,14 @@ export function MatrizVisualizacao() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (profile) {
+    if (profile?.empresa_id) {
       fetchMatrizAndRiscos();
     }
-  }, [profile]);
+  }, [profile?.empresa_id]);
 
   const fetchMatrizAndRiscos = async () => {
     try {
-      // Buscar primeira matriz disponível
+      // Buscar primeira matriz disponível da empresa
       const { data: matrizData } = await supabase
         .from('riscos_matrizes')
         .select(`
@@ -49,6 +49,7 @@ export function MatrizVisualizacao() {
             niveis_risco
           )
         `)
+        .eq('empresa_id', profile?.empresa_id)
         .limit(1)
         .single();
 
@@ -63,10 +64,11 @@ export function MatrizVisualizacao() {
         });
       }
 
-      // Buscar riscos
+      // Buscar riscos da empresa
       const { data: riscosData } = await supabase
         .from('riscos')
-        .select('id, nome, probabilidade_inicial, impacto_inicial, nivel_risco_inicial');
+        .select('id, nome, probabilidade_inicial, impacto_inicial, nivel_risco_inicial')
+        .eq('empresa_id', profile?.empresa_id);
 
       setRiscos(riscosData || []);
     } catch (error) {
@@ -77,10 +79,11 @@ export function MatrizVisualizacao() {
   };
 
   const getRiscosPorCelula = (probabilidade: number, impacto: number) => {
-    return riscos.filter(risco => 
-      parseInt(risco.probabilidade_inicial) === probabilidade && 
-      parseInt(risco.impacto_inicial) === impacto
-    );
+    return riscos.filter(risco => {
+      const probRisco = parseInt(risco.probabilidade_inicial);
+      const impactoRisco = parseInt(risco.impacto_inicial);
+      return probRisco === probabilidade && impactoRisco === impacto;
+    });
   };
 
   const getNivelRisco = (probabilidade: number, impacto: number) => {
@@ -93,10 +96,10 @@ export function MatrizVisualizacao() {
   };
 
   const getCorNivel = (nivel: string) => {
-    if (!matriz?.configuracao) return '#gray-500';
+    if (!matriz?.configuracao) return '#6b7280';
     
     const nivelConfig = matriz.configuracao.niveis_risco.find(n => n.nivel === nivel);
-    return nivelConfig?.cor || '#gray-500';
+    return nivelConfig?.cor || '#6b7280';
   };
 
   if (loading) {
@@ -131,6 +134,9 @@ export function MatrizVisualizacao() {
 
   const escalaProbabilidade = matriz.configuracao?.escala_probabilidade || [];
   const escalaImpacto = matriz.configuracao?.escala_impacto || [];
+  
+  // Criar cópia do array antes de reverter para não mutar o original
+  const escalaProbabilidadeReversed = [...escalaProbabilidade].reverse();
 
   return (
     <Card>
@@ -141,7 +147,7 @@ export function MatrizVisualizacao() {
         <div className="overflow-x-auto">
           <div className="min-w-96">
             {/* Cabeçalho da matriz */}
-            <div className="grid grid-cols-6 gap-1 mb-2">
+            <div className="grid gap-1 mb-2" style={{ gridTemplateColumns: `120px repeat(${escalaImpacto.length}, 1fr)` }}>
               <div className="p-2 font-semibold text-sm">Probabilidade</div>
               {escalaImpacto.map((impacto) => (
                 <div key={impacto.valor} className="p-2 text-center font-semibold text-sm bg-muted rounded">
@@ -151,15 +157,15 @@ export function MatrizVisualizacao() {
             </div>
 
             {/* Linhas da matriz */}
-            {escalaProbabilidade.reverse().map((probabilidade) => (
-              <div key={probabilidade.valor} className="grid grid-cols-6 gap-1 mb-1">
+            {escalaProbabilidadeReversed.map((probabilidade) => (
+              <div key={probabilidade.valor} className="grid gap-1 mb-1" style={{ gridTemplateColumns: `120px repeat(${escalaImpacto.length}, 1fr)` }}>
                 <div className="p-2 font-semibold text-sm bg-muted rounded flex items-center justify-center">
                   {probabilidade.valor}
                 </div>
                 {escalaImpacto.map((impacto) => {
                   const riscosNaCelula = getRiscosPorCelula(probabilidade.valor, impacto.valor);
                   const nivelRisco = getNivelRisco(probabilidade.valor, impacto.valor);
-                  const cor = nivelRisco ? getCorNivel(nivelRisco.nivel) : '#gray-100';
+                  const cor = nivelRisco ? getCorNivel(nivelRisco.nivel) : '#f3f4f6';
                   
                   return (
                     <div 
@@ -170,7 +176,7 @@ export function MatrizVisualizacao() {
                       {nivelRisco && (
                         <Badge 
                           className="text-xs mb-1" 
-                          style={{ backgroundColor: cor, color: 'white' }}
+                          style={{ backgroundColor: cor, color: 'white', borderColor: cor }}
                         >
                           {nivelRisco.nivel}
                         </Badge>
