@@ -154,11 +154,16 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
     }
   };
 
-  const handleSystemLogoUpload = async (file: File) => {
+  const handleCompanyLogoUpload = async (file: File) => {
+    if (!userProfile?.empresa_id) {
+      toast.error('Empresa não encontrada');
+      return;
+    }
+
     try {
       setUploading(true);
       const fileExt = file.name.split('.').pop();
-      const fileName = `sistema-logo.${fileExt}`;
+      const fileName = `empresa-${userProfile.empresa_id}.${fileExt}`;
       const filePath = `${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -167,11 +172,22 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
 
       if (uploadError) throw uploadError;
 
-      toast.success('Logo do sistema atualizado com sucesso');
+      const { data: urlData } = supabase.storage
+        .from('empresa-logos')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('empresas')
+        .update({ logo_url: urlData.publicUrl })
+        .eq('id', userProfile.empresa_id);
+
+      if (updateError) throw updateError;
+
+      toast.success('Logo da empresa atualizado com sucesso');
       toast.info('Recarregue a página para ver as alterações');
     } catch (error) {
-      console.error('Erro ao fazer upload do logo:', error);
-      toast.error('Erro ao fazer upload do logo');
+      console.error('Erro ao fazer upload do logo da empresa:', error);
+      toast.error('Erro ao fazer upload do logo da empresa');
     } finally {
       setUploading(false);
     }
@@ -192,13 +208,13 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
-              Configurações do Sistema
+              Configurações da Empresa
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">
-                Logo Principal do Sistema
+                Logo da Empresa
               </label>
               <div className="flex items-center gap-4">
                 <label className="cursor-pointer">
@@ -208,7 +224,7 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) handleSystemLogoUpload(file);
+                      if (file) handleCompanyLogoUpload(file);
                     }}
                     disabled={uploading}
                   />
@@ -220,7 +236,7 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
                   </Button>
                 </label>
                 <p className="text-sm text-muted-foreground">
-                  Será exibido no menu lateral do sistema
+                  Será exibido no menu lateral da sua empresa
                 </p>
               </div>
             </div>
