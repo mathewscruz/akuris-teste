@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { Eye, EyeOff } from 'lucide-react';
 import logoImage from '@/assets/governaii-logo.png';
 
 const Auth = () => {
@@ -15,7 +17,8 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [nome, setNome] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Redirect if already authenticated
   if (loading) {
@@ -57,163 +60,113 @@ const Auth = () => {
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password || !nome) {
-      toast.error('Por favor, preencha todos os campos');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            nome: nome,
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      // Fallback: Create profile manually if trigger failed
-      if (data.user && !data.user.email_confirmed_at) {
-        try {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              user_id: data.user.id,
-              nome: nome,
-              email: email,
-              role: email === 'admin@governaii.com' ? 'super_admin' : 'user'
-            });
-          
-          if (profileError && !profileError.message.includes('duplicate key')) {
-            console.error('Profile creation error:', profileError);
-          }
-        } catch (profileError) {
-          console.error('Fallback profile creation failed:', profileError);
-        }
-      }
-
-      toast.success('Conta criada com sucesso! Verifique seu email para confirmar.');
-    } catch (error: any) {
-      console.error('Error signing up:', error);
-      toast.error(error.message || 'Erro ao criar conta');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleForgotPassword = () => {
+    toast.info('Funcionalidade em desenvolvimento');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-subtle p-4">
-      <Card className="w-full max-w-md shadow-elegant">
-        <CardHeader className="text-center">
-          <img 
-            src={logoImage} 
-            alt="GovernAII" 
-            className="h-16 mx-auto mb-4 object-contain"
-          />
-          <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            GovernAII
-          </CardTitle>
-          <CardDescription>
-            Plataforma de Governança, Riscos e Conformidade
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Entrar</TabsTrigger>
-              <TabsTrigger value="signup">Cadastrar</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email-signin">Email</Label>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+      <div className="w-full max-w-md">
+        <Card className="shadow-2xl border-0 bg-white">
+          <CardHeader className="text-center pb-6">
+            <img 
+              src={logoImage} 
+              alt="GovernAII" 
+              className="h-16 mx-auto mb-4 object-contain"
+            />
+            <CardTitle className="text-2xl font-bold text-gray-800 mb-2">
+              Acesso ao Sistema
+            </CardTitle>
+            <CardDescription className="text-gray-600">
+              Entre com suas credenciais
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="px-8 pb-8">
+            <form onSubmit={handleSignIn} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-gray-700 font-medium">
+                  E-mail
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu.email@empresa.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-12 px-4 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-gray-700 font-medium">
+                  Senha
+                </Label>
+                <div className="relative">
                   <Input
-                    id="email-signin"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password-signin">Senha</Label>
-                  <Input
-                    id="password-signin"
-                    type="password"
+                    id="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    className="h-12 px-4 pr-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
                 </div>
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isLoading}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="remember"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  />
+                  <Label 
+                    htmlFor="remember" 
+                    className="text-sm text-gray-600 cursor-pointer"
+                  >
+                    Lembrar-me
+                  </Label>
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
                 >
-                  {isLoading ? 'Entrando...' : 'Entrar'}
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nome-signup">Nome completo</Label>
-                  <Input
-                    id="nome-signup"
-                    type="text"
-                    placeholder="Seu nome completo"
-                    value={nome}
-                    onChange={(e) => setNome(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email-signup">Email</Label>
-                  <Input
-                    id="email-signup"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password-signup">Senha</Label>
-                  <Input
-                    id="password-signup"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Criando conta...' : 'Criar conta'}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+                  Esqueci minha senha
+                </button>
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base rounded-md transition-colors"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Entrando...' : 'Entrar'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+        
+        <div className="text-center mt-8">
+          <p className="text-gray-400 text-sm">
+            © 2025 - GovernAII - Todos os direitos reservados
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
