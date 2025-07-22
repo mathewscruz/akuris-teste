@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { Plus, Search, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings } from 'lucide-react';
+import { Plus, Search, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,6 +14,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { RiscoDialog } from '@/components/riscos/RiscoDialog';
 import { MatrizDialog } from '@/components/riscos/MatrizDialog';
 import { TratamentosList } from '@/components/riscos/TratamentosList';
+import { CategoriasDialog } from '@/components/riscos/CategoriasDialog';
 
 interface Risco {
   id: string;
@@ -74,6 +74,7 @@ export function Riscos() {
   const [selectedRiscoForTratamentos, setSelectedRiscoForTratamentos] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('riscos');
   const [matrizConfig, setMatrizConfig] = useState<MatrizConfig | null>(null);
+  const [categoriasDialogOpen, setCategoriasDialogOpen] = useState(false);
 
   const fetchRiscos = async () => {
     try {
@@ -217,6 +218,11 @@ export function Riscos() {
     fetchMatrizConfig();
   };
 
+  const handleCategoriasDialogSuccess = () => {
+    setCategoriasDialogOpen(false);
+    fetchRiscos();
+  };
+
   const getNivelBadgeVariant = (nivel: string) => {
     if (matrizConfig) {
       const nivelConfig = matrizConfig.niveis_risco.find(n => n.nivel === nivel);
@@ -273,9 +279,11 @@ export function Riscos() {
     }
   };
 
-  const handleTratamentosClick = (riscoId: string) => {
+  const handleTratamentosClick = (riscoId: string, riscoNome: string) => {
     setSelectedRiscoForTratamentos(riscoId);
     setActiveTab('tratamentos');
+    console.log(`Navegando para tratamentos do risco: ${riscoNome} (ID: ${riscoId})`);
+    toast.success(`Visualizando tratamentos do risco: ${riscoNome}`);
   };
 
   if (loading) {
@@ -378,6 +386,10 @@ export function Riscos() {
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setCategoriasDialogOpen(true)}>
+                    <Tag className="mr-2 h-4 w-4" />
+                    Categorias
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => setMatrizDialogOpen(true)}>
                     <Settings className="mr-2 h-4 w-4" />
                     Configurar Matriz
@@ -508,7 +520,7 @@ export function Riscos() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleTratamentosClick(risco.id)}
+                                onClick={() => handleTratamentosClick(risco.id, risco.nome)}
                               >
                                 Tratamentos
                               </Button>
@@ -584,6 +596,12 @@ export function Riscos() {
         open={matrizDialogOpen}
         onOpenChange={setMatrizDialogOpen}
         onSuccess={handleMatrizDialogSuccess}
+      />
+
+      <CategoriasDialog
+        open={categoriasDialogOpen}
+        onOpenChange={setCategoriasDialogOpen}
+        onSuccess={handleCategoriasDialogSuccess}
       />
 
       <ConfirmDialog
