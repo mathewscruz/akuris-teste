@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Plus, Shield, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ControleDialog from "@/components/controles/ControleDialog";
 import CategoriasDialog from "@/components/controles/CategoriasDialog";
 import TestesList from "@/components/controles/TestesList";
+import ControlesVinculacaoDialog from "@/components/controles/ControlesVinculacaoDialog";
+import ControlesDashboard from "@/components/controles/ControlesDashboard";
 
 interface Controle {
   id: string;
@@ -43,6 +45,8 @@ export default function Controles() {
   const [categoriasDialogOpen, setCategoriasDialogOpen] = useState(false);
   const [editingControle, setEditingControle] = useState<Controle | null>(null);
   const [selectedControleForTests, setSelectedControleForTests] = useState<Controle | null>(null);
+  const [vinculacaoDialogOpen, setVinculacaoDialogOpen] = useState(false);
+  const [selectedControleForVinculacao, setSelectedControleForVinculacao] = useState<Controle | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -182,13 +186,21 @@ export default function Controles() {
         </div>
       </div>
 
-      <Tabs defaultValue="controles" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <Tabs defaultValue="dashboard" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="controles">Controles</TabsTrigger>
           <TabsTrigger value="testes" disabled={!selectedControleForTests}>
             Testes {selectedControleForTests && `- ${selectedControleForTests.nome}`}
           </TabsTrigger>
+          <TabsTrigger value="vinculacoes" disabled={!selectedControleForVinculacao}>
+            Vinculações {selectedControleForVinculacao && `- ${selectedControleForVinculacao.nome}`}
+          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="dashboard" className="space-y-6">
+          <ControlesDashboard />
+        </TabsContent>
 
         <TabsContent value="controles" className="space-y-6">
           {/* Métricas */}
@@ -308,6 +320,17 @@ export default function Controles() {
                       Testes
                     </Button>
                     <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedControleForVinculacao(controle);
+                        setVinculacaoDialogOpen(true);
+                      }}
+                    >
+                      <Link className="w-4 h-4 mr-1" />
+                      Vincular
+                    </Button>
+                    <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => handleDelete(controle.id)}
@@ -365,6 +388,43 @@ export default function Controles() {
             </Card>
           )}
         </TabsContent>
+
+        <TabsContent value="vinculacoes">
+          {selectedControleForVinculacao ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedControleForVinculacao(null)}
+                >
+                  ← Voltar aos Controles
+                </Button>
+              </div>
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Link className="w-12 h-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Gerencie as Vinculações</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Vincule este controle a riscos e ativos para mapear sua cobertura
+                  </p>
+                  <Button onClick={() => setVinculacaoDialogOpen(true)}>
+                    Abrir Editor de Vinculações
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Link className="w-12 h-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Selecione um controle</h3>
+                <p className="text-muted-foreground">
+                  Clique em "Vincular" em um controle para gerenciar suas vinculações
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
       </Tabs>
 
       <ControleDialog
@@ -380,6 +440,13 @@ export default function Controles() {
       <CategoriasDialog
         open={categoriasDialogOpen}
         onOpenChange={setCategoriasDialogOpen}
+      />
+
+      <ControlesVinculacaoDialog
+        open={vinculacaoDialogOpen}
+        onOpenChange={setVinculacaoDialogOpen}
+        controleId={selectedControleForVinculacao?.id}
+        controleNome={selectedControleForVinculacao?.nome}
       />
     </div>
   );
