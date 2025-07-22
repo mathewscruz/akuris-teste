@@ -4,11 +4,29 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/components/AuthProvider';
 
 const UserProfile: React.FC = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, loading } = useAuth();
 
-  if (!user || !profile) {
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center gap-3">
+        <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+        <div className="hidden sm:block space-y-1">
+          <div className="h-4 w-20 bg-muted rounded animate-pulse" />
+          <div className="h-3 w-16 bg-muted rounded animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if no user
+  if (!user) {
     return null;
   }
+
+  // Use user metadata if profile is not available
+  const displayName = profile?.nome || user.user_metadata?.nome || user.email?.split('@')[0] || 'Usuário';
+  const displayRole = profile?.role || 'user';
 
   const getInitials = (name: string) => {
     return name
@@ -54,14 +72,14 @@ const UserProfile: React.FC = () => {
       <Avatar className="h-8 w-8">
         <AvatarImage src={user.user_metadata?.avatar_url} />
         <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-          {getInitials(profile.nome)}
+          {getInitials(displayName)}
         </AvatarFallback>
       </Avatar>
       
       <div className="hidden sm:block">
-        <p className="text-sm font-medium text-foreground">{profile.nome}</p>
-        <Badge variant={getRoleColor(profile.role)} className="text-xs">
-          {getRoleLabel(profile.role)}
+        <p className="text-sm font-medium text-foreground">{displayName}</p>
+        <Badge variant={getRoleColor(displayRole)} className="text-xs">
+          {getRoleLabel(displayRole)}
         </Badge>
       </div>
     </div>
