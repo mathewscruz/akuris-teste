@@ -1,3 +1,4 @@
+
 import {
   Body,
   Container,
@@ -92,7 +93,7 @@ export default WelcomeEmail
 
 const main = {
   backgroundColor: '#f8fafc',
-  fontFamily: '"Inter", "Segoe UI", Roboto, sans-serif',
+  fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   padding: '20px',
 }
 
@@ -119,7 +120,7 @@ const logo = {
 }
 
 const h1 = {
-  background: 'linear-gradient(135deg, #1e293b, #475569)',
+  background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
   backgroundClip: 'text',
   WebkitBackgroundClip: 'text',
   WebkitTextFillColor: 'transparent',
@@ -135,6 +136,7 @@ const text = {
   fontSize: '16px',
   lineHeight: '28px',
   margin: '0 0 20px',
+  fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 }
 
 const credentialsBox = {
@@ -153,6 +155,7 @@ const credentialLabel = {
   margin: '0 0 8px',
   textTransform: 'uppercase' as const,
   letterSpacing: '0.05em',
+  fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 }
 
 const credentialValue = {
@@ -160,7 +163,7 @@ const credentialValue = {
   fontSize: '20px',
   fontWeight: '700',
   margin: '0 0 24px',
-  fontFamily: '"JetBrains Mono", Monaco, monospace',
+  fontFamily: '"JetBrains Mono", Monaco, "Courier New", monospace',
   padding: '12px 16px',
   backgroundColor: '#ffffff',
   border: '1px solid #e2e8f0',
@@ -173,7 +176,7 @@ const buttonContainer = {
 }
 
 const button = {
-  background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+  background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', // Azul corporativo GovernAII
   border: 'none',
   borderRadius: '12px',
   color: '#ffffff',
@@ -184,8 +187,9 @@ const button = {
   textAlign: 'center' as const,
   textDecoration: 'none',
   transition: 'all 0.3s ease',
-  boxShadow: '0 4px 14px 0 rgba(59, 130, 246, 0.35)',
+  boxShadow: '0 4px 14px 0 rgba(37, 99, 235, 0.35)',
   letterSpacing: '0.025em',
+  fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 }
 
 const importantNote = {
@@ -198,6 +202,7 @@ const importantNote = {
   margin: '32px 0',
   padding: '20px',
   borderLeft: '4px solid #f59e0b',
+  fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 }
 
 const divider = {
@@ -212,10 +217,12 @@ const footer = {
   lineHeight: '24px',
   marginTop: '32px',
   textAlign: 'center' as const,
+  fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 }
 
 const footerSubtext = {
   color: '#94a3b8',
   fontSize: '12px',
   fontStyle: 'italic',
+  fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 }
