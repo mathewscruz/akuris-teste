@@ -34,7 +34,7 @@ interface Props {
 }
 
 const ConfiguracoesGerais = ({ userRole }: Props) => {
-  const { user, refetchProfile, company } = useAuth();
+  const { user, refetchProfile, company, forceLogoUpdate } = useAuth();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -183,6 +183,15 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
     }
   };
 
+  const verifyImageLoad = (url: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+    });
+  };
+
   const handleCompanyLogoUpload = async (file: File) => {
     if (!userProfile?.empresa_id) {
       toast.error('Empresa não encontrada');
@@ -210,6 +219,8 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
       const fileName = `empresa-${userProfile.empresa_id}-${timestamp}.${fileExt}`;
       const filePath = `${fileName}`;
 
+      console.log('Iniciando upload do logo da empresa...');
+
       const { error: uploadError } = await supabase.storage
         .from('empresa-logos')
         .upload(filePath, file, { upsert: true });
@@ -220,8 +231,18 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
         .from('empresa-logos')
         .getPublicUrl(filePath);
 
-      // Adicionar cache busting à URL
+      // URL com cache busting para garantir refresh
       const logoUrlWithCacheBusting = `${urlData.publicUrl}?t=${timestamp}`;
+
+      console.log('Logo uploaded, URL:', logoUrlWithCacheBusting);
+
+      // Verificar se a imagem está acessível
+      const isImageReady = await verifyImageLoad(logoUrlWithCacheBusting);
+      if (!isImageReady) {
+        throw new Error('Falha ao verificar se a imagem foi carregada corretamente');
+      }
+
+      console.log('Imagem verificada, atualizando banco de dados...');
 
       const { error: updateError } = await supabase
         .from('empresas')
@@ -230,12 +251,16 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
 
       if (updateError) throw updateError;
 
-      // Aguardar um pouco e depois atualizar o contexto
-      setTimeout(async () => {
-        await refetchProfile();
-        console.log('Logo atualizado no contexto');
-        toast.success('Logo da empresa atualizado com sucesso');
-      }, 500);
+      console.log('Banco atualizado, chamando refetchProfile...');
+
+      // Forçar atualização imediata do contexto
+      await refetchProfile();
+      
+      // Forçar re-render de todos os componentes que usam logo
+      forceLogoUpdate();
+
+      console.log('Logo da empresa atualizado com sucesso');
+      toast.success('Logo da empresa atualizado com sucesso');
 
     } catch (error) {
       console.error('Erro ao fazer upload do logo da empresa:', error);
@@ -256,8 +281,11 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
   const getCurrentCompanyLogo = () => {
     // Primeiro mostra o preview se existir
     if (logoPreview) return logoPreview;
-    // Depois o logo da empresa do contexto
-    if (company?.logo_url) return company.logo_url;
+    // Depois o logo da empresa do contexto com cache busting
+    if (company?.logo_url) {
+      const hasTimestamp = company.logo_url.includes('?t=');
+      return hasTimestamp ? company.logo_url : `${company.logo_url}?t=${Date.now()}`;
+    }
     // Por último um placeholder
     return null;
   };
@@ -282,6 +310,7 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
                 {getCurrentCompanyLogo() && (
                   <div className="relative">
                     <img
+                      key={`company-logo-${Date.now()}`} // Força re-render sempre
                       src={getCurrentCompanyLogo()!}
                       alt="Logo da empresa"
                       className={`h-16 w-auto max-w-[120px] object-contain border-2 border-border rounded ${

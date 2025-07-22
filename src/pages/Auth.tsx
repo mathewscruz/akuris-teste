@@ -89,7 +89,9 @@ const Auth = () => {
 
   const getCurrentLogo = () => {
     if (companyLogo) {
-      return companyLogo;
+      // Se o logo da empresa já tem timestamp, usar como está; senão, adicionar timestamp
+      const hasTimestamp = companyLogo.includes('?t=');
+      return hasTimestamp ? companyLogo : `${companyLogo}?t=${Date.now()}`;
     }
     return logoImage;
   };
@@ -101,7 +103,7 @@ const Auth = () => {
         <div className="text-center mb-8">
           <div className="relative">
             <img 
-              key={`auth-logo-${logoUpdateKey}-${companyLogo || 'default'}`} // Força re-render quando logo muda
+              key={`auth-logo-${logoUpdateKey}-${Date.now()}-${companyLogo || 'default'}`} // Chave única que força re-render completo
               src={getCurrentLogo()} 
               alt="Logo" 
               className={`h-20 mx-auto object-contain transition-opacity duration-300 ${

@@ -32,7 +32,8 @@ interface AuthContextType {
   hasTemporaryPassword: boolean;
   checkTemporaryPassword: () => Promise<void>;
   getCompanyByEmail: (email: string) => Promise<Company | null>;
-  logoUpdateKey: number; // Chave para forçar re-render do logo
+  logoUpdateKey: number;
+  forceLogoUpdate: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -82,11 +84,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Incrementar a chave para forçar re-render dos componentes que usam logo
       setLogoUpdateKey(prev => prev + 1);
+      console.log('Logo update key incremented');
     } catch (error) {
       console.error('Error fetching profile:', error);
       setProfile(null);
       setCompany(null);
     }
+  };
+
+  const forceLogoUpdate = () => {
+    console.log('Forcing logo update...');
+    setLogoUpdateKey(prev => prev + 1);
+    // Força um re-render adicional após pequeno delay para garantir que todos os componentes sejam atualizados
+    setTimeout(() => {
+      setLogoUpdateKey(prev => prev + 1);
+    }, 100);
   };
 
   const getCompanyByEmail = async (email: string): Promise<Company | null> => {
@@ -226,6 +238,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkTemporaryPassword,
     getCompanyByEmail,
     logoUpdateKey,
+    forceLogoUpdate,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

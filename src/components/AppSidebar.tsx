@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
@@ -121,10 +120,12 @@ export function AppSidebar() {
     }
   };
 
-  // Determina qual logo usar
+  // Determina qual logo usar com cache busting melhorado
   const getLogoSrc = () => {
     if (company?.logo_url) {
-      return company.logo_url;
+      // Se o logo já tem timestamp, usar como está; senão, adicionar timestamp
+      const hasTimestamp = company.logo_url.includes('?t=');
+      return hasTimestamp ? company.logo_url : `${company.logo_url}?t=${Date.now()}`;
     }
     return isCollapsed ? logoMini : "https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/sign/logotipo/Governiaa%20(500%20x%20200%20px)%20(15).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NTdhMjYzYS1jZjc1LTQ3OGYtYjNkMy01NWM2ODViMTQ0MTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvdGlwby9Hb3Zlcm5pYWEgKDUwMCB4IDIwMCBweCkgKDE1KS5wbmciLCJpYXQiOjE3NTMyMDEzODIsImV4cCI6MTc4NDczNzM4Mn0.AjG5UVNIcJcoMc_MVu3tIGUbLQGe77VhUeeSlEa5-1o";
   };
@@ -141,7 +142,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border h-14">
         <div className="flex items-center justify-center px-1 py-2 h-full">
           <img 
-            key={`sidebar-logo-${logoUpdateKey}`} // Força re-render quando logo muda
+            key={`sidebar-logo-${logoUpdateKey}-${Date.now()}`} // Chave única que força re-render completo
             src={getLogoSrc()} 
             alt={getLogoAlt()} 
             className={`object-contain transition-all duration-300 ${
