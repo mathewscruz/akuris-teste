@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
@@ -17,7 +18,8 @@ import {
   HardDrive,
   MessageSquare,
   Search,
-  LogOut
+  LogOut,
+  LayoutDashboard
 } from 'lucide-react';
 
 import {
@@ -29,7 +31,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   useSidebar,
   SidebarHeader,
   SidebarFooter,
@@ -37,9 +38,13 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/AuthProvider';
-import logoImage from '@/assets/governaii-logo.png';
 
 const menuItems = [
+  {
+    title: 'Dashboard',
+    url: '/dashboard',
+    icon: LayoutDashboard,
+  },
   {
     title: 'Gestão de Ativos',
     url: '/ativos',
@@ -84,7 +89,8 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   
-  const [openGroups, setOpenGroups] = useState<string[]>(['Controles Internos', 'Segurança e Privacidade', 'Compliance']);
+  // Start with all groups collapsed
+  const [openGroups, setOpenGroups] = useState<string[]>([]);
   
   const isCollapsed = state === 'collapsed';
 
@@ -115,22 +121,22 @@ export function AppSidebar() {
       collapsible="icon"
     >
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2 px-2 py-2">
+        <div className="flex items-center justify-center px-2 py-4">
           <img 
-            src={logoImage} 
+            src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/sign/logotipo/Governiaa%20(500%20x%20200%20px)%20(15).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NTdhMjYzYS1jZjc1LTQ3OGYtYjNkMy01NWM2ODViMTQ0MTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvdGlwby9Hb3Zlcm5pYWEgKDUwMCB4IDIwMCBweCkgKDE1KS5wbmciLCJpYXQiOjE3NTMyMDEzODIsImV4cCI6MTc4NDczNzM4Mn0.AjG5UVNIcJcoMc_MVu3tIGUbLQGe77VhUeeSlEa5-1o" 
             alt="GovernAII" 
-            className="h-8 w-8 object-contain"
+            className={`object-contain transition-all duration-300 ${
+              isCollapsed ? 'h-8 w-8' : 'h-12 w-auto max-w-[180px]'
+            }`}
           />
-          {!isCollapsed && (
-            <div className="flex flex-col">
-              <span className="font-semibold text-sm text-sidebar-foreground">GovernAII</span>
-              <span className="text-xs text-sidebar-foreground/70">
-                {profile?.empresa_id ? 'Empresa conectada' : 'Sem empresa'}
+          {!isCollapsed && profile?.empresa_id && (
+            <div className="mt-2">
+              <span className="text-xs text-sidebar-foreground/70 block text-center">
+                Empresa conectada
               </span>
             </div>
           )}
         </div>
-        <SidebarTrigger className="ml-auto mr-2" />
       </SidebarHeader>
 
       <SidebarContent>
@@ -147,14 +153,14 @@ export function AppSidebar() {
                       onOpenChange={() => toggleGroup(item.title)}
                     >
                       <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="w-full justify-between hover:bg-sidebar-accent/50">
+                        <SidebarMenuButton className="w-full justify-between hover:bg-sidebar-accent/50 transition-all duration-200">
                           <div className="flex items-center">
                             <item.icon className="h-4 w-4 mr-2" />
                             {!isCollapsed && <span>{item.title}</span>}
                           </div>
                           {!isCollapsed && (
                             <ChevronDown 
-                              className={`h-4 w-4 transition-transform ${
+                              className={`h-4 w-4 transition-all duration-300 ${
                                 openGroups.includes(item.title) ? 'transform rotate-180' : ''
                               }`} 
                             />
@@ -162,15 +168,17 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
                       {!isCollapsed && (
-                        <CollapsibleContent className="space-y-1">
-                          {item.subItems.map((subItem) => (
-                            <SidebarMenuButton key={subItem.title} asChild>
-                              <NavLink to={subItem.url} className={getNavCls}>
-                                <subItem.icon className="h-4 w-4 mr-2 ml-4" />
-                                <span className="text-sm">{subItem.title}</span>
-                              </NavLink>
-                            </SidebarMenuButton>
-                          ))}
+                        <CollapsibleContent className="transition-all duration-300 ease-in-out overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                          <div className="space-y-1 mt-1">
+                            {item.subItems.map((subItem) => (
+                              <SidebarMenuButton key={subItem.title} asChild>
+                                <NavLink to={subItem.url} className={getNavCls}>
+                                  <subItem.icon className="h-4 w-4 mr-2 ml-4" />
+                                  <span className="text-sm">{subItem.title}</span>
+                                </NavLink>
+                              </SidebarMenuButton>
+                            ))}
+                          </div>
                         </CollapsibleContent>
                       )}
                     </Collapsible>
