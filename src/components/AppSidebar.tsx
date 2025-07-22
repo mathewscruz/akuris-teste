@@ -144,28 +144,39 @@ export function AppSidebar() {
                       onOpenChange={() => toggleGroup(item.title)}
                     >
                       <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="w-full justify-between hover:bg-sidebar-accent/50 transition-all duration-200 h-10 px-3">
+                        <SidebarMenuButton className="w-full justify-between hover:bg-sidebar-accent/50 transition-all duration-200 h-10 px-3 group">
                           <div className="flex items-center">
-                            <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                            {!isCollapsed && <span className="text-sm font-medium">{item.title}</span>}
+                            <item.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ${
+                              openGroups.includes(item.title) ? 'text-primary scale-110' : ''
+                            }`} />
+                            {!isCollapsed && <span className="text-sm font-medium transition-colors duration-200">{item.title}</span>}
                           </div>
                           {!isCollapsed && (
                             <ChevronDown 
-                              className={`h-4 w-4 transition-all duration-300 flex-shrink-0 ${
-                                openGroups.includes(item.title) ? 'transform rotate-180' : ''
+                              className={`h-4 w-4 transition-all duration-500 ease-out flex-shrink-0 ${
+                                openGroups.includes(item.title) 
+                                  ? 'transform rotate-180 text-primary scale-110' 
+                                  : 'group-hover:scale-105'
                               }`} 
                             />
                           )}
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
                       {!isCollapsed && (
-                        <CollapsibleContent className="transition-all duration-300 ease-in-out overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                          <div className="space-y-1 mt-1 ml-4">
-                            {item.subItems.map((subItem) => (
-                              <SidebarMenuButton key={subItem.title} asChild>
+                        <CollapsibleContent className="transition-all duration-500 ease-out overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                          <div className="space-y-1 mt-1 ml-4 animate-fade-in">
+                            {item.subItems.map((subItem, index) => (
+                              <SidebarMenuButton 
+                                key={subItem.title} 
+                                asChild
+                                className="transform transition-all duration-200 hover:translate-x-1 hover:scale-105"
+                                style={{ 
+                                  animationDelay: openGroups.includes(item.title) ? `${index * 50}ms` : '0ms'
+                                }}
+                              >
                                 <NavLink to={subItem.url} className={getNavCls}>
-                                  <subItem.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                                  <span className="text-sm">{subItem.title}</span>
+                                  <subItem.icon className="h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200" />
+                                  <span className="text-sm transition-colors duration-200">{subItem.title}</span>
                                 </NavLink>
                               </SidebarMenuButton>
                             ))}
