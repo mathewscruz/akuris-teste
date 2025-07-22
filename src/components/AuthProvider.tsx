@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,15 +13,25 @@ interface Profile {
   ativo: boolean;
 }
 
+interface Company {
+  id: string;
+  nome: string;
+  logo_url: string | null;
+  cnpj: string | null;
+  contato: string | null;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
+  company: Company | null;
   loading: boolean;
   signOut: () => Promise<void>;
   refetchProfile: () => Promise<void>;
   hasTemporaryPassword: boolean;
   checkTemporaryPassword: () => Promise<void>;
+  getCompanyByEmail: (email: string) => Promise<Company | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasTemporaryPassword, setHasTemporaryPassword] = useState(false);
 
@@ -44,15 +56,82 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          *,
+          empresas:empresa_id (
+            id,
+            nome,
+            logo_url,
+            cnpj,
+            contato
+          )
+        `)
         .eq('user_id', userId)
         .single();
 
       if (error) throw error;
+      
       setProfile(data);
+      setCompany(data.empresas || null);
     } catch (error) {
       console.error('Error fetching profile:', error);
       setProfile(null);
+      setCompany(null);
+    }
+  };
+
+  const getCompanyByEmail = async (email: string): Promise<Company | null> => {
+    if (!email || !email.includes('@')) return null;
+
+    try {
+      // Primeiro, tenta encontrar um usuário com esse email
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select(`
+          empresa_id,
+          empresas:empresa_id (
+            id,
+            nome,
+            logo_url,
+            cnpj,
+            contato
+          )
+        `)
+        .eq('email', email)
+        .single();
+
+      if (!profileError && profileData?.empresas) {
+        return profileData.empresas as Company;
+      }
+
+      // Se não encontrar pelo email exato, tenta pelo domínio
+      const domain = email.split('@')[1];
+      if (!domain) return null;
+
+      const { data: domainData, error: domainError } = await supabase
+        .from('profiles')
+        .select(`
+          empresa_id,
+          empresas:empresa_id (
+            id,
+            nome,
+            logo_url,
+            cnpj,
+            contato
+          )
+        `)
+        .like('email', `%@${domain}`)
+        .limit(1)
+        .single();
+
+      if (!domainError && domainData?.empresas) {
+        return domainData.empresas as Company;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error fetching company by email:', error);
+      return null;
     }
   };
 
@@ -97,6 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }, 0);
         } else {
           setProfile(null);
+          setCompany(null);
           setHasTemporaryPassword(false);
         }
         setLoading(false);
@@ -127,11 +207,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     session,
     profile,
+    company,
     loading,
     signOut,
     refetchProfile,
     hasTemporaryPassword,
     checkTemporaryPassword,
+    getCompanyByEmail,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

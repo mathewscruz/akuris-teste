@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
@@ -13,12 +13,14 @@ import { Eye, EyeOff } from 'lucide-react';
 import logoImage from '@/assets/governaii-logo-main.png';
 
 const Auth = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, getCompanyByEmail } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
+  const [isLoadingLogo, setIsLoadingLogo] = useState(false);
 
   // Redirect if already authenticated
   if (loading) {
@@ -35,6 +37,27 @@ const Auth = () => {
   if (user) {
     return <Navigate to="/" replace />;
   }
+
+  // Debounce para buscar logo da empresa
+  useEffect(() => {
+    const timeoutId = setTimeout(async () => {
+      if (email && email.includes('@')) {
+        setIsLoadingLogo(true);
+        try {
+          const company = await getCompanyByEmail(email);
+          setCompanyLogo(company?.logo_url || null);
+        } catch (error) {
+          console.error('Erro ao buscar logo da empresa:', error);
+        } finally {
+          setIsLoadingLogo(false);
+        }
+      } else {
+        setCompanyLogo(null);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [email, getCompanyByEmail]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,16 +87,37 @@ const Auth = () => {
     toast.info('Funcionalidade em desenvolvimento');
   };
 
+  const getCurrentLogo = () => {
+    if (companyLogo) {
+      return companyLogo;
+    }
+    return logoImage;
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
       <div className="w-full max-w-md">
         {/* Logo fora do card */}
         <div className="text-center mb-8">
-          <img 
-            src={logoImage} 
-            alt="GovernAII" 
-            className="h-20 mx-auto object-contain"
-          />
+          <div className="relative">
+            <img 
+              src={getCurrentLogo()} 
+              alt="Logo" 
+              className={`h-20 mx-auto object-contain transition-opacity duration-300 ${
+                isLoadingLogo ? 'opacity-50' : 'opacity-100'
+              }`}
+              onError={(e) => {
+                // Fallback para logo padrão em caso de erro
+                const target = e.target as HTMLImageElement;
+                target.src = logoImage;
+              }}
+            />
+            {isLoadingLogo && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white/50"></div>
+              </div>
+            )}
+          </div>
         </div>
         
         <Card className="shadow-2xl border-0 bg-white">
