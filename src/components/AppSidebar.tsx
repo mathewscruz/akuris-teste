@@ -27,7 +27,6 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -120,31 +119,22 @@ export function AppSidebar() {
       className={isCollapsed ? 'w-14' : 'w-60'}
       collapsible="icon"
     >
-      <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center justify-center px-2 py-4">
+      <SidebarHeader className="border-b border-sidebar-border h-14">
+        <div className="flex items-center justify-center px-3 py-2 h-full">
           <img 
             src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/sign/logotipo/Governiaa%20(500%20x%20200%20px)%20(15).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NTdhMjYzYS1jZjc1LTQ3OGYtYjNkMy01NWM2ODViMTQ0MTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvdGlwby9Hb3Zlcm5pYWEgKDUwMCB4IDIwMCBweCkgKDE1KS5wbmciLCJpYXQiOjE3NTMyMDEzODIsImV4cCI6MTc4NDczNzM4Mn0.AjG5UVNIcJcoMc_MVu3tIGUbLQGe77VhUeeSlEa5-1o" 
             alt="GovernAII" 
             className={`object-contain transition-all duration-300 ${
-              isCollapsed ? 'h-8 w-8' : 'h-12 w-auto max-w-[180px]'
+              isCollapsed ? 'h-8 w-8' : 'h-10 w-auto max-w-[200px]'
             }`}
           />
-          {!isCollapsed && profile?.empresa_id && (
-            <div className="mt-2">
-              <span className="text-xs text-sidebar-foreground/70 block text-center">
-                Empresa conectada
-              </span>
-            </div>
-          )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="py-2">
         <SidebarGroup>
-          <SidebarGroupLabel>Navegação Principal</SidebarGroupLabel>
-          
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.subItems ? (
@@ -153,14 +143,14 @@ export function AppSidebar() {
                       onOpenChange={() => toggleGroup(item.title)}
                     >
                       <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="w-full justify-between hover:bg-sidebar-accent/50 transition-all duration-200">
+                        <SidebarMenuButton className="w-full justify-between hover:bg-sidebar-accent/50 transition-all duration-200 h-10 px-3">
                           <div className="flex items-center">
-                            <item.icon className="h-4 w-4 mr-2" />
-                            {!isCollapsed && <span>{item.title}</span>}
+                            <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                            {!isCollapsed && <span className="text-sm font-medium">{item.title}</span>}
                           </div>
                           {!isCollapsed && (
                             <ChevronDown 
-                              className={`h-4 w-4 transition-all duration-300 ${
+                              className={`h-4 w-4 transition-all duration-300 flex-shrink-0 ${
                                 openGroups.includes(item.title) ? 'transform rotate-180' : ''
                               }`} 
                             />
@@ -169,11 +159,11 @@ export function AppSidebar() {
                       </CollapsibleTrigger>
                       {!isCollapsed && (
                         <CollapsibleContent className="transition-all duration-300 ease-in-out overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                          <div className="space-y-1 mt-1">
+                          <div className="space-y-1 mt-1 ml-4">
                             {item.subItems.map((subItem) => (
                               <SidebarMenuButton key={subItem.title} asChild>
                                 <NavLink to={subItem.url} className={getNavCls}>
-                                  <subItem.icon className="h-4 w-4 mr-2 ml-4" />
+                                  <subItem.icon className="h-4 w-4 mr-3 flex-shrink-0" />
                                   <span className="text-sm">{subItem.title}</span>
                                 </NavLink>
                               </SidebarMenuButton>
@@ -185,8 +175,8 @@ export function AppSidebar() {
                   ) : (
                     <SidebarMenuButton asChild>
                       <NavLink to={item.url} className={getNavCls}>
-                        <item.icon className="h-4 w-4 mr-2" />
-                        {!isCollapsed && <span>{item.title}</span>}
+                        <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                        {!isCollapsed && <span className="text-sm font-medium">{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   )}
@@ -196,14 +186,14 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
+        <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/configuracoes" className={getNavCls}>
-                    <Settings className="h-4 w-4 mr-2" />
-                    {!isCollapsed && <span>Configurações</span>}
+                    <Settings className="h-4 w-4 mr-3 flex-shrink-0" />
+                    {!isCollapsed && <span className="text-sm font-medium">Configurações</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -212,11 +202,11 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border">
-        <div className="p-2">
+      <SidebarFooter className="border-t border-sidebar-border p-3">
+        <div>
           {!isCollapsed && profile && (
-            <div className="mb-2 px-2 py-1">
-              <div className="text-xs text-sidebar-foreground/70">Conectado como:</div>
+            <div className="mb-3 px-2 py-2 bg-sidebar-accent/30 rounded-md">
+              <div className="text-xs text-sidebar-foreground/70 mb-1">Conectado como:</div>
               <div className="text-sm font-medium text-sidebar-foreground truncate">
                 {profile.nome}
               </div>
@@ -229,10 +219,10 @@ export function AppSidebar() {
             variant="ghost" 
             size="sm" 
             onClick={handleSignOut}
-            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50"
+            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 h-10 px-3"
           >
-            <LogOut className="h-4 w-4 mr-2" />
-            {!isCollapsed && <span>Sair</span>}
+            <LogOut className="h-4 w-4 mr-3 flex-shrink-0" />
+            {!isCollapsed && <span className="text-sm font-medium">Sair</span>}
           </Button>
         </div>
       </SidebarFooter>
