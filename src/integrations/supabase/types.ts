@@ -14,16 +14,158 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ativos: {
+        Row: {
+          created_at: string
+          criticidade: string | null
+          data_aquisicao: string | null
+          descricao: string | null
+          empresa_id: string
+          fornecedor: string | null
+          id: string
+          localizacao: string | null
+          nome: string
+          proprietario: string | null
+          status: string | null
+          tags: string[] | null
+          tipo: string
+          updated_at: string
+          valor_negocio: string | null
+          versao: string | null
+        }
+        Insert: {
+          created_at?: string
+          criticidade?: string | null
+          data_aquisicao?: string | null
+          descricao?: string | null
+          empresa_id: string
+          fornecedor?: string | null
+          id?: string
+          localizacao?: string | null
+          nome: string
+          proprietario?: string | null
+          status?: string | null
+          tags?: string[] | null
+          tipo: string
+          updated_at?: string
+          valor_negocio?: string | null
+          versao?: string | null
+        }
+        Update: {
+          created_at?: string
+          criticidade?: string | null
+          data_aquisicao?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          fornecedor?: string | null
+          id?: string
+          localizacao?: string | null
+          nome?: string
+          proprietario?: string | null
+          status?: string | null
+          tags?: string[] | null
+          tipo?: string
+          updated_at?: string
+          valor_negocio?: string | null
+          versao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ativos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      empresas: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          logo_url: string | null
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          email: string
+          empresa_id: string | null
+          id: string
+          nome: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          email: string
+          empresa_id?: string | null
+          id?: string
+          nome: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          email?: string
+          empresa_id?: string | null
+          id?: string
+          nome?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_empresa_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "super_admin" | "admin" | "user" | "readonly"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +292,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["super_admin", "admin", "user", "readonly"],
+    },
   },
 } as const
