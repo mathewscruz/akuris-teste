@@ -191,6 +191,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    const initAuth = async () => {
+      try {
+        // Check for existing session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await fetchProfile(session.user.id);
+          await checkTemporaryPassword();
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Initialize auth immediately
+    initAuth();
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -200,33 +223,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           await fetchProfile(session.user.id);
-          // Garantir que verificação de senha temporária aconteça após login
           if (event === 'SIGNED_IN') {
-            console.log('User signed in, checking temporary password...');
-            setTimeout(async () => {
-              await checkTemporaryPassword();
-            }, 500);
+            await checkTemporaryPassword();
           }
         } else {
           setProfile(null);
           setCompany(null);
           setHasTemporaryPassword(false);
         }
-        setLoading(false);
       }
     );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchProfile(session.user.id);
-        checkTemporaryPassword();
-      }
-      setLoading(false);
-    });
 
     return () => subscription.unsubscribe();
   }, []);
