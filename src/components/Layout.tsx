@@ -7,13 +7,14 @@ import { useBreadcrumb } from '@/hooks/useBreadcrumb';
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import UserProfile from '@/components/UserProfile';
 import NotificationCenter from '@/components/NotificationCenter';
+import PasswordChangeRequired from '@/components/PasswordChangeRequired';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, hasTemporaryPassword, checkTemporaryPassword } = useAuth();
   const navigate = useNavigate();
   const breadcrumbs = useBreadcrumb();
 
@@ -30,6 +31,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Se o usuário tem senha temporária, mostrar tela de alteração obrigatória
+  if (hasTemporaryPassword) {
+    return (
+      <PasswordChangeRequired 
+        onPasswordChanged={() => {
+          checkTemporaryPassword();
+        }}
+      />
+    );
   }
 
   return (

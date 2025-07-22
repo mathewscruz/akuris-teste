@@ -19,6 +19,8 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => Promise<void>;
   refetchProfile: () => Promise<void>;
+  hasTemporaryPassword: boolean;
+  checkTemporaryPassword: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,6 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasTemporaryPassword, setHasTemporaryPassword] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -50,6 +53,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Error fetching profile:', error);
       setProfile(null);
+    }
+  };
+
+  const checkTemporaryPassword = async () => {
+    if (!user) {
+      setHasTemporaryPassword(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('temporary_passwords')
+        .select('is_temporary')
+        .eq('user_id', user.id)
+        .eq('is_temporary', true)
+        .single();
+
+      setHasTemporaryPassword(!!data);
+    } catch (error) {
+      // Se não encontrar registro, assume que não tem senha temporária
+      setHasTemporaryPassword(false);
     }
   };
 
@@ -69,9 +93,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           setTimeout(() => {
             fetchProfile(session.user.id);
+            checkTemporaryPassword();
           }, 0);
         } else {
           setProfile(null);
+          setHasTemporaryPassword(false);
         }
         setLoading(false);
       }
@@ -84,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (session?.user) {
         fetchProfile(session.user.id);
+        checkTemporaryPassword();
       }
       setLoading(false);
     });
@@ -103,6 +130,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signOut,
     refetchProfile,
+    hasTemporaryPassword,
+    checkTemporaryPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

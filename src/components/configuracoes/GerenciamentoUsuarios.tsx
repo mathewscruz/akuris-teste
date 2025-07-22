@@ -141,12 +141,77 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
 
   const handleSubmit = async (data: UsuarioForm) => {
     try {
-      if (editingUsuario) {
+      setLoading(true);
+      
+      if (!editingUsuario) {
+        // Criar usuário no Auth
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: data.email,
+          password: 'temp123456', // Senha temporária inicial
+          email_confirm: true,
+          user_metadata: {
+            nome: data.nome
+          }
+        });
+
+        if (authError) throw authError;
+
+        // Criar perfil do usuário
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: authData.user.id,
+            nome: data.nome,
+            email: data.email,
+            role: data.role,
+            empresa_id: data.empresa_id || null,
+          });
+
+        if (profileError) throw profileError;
+
+        // Gerar senha temporária
+        const { data: tempPassword, error: passwordError } = await supabase
+          .rpc('generate_temp_password');
+
+        if (passwordError) throw passwordError;
+
+        // Atualizar com a senha temporária gerada
+        const { error: updatePasswordError } = await supabase.auth.admin.updateUserById(
+          authData.user.id,
+          { password: tempPassword }
+        );
+
+        if (updatePasswordError) throw updatePasswordError;
+
+        // Registrar senha temporária
+        await supabase
+          .from('temporary_passwords')
+          .insert({
+            user_id: authData.user.id,
+            is_temporary: true,
+          });
+
+        // Enviar e-mail de boas-vindas
+        try {
+          await supabase.functions.invoke('send-welcome-email', {
+            body: {
+              userName: data.nome,
+              userEmail: data.email,
+              temporaryPassword: tempPassword,
+            }
+          });
+        } catch (emailError) {
+          console.error('Erro ao enviar e-mail:', emailError);
+          // Não falhar a criação do usuário por causa do e-mail
+        }
+
+        toast.success('Usuário criado com sucesso! E-mail de boas-vindas enviado.');
+      } else {
+        // Para edição de usuário
         const { error } = await supabase
           .from('profiles')
           .update({
             nome: data.nome,
-            email: data.email,
             role: data.role,
             empresa_id: data.empresa_id || null,
           })
@@ -154,19 +219,17 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
 
         if (error) throw error;
         toast.success('Usuário atualizado com sucesso');
-      } else {
-        // Para criar usuário, seria necessário usar uma função do servidor
-        // Por agora, vamos apenas mostrar uma mensagem
-        toast.info('Funcionalidade de criação de usuário será implementada');
       }
 
       setDialogOpen(false);
       setEditingUsuario(null);
       form.reset();
       fetchUsuarios();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar usuário:', error);
-      toast.error('Erro ao salvar usuário');
+      toast.error(error.message || 'Erro ao salvar usuário');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -224,11 +287,23 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
 
   const resetPassword = async (usuario: Usuario) => {
     try {
-      // Esta funcionalidade requer implementação no servidor
-      toast.info('Funcionalidade de reset de senha será implementada');
-    } catch (error) {
+      setLoading(true);
+      
+      // Chamar Edge Function para reset de senha
+      const { error } = await supabase.functions.invoke('send-password-reset', {
+        body: {
+          userId: usuario.user_id,
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success('Nova senha temporária enviada por e-mail.');
+    } catch (error: any) {
       console.error('Erro ao resetar senha:', error);
-      toast.error('Erro ao resetar senha');
+      toast.error(error.message || 'Erro ao resetar senha');
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -195,11 +195,39 @@ export type Database = {
           },
         ]
       }
+      temporary_passwords: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_temporary: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_temporary?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_temporary?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      generate_temp_password: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_empresa_id: {
         Args: Record<PropertyKey, never>
         Returns: string
