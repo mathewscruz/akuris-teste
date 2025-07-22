@@ -144,70 +144,24 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
       setLoading(true);
       
       if (!editingUsuario) {
-        // Criar usuário no Auth
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: data.email,
-          password: 'temp123456', // Senha temporária inicial
-          email_confirm: true,
-          user_metadata: {
-            nome: data.nome
-          }
-        });
-
-        if (authError) throw authError;
-
-        // Criar perfil do usuário
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            user_id: authData.user.id,
+        // Criar novo usuário usando Edge Function
+        const { error } = await supabase.functions.invoke('create-user', {
+          body: {
             nome: data.nome,
             email: data.email,
             role: data.role,
             empresa_id: data.empresa_id || null,
-          });
+          }
+        });
 
-        if (profileError) throw profileError;
-
-        // Gerar senha temporária
-        const { data: tempPassword, error: passwordError } = await supabase
-          .rpc('generate_temp_password');
-
-        if (passwordError) throw passwordError;
-
-        // Atualizar com a senha temporária gerada
-        const { error: updatePasswordError } = await supabase.auth.admin.updateUserById(
-          authData.user.id,
-          { password: tempPassword }
-        );
-
-        if (updatePasswordError) throw updatePasswordError;
-
-        // Registrar senha temporária
-        await supabase
-          .from('temporary_passwords')
-          .insert({
-            user_id: authData.user.id,
-            is_temporary: true,
-          });
-
-        // Enviar e-mail de boas-vindas
-        try {
-          await supabase.functions.invoke('send-welcome-email', {
-            body: {
-              userName: data.nome,
-              userEmail: data.email,
-              temporaryPassword: tempPassword,
-            }
-          });
-        } catch (emailError) {
-          console.error('Erro ao enviar e-mail:', emailError);
-          // Não falhar a criação do usuário por causa do e-mail
+        if (error) {
+          console.error('Erro ao criar usuário:', error);
+          throw new Error(error.message || 'Erro ao criar usuário');
         }
 
         toast.success('Usuário criado com sucesso! E-mail de boas-vindas enviado.');
       } else {
-        // Para edição de usuário
+        // Para edição de usuário (mantém a lógica existente)
         const { error } = await supabase
           .from('profiles')
           .update({
@@ -289,7 +243,6 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
     try {
       setLoading(true);
       
-      // Chamar Edge Function para reset de senha
       const { error } = await supabase.functions.invoke('send-password-reset', {
         body: {
           userId: usuario.user_id,
