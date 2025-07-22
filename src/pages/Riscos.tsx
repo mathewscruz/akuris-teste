@@ -6,12 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { RiscoDialog } from '@/components/riscos/RiscoDialog';
 import { MatrizDialog } from '@/components/riscos/MatrizDialog';
+import { TratamentosList } from '@/components/riscos/TratamentosList';
 
 interface Risco {
   id: string;
@@ -64,6 +66,7 @@ export function Riscos() {
   const [editingRisco, setEditingRisco] = useState<Risco | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [riscoToDelete, setRiscoToDelete] = useState<Risco | null>(null);
+  const [selectedRiscoForTratamentos, setSelectedRiscoForTratamentos] = useState<string | null>(null);
 
   const fetchRiscos = async () => {
     try {
@@ -299,158 +302,214 @@ export function Riscos() {
         </Card>
       </div>
 
-      {/* Card Principal com Tabela */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Riscos Identificados
-              </CardTitle>
-              <CardDescription>
-                Gerencie e monitore todos os riscos da organização
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setMatrizDialogOpen(true)}>
-                <Settings className="mr-2 h-4 w-4" />
-                Configurar Matriz
-              </Button>
-              <Button onClick={openCreateDialog} size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Risco
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Controles e Filtros */}
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Buscar riscos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="identificado">Identificado</SelectItem>
-                  <SelectItem value="analisado">Analisado</SelectItem>
-                  <SelectItem value="tratado">Tratado</SelectItem>
-                  <SelectItem value="monitorado">Monitorado</SelectItem>
-                  <SelectItem value="aceito">Aceito</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={nivelFilter} onValueChange={setNivelFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Nível" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="Crítico">Crítico</SelectItem>
-                  <SelectItem value="Alto">Alto</SelectItem>
-                  <SelectItem value="Médio">Médio</SelectItem>
-                  <SelectItem value="Baixo">Baixo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+      {/* Tabs para Riscos e Tratamentos */}
+      <Tabs defaultValue="riscos" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="riscos">Riscos</TabsTrigger>
+          <TabsTrigger value="tratamentos">Tratamentos</TabsTrigger>
+        </TabsList>
 
-          {/* Tabela de Riscos */}
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Nível Inicial</TableHead>
-                  <TableHead>Nível Residual</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Responsável</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRiscos.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      {searchTerm || statusFilter || nivelFilter
-                        ? 'Nenhum risco encontrado com os filtros aplicados.'
-                        : 'Nenhum risco cadastrado. Clique em "Novo Risco" para adicionar o primeiro.'}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredRiscos.map((risco) => (
-                    <TableRow key={risco.id}>
-                      <TableCell className="font-medium">{risco.nome}</TableCell>
-                      <TableCell>
-                        {risco.categoria && (
-                          <div className="flex items-center gap-2">
-                            {risco.categoria.cor && (
-                              <div 
-                                className="w-3 h-3 rounded-full" 
-                                style={{ backgroundColor: risco.categoria.cor }}
-                              />
-                            )}
-                            {risco.categoria.nome}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getNivelBadgeVariant(risco.nivel_risco_inicial)}>
-                          {risco.nivel_risco_inicial}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {risco.nivel_risco_residual ? (
-                          <Badge variant={getNivelBadgeVariant(risco.nivel_risco_residual)}>
-                            {risco.nivel_risco_residual}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusBadgeVariant(risco.status)}>
-                          {risco.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{risco.responsavel || '-'}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(risco)}
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openDeleteDialog(risco)}
-                          >
-                            Excluir
-                          </Button>
-                        </div>
-                      </TableCell>
+        <TabsContent value="riscos">
+          {/* Card Principal com Tabela de Riscos */}
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    Riscos Identificados
+                  </CardTitle>
+                  <CardDescription>
+                    Gerencie e monitore todos os riscos da organização
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setMatrizDialogOpen(true)}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Configurar Matriz
+                  </Button>
+                  <Button onClick={openCreateDialog} size="sm">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Novo Risco
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Controles e Filtros */}
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Buscar riscos..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="identificado">Identificado</SelectItem>
+                      <SelectItem value="analisado">Analisado</SelectItem>
+                      <SelectItem value="tratado">Tratado</SelectItem>
+                      <SelectItem value="monitorado">Monitorado</SelectItem>
+                      <SelectItem value="aceito">Aceito</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={nivelFilter} onValueChange={setNivelFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Nível" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="Crítico">Crítico</SelectItem>
+                      <SelectItem value="Alto">Alto</SelectItem>
+                      <SelectItem value="Médio">Médio</SelectItem>
+                      <SelectItem value="Baixo">Baixo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Tabela de Riscos */}
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Nível Inicial</TableHead>
+                      <TableHead>Nível Residual</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Responsável</TableHead>
+                      <TableHead>Ações</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredRiscos.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">
+                          {searchTerm || statusFilter || nivelFilter
+                            ? 'Nenhum risco encontrado com os filtros aplicados.'
+                            : 'Nenhum risco cadastrado. Clique em "Novo Risco" para adicionar o primeiro.'}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredRiscos.map((risco) => (
+                        <TableRow key={risco.id}>
+                          <TableCell className="font-medium">{risco.nome}</TableCell>
+                          <TableCell>
+                            {risco.categoria && (
+                              <div className="flex items-center gap-2">
+                                {risco.categoria.cor && (
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: risco.categoria.cor }}
+                                  />
+                                )}
+                                {risco.categoria.nome}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getNivelBadgeVariant(risco.nivel_risco_inicial)}>
+                              {risco.nivel_risco_inicial}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {risco.nivel_risco_residual ? (
+                              <Badge variant={getNivelBadgeVariant(risco.nivel_risco_residual)}>
+                                {risco.nivel_risco_residual}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getStatusBadgeVariant(risco.status)}>
+                              {risco.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{risco.responsavel || '-'}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEdit(risco)}
+                              >
+                                Editar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedRiscoForTratamentos(risco.id);
+                                }}
+                              >
+                                Tratamentos
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openDeleteDialog(risco)}
+                              >
+                                Excluir
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="tratamentos">
+          {selectedRiscoForTratamentos ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold">Tratamentos do Risco</h2>
+                  <p className="text-muted-foreground">
+                    Risco selecionado: {riscos.find(r => r.id === selectedRiscoForTratamentos)?.nome}
+                  </p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedRiscoForTratamentos(null)}
+                >
+                  Voltar para Lista de Riscos
+                </Button>
+              </div>
+              <TratamentosList riscoId={selectedRiscoForTratamentos} />
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="py-8">
+                <div className="text-center">
+                  <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Selecione um Risco</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Para visualizar e gerenciar tratamentos, primeiro selecione um risco na aba "Riscos".
+                  </p>
+                  <Button onClick={() => document.querySelector('[data-state="inactive"]')?.click()}>
+                    Ver Lista de Riscos
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Dialogs */}
       <RiscoDialog
