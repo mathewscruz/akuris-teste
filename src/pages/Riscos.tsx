@@ -16,7 +16,6 @@ import { RiscoDialog } from '@/components/riscos/RiscoDialog';
 import { MatrizDialog } from '@/components/riscos/MatrizDialog';
 import { TratamentosList } from '@/components/riscos/TratamentosList';
 import { CategoriasDialog } from '@/components/riscos/CategoriasDialog';
-import { PageTransition } from '@/components/PageTransition';
 
 interface Risco {
   id: string;
@@ -302,9 +301,8 @@ export function Riscos() {
   }
 
   return (
-    <PageTransition>
-      <TooltipProvider>
-        <div className="container mx-auto py-6 px-4 max-w-7xl">
+    <TooltipProvider>
+      <div className="container mx-auto py-6 px-4 max-w-7xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Gestão de Riscos</h1>
           <p className="text-muted-foreground">
@@ -638,6 +636,5 @@ export function Riscos() {
         />
       </div>
     </TooltipProvider>
-    </PageTransition>
   );
 }

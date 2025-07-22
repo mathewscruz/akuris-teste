@@ -158,13 +158,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkTemporaryPassword = async () => {
     if (!user) {
-      console.log('No user for temporary password check');
       setHasTemporaryPassword(false);
       return;
     }
 
     try {
-      console.log('Checking temporary password for user:', user.id);
       const { data, error } = await supabase
         .from('temporary_passwords')
         .select('is_temporary')
@@ -172,12 +170,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('is_temporary', true)
         .single();
 
-      console.log('Temporary password check result:', data, error);
-      const hasTemp = !!data;
-      setHasTemporaryPassword(hasTemp);
-      console.log('Has temporary password:', hasTemp);
+      setHasTemporaryPassword(!!data);
     } catch (error) {
-      console.log('Error checking temporary password:', error);
       // Se não encontrar registro, assume que não tem senha temporária
       setHasTemporaryPassword(false);
     }
@@ -191,48 +185,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        // Check for existing session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-          await checkTemporaryPassword();
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Initialize auth immediately
-    initAuth();
-
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+        console.log('Auth state changed:', event);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await fetchProfile(session.user.id);
-          if (event === 'SIGNED_IN') {
-            await checkTemporaryPassword();
-          }
+          fetchProfile(session.user.id);
+          checkTemporaryPassword();
         } else {
           setProfile(null);
           setCompany(null);
           setHasTemporaryPassword(false);
         }
+        setLoading(false);
       }
     );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchProfile(session.user.id);
+        checkTemporaryPassword();
+      }
+      setLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);

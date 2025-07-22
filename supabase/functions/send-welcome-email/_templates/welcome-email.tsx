@@ -173,7 +173,7 @@ const buttonContainer = {
 }
 
 const button = {
-  background: 'linear-gradient(135deg, hsl(217, 91%, 60%), hsl(217, 91%, 50%))',
+  background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
   border: 'none',
   borderRadius: '12px',
   color: '#ffffff',
