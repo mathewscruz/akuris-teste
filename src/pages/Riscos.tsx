@@ -137,8 +137,8 @@ export function Riscos() {
   const filteredRiscos = riscos.filter(risco => {
     const matchesSearch = risco.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          risco.responsavel?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !statusFilter || risco.status === statusFilter;
-    const matchesNivel = !nivelFilter || risco.nivel_risco_inicial === nivelFilter;
+    const matchesStatus = !statusFilter || statusFilter === 'all' || risco.status === statusFilter;
+    const matchesNivel = !nivelFilter || nivelFilter === 'all' || risco.nivel_risco_inicial === nivelFilter;
 
     return matchesSearch && matchesStatus && matchesNivel;
   });
@@ -294,7 +294,7 @@ export function Riscos() {
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="identificado">Identificado</SelectItem>
               <SelectItem value="analisado">Analisado</SelectItem>
               <SelectItem value="tratado">Tratado</SelectItem>
@@ -307,7 +307,7 @@ export function Riscos() {
               <SelectValue placeholder="Nível" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="Crítico">Crítico</SelectItem>
               <SelectItem value="Alto">Alto</SelectItem>
               <SelectItem value="Médio">Médio</SelectItem>
