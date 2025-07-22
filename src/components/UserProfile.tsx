@@ -1,11 +1,34 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/components/AuthProvider';
+import { supabase } from '@/integrations/supabase/client';
 
 const UserProfile: React.FC = () => {
   const { user, profile, loading } = useAuth();
+  const [userProfile, setUserProfile] = useState<any>(null);
+  
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+      
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('nome, foto_url')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (data) setUserProfile(data);
+      } catch (error) {
+        console.error('Erro ao buscar perfil:', error);
+      }
+    };
 
+    fetchUserProfile();
+  }, [user]);
+
+  const { signOut } = useAuth();
   // Show loading state
   if (loading) {
     return (
@@ -70,7 +93,7 @@ const UserProfile: React.FC = () => {
   return (
     <div className="flex items-center gap-3">
       <Avatar className="h-8 w-8">
-        <AvatarImage src={user.user_metadata?.avatar_url} />
+        <AvatarImage src={userProfile?.foto_url} />
         <AvatarFallback className="bg-primary text-primary-foreground text-xs">
           {getInitials(displayName)}
         </AvatarFallback>
