@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,8 +12,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Search, Edit, Trash2, UserCheck, UserX, Key, User } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, UserCheck, UserX, Key, User, Send, Clock } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const usuarioSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -38,6 +42,16 @@ interface Usuario {
   };
 }
 
+interface UserAccessInfo {
+  user_id: string;
+  last_sign_in_at: string | null;
+  created_at: string;
+  has_temp_password: boolean;
+  temp_password_created_at?: string;
+  temp_password_expires_at?: string;
+  first_access_pending: boolean;
+}
+
 interface Empresa {
   id: string;
   nome: string;
@@ -58,6 +72,8 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
   const [editingUsuario, setEditingUsuario] = useState<Usuario | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [usuarioToDelete, setUsuarioToDelete] = useState<Usuario | null>(null);
+  const [usersAccessInfo, setUsersAccessInfo] = useState<Map<string, UserAccessInfo>>(new Map());
+  const [accessInfoLoading, setAccessInfoLoading] = useState(false);
 
   const form = useForm<UsuarioForm>({
     resolver: zodResolver(usuarioSchema),
@@ -100,11 +116,46 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
 
       if (error) throw error;
       setUsuarios(data || []);
+      
+      // Buscar informações de acesso dos usuários
+      if (data && data.length > 0) {
+        fetchUsersAccessInfo(data.map(u => u.user_id));
+      }
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
       toast.error('Erro ao carregar usuários');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsersAccessInfo = async (userIds: string[]) => {
+    try {
+      setAccessInfoLoading(true);
+      
+      const { data, error } = await supabase.functions.invoke('get-user-access-info', {
+        body: { user_ids: userIds }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // Criar um Map para fácil acesso por user_id
+      const accessInfoMap = new Map<string, UserAccessInfo>();
+      
+      if (data.users && Array.isArray(data.users)) {
+        data.users.forEach((user: UserAccessInfo) => {
+          accessInfoMap.set(user.user_id, user);
+        });
+      }
+      
+      setUsersAccessInfo(accessInfoMap);
+    } catch (error) {
+      console.error('Erro ao buscar informações de acesso:', error);
+      toast.error('Erro ao carregar informações de acesso dos usuários');
+    } finally {
+      setAccessInfoLoading(false);
     }
   };
 
@@ -260,6 +311,29 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
     }
   };
 
+  const resendWelcomeEmail = async (usuario: Usuario) => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase.functions.invoke('resend-welcome-email', {
+        body: {
+          userId: usuario.user_id,
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success('E-mail de acesso reenviado com sucesso.');
+      // Atualizar informações de acesso após reenviar
+      fetchUsersAccessInfo([usuario.user_id]);
+    } catch (error: any) {
+      console.error('Erro ao reenviar e-mail de acesso:', error);
+      toast.error(error.message || 'Erro ao reenviar e-mail de acesso');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const openCreateDialog = () => {
     setEditingUsuario(null);
     form.reset();
@@ -286,6 +360,86 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
         {labels[role as keyof typeof labels] || role}
       </Badge>
     );
+  };
+
+  const getAccessStatusBadge = (userId: string) => {
+    const accessInfo = usersAccessInfo.get(userId);
+    
+    if (!accessInfo) {
+      return (
+        <Badge variant="outline" className="bg-gray-100">
+          <span className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Carregando...
+          </span>
+        </Badge>
+      );
+    }
+    
+    if (accessInfo.first_access_pending) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="warning" className="bg-amber-100 text-amber-800 border-amber-300">
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  Pendente primeiro acesso
+                </span>
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Senha temporária enviada em {formatDate(accessInfo.temp_password_created_at)}</p>
+              <p>Expira em {formatDate(accessInfo.temp_password_expires_at)}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+    
+    if (accessInfo.last_sign_in_at) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
+                <span className="flex items-center gap-1">
+                  <UserCheck className="h-3 w-3" />
+                  Último acesso
+                </span>
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              {formatDate(accessInfo.last_sign_in_at)}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+    
+    return (
+      <Badge variant="outline" className="bg-gray-100">
+        <span className="flex items-center gap-1">
+          <UserX className="h-3 w-3" />
+          Nunca acessou
+        </span>
+      </Badge>
+    );
+  };
+  
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    
+    try {
+      return format(new Date(dateString), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  const shouldShowResendButton = (userId: string) => {
+    const accessInfo = usersAccessInfo.get(userId);
+    return accessInfo?.first_access_pending || !accessInfo?.last_sign_in_at;
   };
 
   if (loading) {
@@ -375,7 +529,7 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="email@exemplo.com" {...field} />
+                        <Input placeholder="email@exemplo.com" {...field} disabled={!!editingUsuario} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -459,7 +613,8 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
               <TableHead>Perfil</TableHead>
               {isSuperAdmin && <TableHead>Empresa</TableHead>}
               <TableHead>Status</TableHead>
-              <TableHead>Ações</TableHead>
+              <TableHead>Status de Acesso</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -494,39 +649,104 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(usuario)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleUserStatus(usuario)}
-                    >
-                      {usuario.ativo ? (
-                        <UserX className="h-4 w-4" />
-                      ) : (
-                        <UserCheck className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => resetPassword(usuario)}
-                    >
-                      <Key className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openDeleteDialog(usuario)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  {accessInfoLoading ? (
+                    <div className="animate-pulse h-5 w-24 bg-gray-200 rounded"></div>
+                  ) : (
+                    getAccessStatusBadge(usuario.user_id)
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center justify-end gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(usuario)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Editar</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleUserStatus(usuario)}
+                          >
+                            {usuario.ativo ? (
+                              <UserX className="h-4 w-4" />
+                            ) : (
+                              <UserCheck className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{usuario.ativo ? 'Desativar' : 'Ativar'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => resetPassword(usuario)}
+                          >
+                            <Key className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Resetar senha</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    {shouldShowResendButton(usuario.user_id) && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => resendWelcomeEmail(usuario)}
+                            >
+                              <Send className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Reenviar e-mail de primeiro acesso</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openDeleteDialog(usuario)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Excluir</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </TableCell>
               </TableRow>
