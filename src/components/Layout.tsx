@@ -1,8 +1,12 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { useAuth } from '@/components/AuthProvider';
+import { useBreadcrumb } from '@/hooks/useBreadcrumb';
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import UserProfile from '@/components/UserProfile';
+import NotificationCenter from '@/components/NotificationCenter';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,6 +14,8 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const breadcrumbs = useBreadcrumb();
 
   if (loading) {
     return (
@@ -32,10 +38,38 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <AppSidebar />
         
         <div className="flex-1 flex flex-col">
-          <header className="h-14 flex items-center border-b border-border px-4 bg-card">
-            <SidebarTrigger className="mr-4" />
-            <div className="flex-1">
-              <h1 className="text-lg font-semibold text-foreground">GovernAII</h1>
+          <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger />
+              
+              <Breadcrumb>
+                <BreadcrumbList>
+                  {breadcrumbs.map((breadcrumb, index) => (
+                    <React.Fragment key={breadcrumb.path}>
+                      <BreadcrumbItem>
+                        {index === breadcrumbs.length - 1 ? (
+                          <BreadcrumbPage className="font-semibold">
+                            {breadcrumb.title}
+                          </BreadcrumbPage>
+                        ) : (
+                          <BreadcrumbLink 
+                            className="cursor-pointer hover:text-primary"
+                            onClick={() => navigate(breadcrumb.path)}
+                          >
+                            {breadcrumb.title}
+                          </BreadcrumbLink>
+                        )}
+                      </BreadcrumbItem>
+                      {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
+                    </React.Fragment>
+                  ))}
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <NotificationCenter />
+              <UserProfile />
             </div>
           </header>
 
