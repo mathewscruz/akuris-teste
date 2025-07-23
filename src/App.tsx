@@ -42,6 +42,7 @@ function App() {
             <Route path="/:empresa/denuncia" element={<DenunciaMenu />} />
             <Route path="/:empresa/denuncia/registrar" element={<DenunciaFormulario />} />
             <Route path="/:empresa/denuncia/consulta" element={<DenunciaConsulta />} />
+            <Route path="/404" element={<NotFound />} />
             <Route path="/" element={<Layout><Navigate to="/dashboard" replace /></Layout>} />
             <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
             <Route path="/ativos" element={<Layout><Ativos /></Layout>} />

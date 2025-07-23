@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function DenunciaExternaRedirect() {
   const { token } = useParams();
@@ -9,35 +10,51 @@ export default function DenunciaExternaRedirect() {
   useEffect(() => {
     const buscarEmpresaPorToken = async () => {
       if (!token) {
+        console.log('Token não encontrado na URL');
         navigate('/404', { replace: true });
         return;
       }
 
       try {
-        const SUPABASE_URL = "https://lnlkahtugwmkznasapfd.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubGthaHR1Z3dta3puYXNhcGZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxOTk4MjcsImV4cCI6MjA2ODc3NTgyN30.DRHZ_55_8aH8fEDghoY84fl3rChFNgVyPA9UM3y-KCY";
+        console.log('Buscando empresa por token:', token);
         
-        const response = await fetch(
-          `${SUPABASE_URL}/rest/v1/empresas?token_publico=eq.${token}&ativo=eq.true&select=slug`,
-          {
-            headers: {
-              'apikey': SUPABASE_ANON_KEY,
-              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
+        // Primeiro buscar configuração para obter empresa_id
+        const { data: config, error: configError } = await supabase
+          .from('denuncias_configuracoes')
+          .select('empresa_id')
+          .eq('token_publico', token)
+          .eq('ativo', true)
+          .single();
 
-        if (!response.ok) {
-          throw new Error('Erro na requisição');
+        if (configError) {
+          console.error('Erro na consulta de configuração:', configError);
+          throw configError;
         }
 
-        const data = await response.json();
+        if (!config) {
+          console.error('Configuração não encontrada para token:', token);
+          navigate('/404', { replace: true });
+          return;
+        }
 
-        if (data && data.length > 0) {
-          navigate(`/${data[0].slug}/denuncia`, { replace: true });
+        // Buscar dados da empresa
+        const { data: empresa, error: empresaError } = await supabase
+          .from('empresas')
+          .select('slug, nome')
+          .eq('id', config.empresa_id)
+          .eq('ativo', true)
+          .single();
+
+        if (empresaError) {
+          console.error('Erro na consulta de empresa:', empresaError);
+          throw empresaError;
+        }
+
+        if (empresa) {
+          console.log('Empresa encontrada:', empresa.nome, 'slug:', empresa.slug);
+          navigate(`/${empresa.slug}/denuncia`, { replace: true });
         } else {
-          console.error('Empresa não encontrada para token:', token);
+          console.error('Empresa não encontrada para ID:', config.empresa_id);
           navigate('/404', { replace: true });
         }
       } catch (error) {
