@@ -726,7 +726,7 @@ export default function Assessment() {
           </CardHeader>
           <CardContent className="p-8 space-y-8">
             {currentQuestions.map((question, index) => (
-              <div key={question.id} className="space-y-4 p-6 bg-background/50 rounded-xl border border-border/30 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
+              <div key={question.id} className="space-y-4 p-6 bg-white rounded-xl border border-border shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
                 <Label className="text-lg font-semibold text-foreground leading-relaxed block">
                   {question.pergunta}
                   {question.obrigatoria && <span className="text-destructive ml-2 text-xl">*</span>}
@@ -737,7 +737,7 @@ export default function Assessment() {
                     value={responses[question.id] || ''}
                     onChange={(e) => handleResponseChange(question.id, e.target.value)}
                     placeholder="Digite sua resposta..."
-                    className="min-h-[120px] bg-background border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    className="min-h-[120px] bg-white border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                   />
                 )}
 
@@ -762,7 +762,7 @@ export default function Assessment() {
                     value={responses[question.id] || ''}
                     onChange={(e) => handleResponseChange(question.id, e.target.value)}
                     placeholder="Digite um número..."
-                    className="bg-background border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                     className="bg-white border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                   />
                 )}
 
@@ -788,7 +788,7 @@ export default function Assessment() {
                     value={responses[question.id] || ''}
                     onValueChange={(value) => handleResponseChange(question.id, value)}
                   >
-                    <SelectTrigger className="bg-background border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <SelectTrigger className="bg-white border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200">
                       <SelectValue placeholder="Selecione uma opção..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -810,7 +810,7 @@ export default function Assessment() {
                       </p>
                       <Input
                         type="file"
-                        className="bg-background border-border/50"
+                        className="bg-white border-border/50"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
@@ -842,7 +842,7 @@ export default function Assessment() {
                           value={responses[`${question.id}_evidencia`] || ''}
                           onChange={(e) => handleResponseChange(`${question.id}_evidencia`, e.target.value)}
                           placeholder="Descreva as evidências que comprovam sua resposta..."
-                          className="min-h-[100px] bg-background border-border/50 focus:border-success/50 focus:ring-2 focus:ring-success/20 transition-all duration-200"
+                          className="min-h-[100px] bg-white border-border/50 focus:border-success/50 focus:ring-2 focus:ring-success/20 transition-all duration-200"
                         />
                       </div>
                     )}
@@ -858,7 +858,7 @@ export default function Assessment() {
                           value={responses[`${question.id}_justificativa`] || ''}
                           onChange={(e) => handleResponseChange(`${question.id}_justificativa`, e.target.value)}
                           placeholder="Explique o motivo e planos futuros..."
-                          className="min-h-[100px] bg-background border-border/50 focus:border-warning/50 focus:ring-2 focus:ring-warning/20 transition-all duration-200"
+                          className="min-h-[100px] bg-white border-border/50 focus:border-warning/50 focus:ring-2 focus:ring-warning/20 transition-all duration-200"
                         />
                       </div>
                     )}
