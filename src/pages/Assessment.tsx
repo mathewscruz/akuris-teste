@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -14,18 +13,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, AlertCircle, Upload, Clock } from 'lucide-react';
 
-interface Question {
+interface QuestionData {
   id: string;
   titulo: string;
   descricao?: string;
-  tipo: 'texto' | 'multipla_escolha' | 'arquivo' | 'score' | 'sim_nao';
+  tipo: string;
   opcoes?: string[];
   obrigatoria: boolean;
   peso: number;
   ordem: number;
 }
 
-interface Assessment {
+interface AssessmentData {
   id: string;
   fornecedor_nome: string;
   fornecedor_email: string;
@@ -33,14 +32,15 @@ interface Assessment {
   data_inicio?: string;
   data_conclusao?: string;
   data_expiracao: string;
-  template: {
+  template_id: string;
+  template?: {
     nome: string;
     descricao?: string;
     categoria: string;
   };
 }
 
-interface Response {
+interface ResponseData {
   question_id: string;
   resposta_texto?: string;
   arquivo_url?: string;
@@ -53,9 +53,9 @@ export default function Assessment() {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [assessment, setAssessment] = useState<Assessment | null>(null);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [responses, setResponses] = useState<Record<string, Response>>({});
+  const [assessment, setAssessment] = useState<AssessmentData | null>(null);
+  const [questions, setQuestions] = useState<QuestionData[]>([]);
+  const [responses, setResponses] = useState<Record<string, ResponseData>>({});
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -74,7 +74,7 @@ export default function Assessment() {
       // Buscar assessment pelo token
       const { data: assessmentData, error: assessmentError } = await supabase
         .from('due_diligence_assessments')
-        .select('id, fornecedor_nome, fornecedor_email, status, data_inicio, data_conclusao, data_expiracao, template_id')
+        .select('*')
         .eq('token', token)
         .maybeSingle();
 
@@ -141,7 +141,19 @@ export default function Assessment() {
         .order('ordem');
 
       if (questionsError) throw questionsError;
-      setQuestions((questionsData || []) as Question[]);
+      
+      const typedQuestions: QuestionData[] = (questionsData || []).map(q => ({
+        id: q.id,
+        titulo: q.titulo,
+        descricao: q.descricao,
+        tipo: q.tipo,
+        opcoes: q.opcoes as string[],
+        obrigatoria: q.obrigatoria,
+        peso: q.peso,
+        ordem: q.ordem
+      }));
+      
+      setQuestions(typedQuestions);
 
       // Buscar respostas existentes
       const { data: responsesData, error: responsesError } = await supabase
@@ -151,7 +163,8 @@ export default function Assessment() {
 
       if (responsesError) throw responsesError;
 
-      const existingResponses: Record<string, Response> = {};
+      // Converter respostas para o formato do estado
+      const existingResponses: Record<string, ResponseData> = {};
       (responsesData || []).forEach(response => {
         existingResponses[response.question_id] = {
           question_id: response.question_id,
@@ -318,6 +331,22 @@ export default function Assessment() {
         })
         .eq('id', assessment.id);
 
+      // Enviar email de conclusão
+      try {
+        await supabase.functions.invoke('send-due-diligence-email', {
+          body: {
+            type: 'completion',
+            assessment_id: assessment.id,
+            fornecedor_nome: assessment.fornecedor_nome,
+            fornecedor_email: assessment.fornecedor_email,
+            template_nome: assessment.template?.nome,
+            empresa_nome: 'GovernAI'
+          }
+        });
+      } catch (emailError) {
+        console.error('Erro ao enviar email de conclusão:', emailError);
+      }
+
       toast({
         title: "Questionário enviado",
         description: "Obrigado! Suas respostas foram enviadas com sucesso.",
@@ -338,7 +367,7 @@ export default function Assessment() {
     }
   };
 
-  const renderQuestion = (question: Question) => {
+  const renderQuestion = (question: QuestionData) => {
     const response = responses[question.id];
 
     switch (question.tipo) {
@@ -503,13 +532,13 @@ export default function Assessment() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-2xl">{assessment.template.nome}</CardTitle>
+                <CardTitle className="text-2xl">{assessment.template?.nome}</CardTitle>
                 <CardDescription className="text-base mt-1">
-                  {assessment.template.descricao}
+                  {assessment.template?.descricao}
                 </CardDescription>
               </div>
               <Badge className="text-sm">
-                {assessment.template.categoria}
+                {assessment.template?.categoria}
               </Badge>
             </div>
             

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { DueDiligenceDashboard } from '@/components/due-diligence/DueDiligenceDashboard';
 import { TemplatesManager } from '@/components/due-diligence/TemplatesManager';
-import { AssessmentsManager } from '@/components/due-diligence/AssessmentsManager';
+import { AssessmentsManagerEnhanced } from '@/components/due-diligence/AssessmentsManagerEnhanced';
 import { ReportsView } from '@/components/due-diligence/ReportsView';
+import { ModuleIntegrations } from '@/components/due-diligence/ModuleIntegrations';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function DueDiligence() {
@@ -18,11 +19,12 @@ export default function DueDiligence() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="assessments">Avaliações</TabsTrigger>
           <TabsTrigger value="reports">Relatórios</TabsTrigger>
+          <TabsTrigger value="integrations">Integrações</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">
@@ -34,11 +36,15 @@ export default function DueDiligence() {
         </TabsContent>
 
         <TabsContent value="assessments" className="space-y-6">
-          <AssessmentsManager />
+          <AssessmentsManagerEnhanced />
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-6">
           <ReportsView />
+        </TabsContent>
+
+        <TabsContent value="integrations" className="space-y-6">
+          <ModuleIntegrations />
         </TabsContent>
       </Tabs>
     </div>

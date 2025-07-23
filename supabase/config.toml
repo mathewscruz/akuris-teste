@@ -1,1 +1,7 @@
 project_id = "lnlkahtugwmkznasapfd"
+
+[functions.send-due-diligence-email]
+verify_jwt = false
+
+[functions.process-due-diligence-reminders] 
+verify_jwt = false
