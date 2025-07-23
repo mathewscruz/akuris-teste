@@ -143,7 +143,6 @@ export function CategoriasDenuncia() {
         const { error } = await supabase
           .from('denuncias_categorias')
           .insert({
-            empresa_id: 'current-empresa-id', // Será obtido automaticamente pelo RLS
             nome: formData.nome.trim(),
             descricao: formData.descricao.trim(),
             cor: formData.cor
