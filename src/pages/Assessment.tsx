@@ -395,6 +395,12 @@ export default function Assessment() {
     try {
       setSubmitting(true);
 
+      // Verificar status atual antes do update
+      if (assessment.status === 'concluido') {
+        setIsFinished(true);
+        return;
+      }
+
       // Verificar perguntas obrigatórias
       const requiredQuestions = questions.filter(q => q.obrigatoria);
       const missingRequired = requiredQuestions.filter(q => !responses[q.id]);
@@ -416,14 +422,31 @@ export default function Assessment() {
       // Calcular score
       await calculateScore();
 
-      // Marcar como concluído
-      await supabaseRequest(`due_diligence_assessments?id=eq.${assessment.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ 
-          status: 'concluido',
-          data_conclusao: new Date().toISOString()
-        })
-      });
+      // Marcar como concluído com retry
+      let updateSuccess = false;
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      while (!updateSuccess && retryCount < maxRetries) {
+        try {
+          await supabaseRequest(`due_diligence_assessments?id=eq.${assessment.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ 
+              status: 'concluido',
+              data_conclusao: new Date().toISOString()
+            })
+          });
+          updateSuccess = true;
+        } catch (updateError) {
+          retryCount++;
+          console.warn(`Tentativa ${retryCount} de UPDATE falhou:`, updateError);
+          if (retryCount < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          } else {
+            throw updateError;
+          }
+        }
+      }
 
       // Atualizar o assessment local com o novo status
       setAssessment({
