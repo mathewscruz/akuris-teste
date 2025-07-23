@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { QuestionsManager } from './QuestionsManager';
 
 interface Template {
   id: string;
@@ -21,7 +22,7 @@ interface TemplateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   template?: Template;
-  mode?: 'create' | 'edit' | 'duplicate';
+  mode?: 'create' | 'edit' | 'duplicate' | 'questions';
   onSuccess: () => void;
 }
 
@@ -174,6 +175,7 @@ export function TemplateDialog({
       case 'create': return 'Novo Template';
       case 'edit': return 'Editar Template';
       case 'duplicate': return 'Duplicar Template';
+      case 'questions': return 'Gerenciar Perguntas';
       default: return 'Template';
     }
   };
@@ -183,19 +185,26 @@ export function TemplateDialog({
       case 'create': return 'Crie um novo template de questionário para avaliações de fornecedores.';
       case 'edit': return 'Edite as informações básicas do template.';
       case 'duplicate': return 'Crie uma cópia do template com todas as perguntas.';
+      case 'questions': return 'Adicione e organize as perguntas do questionário.';
       default: return '';
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className={mode === 'questions' ? "max-w-5xl" : "sm:max-w-[500px]"}>
         <DialogHeader>
           <DialogTitle>{getDialogTitle()}</DialogTitle>
           <DialogDescription>{getDialogDescription()}</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {mode === 'questions' ? (
+          <QuestionsManager 
+            templateId={template?.id || ''} 
+            templateName={template?.nome || ''} 
+          />
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="nome">Nome do Template</Label>
             <Input
@@ -251,6 +260,7 @@ export function TemplateDialog({
             </Button>
           </DialogFooter>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );

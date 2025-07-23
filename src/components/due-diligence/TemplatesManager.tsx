@@ -28,7 +28,7 @@ export function TemplatesManager() {
   const [templateDialog, setTemplateDialog] = useState<{
     open: boolean;
     template?: Template;
-    mode?: 'create' | 'edit' | 'duplicate';
+    mode?: 'create' | 'edit' | 'duplicate' | 'questions';
   }>({ open: false });
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
@@ -248,8 +248,22 @@ export function TemplatesManager() {
                       onClick={() => setTemplateDialog({ 
                         open: true, 
                         template, 
+                        mode: 'questions' 
+                      })}
+                      title="Gerenciar perguntas"
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setTemplateDialog({ 
+                        open: true, 
+                        template, 
                         mode: 'edit' 
                       })}
+                      title="Editar template"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
