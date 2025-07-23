@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Copy, Trash2, FileText, Settings } from 'lucide-react';
+import { Plus, Edit, Copy, Trash2, FileText, Settings, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { TemplateDialog } from './TemplateDialog';
@@ -16,6 +16,7 @@ interface Template {
   ativo: boolean;
   versao: number;
   created_at: string;
+  padrao?: boolean;
   _count?: {
     questions: number;
     assessments: number;
@@ -54,8 +55,10 @@ export function TemplatesManager() {
           categoria,
           ativo,
           versao,
-          created_at
+          created_at,
+          padrao
         `)
+        .order('padrao', { ascending: false })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -212,11 +215,19 @@ export function TemplatesManager() {
       {templates.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {templates.map((template) => (
-            <Card key={template.id} className={`${!template.ativo ? 'opacity-60' : ''}`}>
+            <Card key={template.id} className={`${!template.ativo ? 'opacity-60' : ''} ${template.padrao ? 'border-amber-200 bg-amber-50/50' : ''}`}>
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-lg">{template.nome}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg">{template.nome}</CardTitle>
+                      {template.padrao && (
+                        <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+                          <Star className="h-3 w-3 mr-1" />
+                          Padrão
+                        </Badge>
+                      )}
+                    </div>
                     <CardDescription className="mt-1">
                       {template.descricao || 'Sem descrição'}
                     </CardDescription>
@@ -264,6 +275,7 @@ export function TemplatesManager() {
                         mode: 'edit' 
                       })}
                       title="Editar template"
+                      disabled={template.padrao}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -276,6 +288,7 @@ export function TemplatesManager() {
                         template, 
                         mode: 'duplicate' 
                       })}
+                      title="Duplicar template"
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -284,6 +297,8 @@ export function TemplatesManager() {
                       variant="ghost"
                       size="sm"
                       onClick={() => toggleTemplateStatus(template)}
+                      title="Alterar status"
+                      disabled={template.padrao}
                     >
                       <Settings className="h-4 w-4" />
                     </Button>
@@ -292,7 +307,8 @@ export function TemplatesManager() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setDeleteDialog({ open: true, template })}
-                      disabled={!!template._count?.assessments && template._count.assessments > 0}
+                      title="Excluir template"
+                      disabled={template.padrao || (!!template._count?.assessments && template._count.assessments > 0)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
