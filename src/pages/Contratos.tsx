@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, FileText, Calendar, DollarSign, Users, AlertCircle, CheckCircle, Clock, XCircle, Edit, FileEdit } from 'lucide-react';
+import { Plus, Search, FileText, Calendar, DollarSign, Users, AlertCircle, CheckCircle, Clock, XCircle, Edit, FileEdit, Bell, BarChart3, Filter, Link2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ContratoDialog } from '@/components/contratos/ContratoDialog';
@@ -13,6 +13,10 @@ import { FornecedorDialog } from '@/components/contratos/FornecedorDialog';
 import { MarcosDialog } from '@/components/contratos/MarcosDialog';
 import { DocumentosDialog } from '@/components/contratos/DocumentosDialog';
 import { AditivosDialog } from '@/components/contratos/AditivosDialog';
+import NotificacoesContratos from '@/components/contratos/NotificacoesContratos';
+import RelatoriosContratos from '@/components/contratos/RelatoriosContratos';
+import IntegracaoModulos from '@/components/contratos/IntegracaoModulos';
+import TemplatesContratos from '@/components/contratos/TemplatesContratos';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -385,10 +389,15 @@ export default function Contratos() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={() => { setSelectedContrato(null); setDialogOpen(true); }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Contrato
-            </Button>
+              <div className="flex gap-2">
+                <NotificacoesContratos />
+                <RelatoriosContratos />
+                <TemplatesContratos />
+                <Button onClick={() => { setSelectedContrato(null); setDialogOpen(true); }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Contrato
+                </Button>
+              </div>
           </div>
 
           <div className="grid gap-4">
