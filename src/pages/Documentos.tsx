@@ -686,3 +686,5 @@ export function Documentos() {
     </div>
   );
 }
+
+export default Documentos;

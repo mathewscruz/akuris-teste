@@ -11,7 +11,7 @@ import { Riscos } from '@/pages/Riscos';
 import Controles from '@/pages/Controles';
 import Contratos from '@/pages/Contratos';
 import Auditorias from '@/pages/Auditorias';
-import { Documentos } from '@/pages/Documentos';
+import Documentos from '@/pages/Documentos';
 import Configuracoes from '@/pages/Configuracoes';
 import NotFound from '@/pages/NotFound';
 
