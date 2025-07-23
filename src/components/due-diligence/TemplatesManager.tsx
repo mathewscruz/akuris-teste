@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Copy, Trash2, FileText, Settings, Star } from 'lucide-react';
+import { Plus, Edit, Copy, Trash2, FileText, Settings, Star, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TemplateDialog } from './TemplateDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
@@ -23,9 +24,76 @@ interface Template {
   };
 }
 
+const fetchTemplates = async (): Promise<Template[]> => {
+  console.log('🔄 Iniciando busca de templates...');
+  
+  // Buscar templates primeiro
+  const { data: templatesData, error: templatesError } = await supabase
+    .from('due_diligence_templates')
+    .select(`
+      id,
+      nome,
+      descricao,
+      categoria,
+      ativo,
+      versao,
+      created_at,
+      padrao
+    `)
+    .order('padrao', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (templatesError) {
+    console.error('❌ Erro ao buscar templates:', templatesError);
+    throw templatesError;
+  }
+
+  console.log('✅ Templates encontrados:', templatesData?.length || 0);
+
+  // Buscar contagem de perguntas e avaliações para cada template
+  const templatesWithCounts = await Promise.all(
+    (templatesData || []).map(async (template) => {
+      console.log(`🔍 Buscando dados para template: ${template.nome} (ID: ${template.id})`);
+      
+      const [questionsResult, assessmentsResult] = await Promise.all([
+        supabase
+          .from('due_diligence_questions')
+          .select('id', { count: 'exact', head: true })
+          .eq('template_id', template.id),
+        supabase
+          .from('due_diligence_assessments')
+          .select('id', { count: 'exact', head: true })
+          .eq('template_id', template.id)
+      ]);
+
+      const questionsCount = questionsResult.count || 0;
+      const assessmentsCount = assessmentsResult.count || 0;
+      
+      console.log(`📊 Template ${template.nome}: ${questionsCount} perguntas, ${assessmentsCount} avaliações`);
+
+      if (questionsResult.error) {
+        console.error('❌ Erro ao buscar perguntas:', questionsResult.error);
+      }
+      
+      if (assessmentsResult.error) {
+        console.error('❌ Erro ao buscar avaliações:', assessmentsResult.error);
+      }
+
+      return {
+        ...template,
+        _count: {
+          questions: questionsCount,
+          assessments: assessmentsCount
+        }
+      };
+    })
+  );
+
+  console.log('✅ Templates com contagens processados:', templatesWithCounts);
+  return templatesWithCounts;
+};
+
 export function TemplatesManager() {
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [loading, setLoading] = useState(true);
   const [templateDialog, setTemplateDialog] = useState<{
     open: boolean;
     template?: Template;
@@ -37,68 +105,30 @@ export function TemplatesManager() {
   }>({ open: false });
   
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
+  // React Query para gerenciar os templates
+  const {
+    data: templates = [],
+    isLoading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['due-diligence-templates'],
+    queryFn: fetchTemplates,
+    staleTime: 1000 * 60 * 5, // 5 minutos
+    gcTime: 1000 * 60 * 10, // 10 minutos
+  });
 
-  const fetchTemplates = async () => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('due_diligence_templates')
-        .select(`
-          id,
-          nome,
-          descricao,
-          categoria,
-          ativo,
-          versao,
-          created_at,
-          padrao
-        `)
-        .order('padrao', { ascending: false })
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Buscar contagem de perguntas e avaliações para cada template
-      const templatesWithCounts = await Promise.all(
-        (data || []).map(async (template) => {
-          const [questionsCount, assessmentsCount] = await Promise.all([
-            supabase
-              .from('due_diligence_questions')
-              .select('id', { count: 'exact' })
-              .eq('template_id', template.id),
-            supabase
-              .from('due_diligence_assessments')
-              .select('id', { count: 'exact' })
-              .eq('template_id', template.id)
-          ]);
-
-          return {
-            ...template,
-            _count: {
-              questions: questionsCount.count || 0,
-              assessments: assessmentsCount.count || 0
-            }
-          };
-        })
-      );
-
-      setTemplates(templatesWithCounts);
-    } catch (error: any) {
-      console.error('Erro ao buscar templates:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os templates.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Mostrar erro se houver
+  if (error) {
+    console.error('❌ Erro na query de templates:', error);
+    toast({
+      title: "Erro",
+      description: "Não foi possível carregar os templates.",
+      variant: "destructive",
+    });
+  }
 
   const handleDeleteTemplate = async (template: Template) => {
     try {
@@ -124,7 +154,9 @@ export function TemplatesManager() {
         description: "O template foi excluído com sucesso.",
       });
 
-      fetchTemplates();
+      // Invalidar cache e refazer busca
+      queryClient.invalidateQueries({ queryKey: ['due-diligence-templates'] });
+      refetch();
     } catch (error: any) {
       console.error('Erro ao excluir template:', error);
       toast({
@@ -151,7 +183,9 @@ export function TemplatesManager() {
         description: `Template ${!template.ativo ? 'ativado' : 'desativado'} com sucesso.`,
       });
 
-      fetchTemplates();
+      // Invalidar cache e refazer busca
+      queryClient.invalidateQueries({ queryKey: ['due-diligence-templates'] });
+      refetch();
     } catch (error: any) {
       console.error('Erro ao atualizar status:', error);
       toast({
@@ -175,23 +209,33 @@ export function TemplatesManager() {
     return colors[categoria] || colors['geral'];
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i}>
-            <CardHeader>
-              <div className="h-4 bg-muted rounded w-3/4 animate-pulse"></div>
-              <div className="h-3 bg-muted rounded w-1/2 animate-pulse"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="h-3 bg-muted rounded animate-pulse"></div>
-                <div className="h-3 bg-muted rounded w-3/4 animate-pulse"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold">Templates de Questionários</h2>
+            <p className="text-muted-foreground">
+              Carregando templates...
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <div className="h-4 bg-muted rounded w-3/4 animate-pulse"></div>
+                <div className="h-3 bg-muted rounded w-1/2 animate-pulse"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="h-3 bg-muted rounded animate-pulse"></div>
+                  <div className="h-3 bg-muted rounded w-3/4 animate-pulse"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -205,13 +249,25 @@ export function TemplatesManager() {
             Crie e gerencie templates reutilizáveis para avaliações de fornecedores
           </p>
         </div>
-        <Button 
-          onClick={() => setTemplateDialog({ open: true, mode: 'create' })}
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Novo Template
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => refetch()}
+            disabled={isLoading}
+            className="flex items-center gap-2"
+            title="Forçar atualização"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
+          <Button 
+            onClick={() => setTemplateDialog({ open: true, mode: 'create' })}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Novo Template
+          </Button>
+        </div>
       </div>
 
       {templates.length > 0 ? (
@@ -349,7 +405,9 @@ export function TemplatesManager() {
         template={templateDialog.template}
         mode={templateDialog.mode}
         onSuccess={() => {
-          fetchTemplates();
+          // Invalidar cache e refazer busca
+          queryClient.invalidateQueries({ queryKey: ['due-diligence-templates'] });
+          refetch();
           setTemplateDialog({ open: false });
         }}
       />
