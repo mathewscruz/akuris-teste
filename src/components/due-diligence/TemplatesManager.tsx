@@ -271,46 +271,43 @@ export function TemplatesManager() {
       </div>
 
       {templates.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-3">
           {templates.map((template) => (
             <Card key={template.id} className={`${!template.ativo ? 'opacity-60' : ''} ${template.padrao ? 'border-amber-200 bg-amber-50/50' : ''}`}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-lg">{template.nome}</CardTitle>
-                      {template.padrao && (
-                        <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
-                          <Star className="h-3 w-3 mr-1" />
-                          Padrão
-                        </Badge>
-                      )}
-                    </div>
-                    <CardDescription className="mt-1">
-                      {template.descricao || 'Sem descrição'}
-                    </CardDescription>
-                  </div>
-                  <Badge className={getCategoryColor(template.categoria)}>
-                    {template.categoria}
-                  </Badge>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{template._count?.questions || 0} perguntas</span>
-                  <span>{template._count?.assessments || 0} avaliações</span>
-                </div>
-
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Badge variant={template.ativo ? "default" : "secondary"}>
-                      {template.ativo ? 'Ativo' : 'Inativo'}
-                    </Badge>
-                    <span className="text-sm text-muted-foreground">v{template.versao}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-semibold truncate">{template.nome}</h3>
+                          {template.padrao && (
+                            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
+                              <Star className="h-3 w-3 mr-1" />
+                              Padrão
+                            </Badge>
+                          )}
+                          <Badge className={getCategoryColor(template.categoria)}>
+                            {template.categoria}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {template.descricao || 'Sem descrição'}
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{template._count?.questions || 0} perguntas</span>
+                        <span>{template._count?.assessments || 0} avaliações</span>
+                        <Badge variant={template.ativo ? "default" : "secondary"}>
+                          {template.ativo ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                        <span className="text-xs">v{template.versao}</span>
+                      </div>
+                    </div>
                   </div>
                   
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 ml-4">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -372,8 +369,8 @@ export function TemplatesManager() {
                     </Button>
                   </div>
                 </div>
-
-                <div className="text-xs text-muted-foreground">
+                
+                <div className="text-xs text-muted-foreground mt-2 border-t pt-2">
                   Criado em {new Date(template.created_at).toLocaleDateString('pt-BR')}
                 </div>
               </CardContent>
