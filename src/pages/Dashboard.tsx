@@ -2,29 +2,27 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Shield, TrendingUp, Users, Building, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Shield, TrendingUp, Bell, Activity, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { MatrizVisualizacao } from '@/components/riscos/MatrizVisualizacao';
+import { RecentActivities } from '@/components/dashboard/RecentActivities';
+import { RiskScoreTimeline } from '@/components/dashboard/RiskScoreTimeline';
 
 interface DashboardStats {
-  totalRiscos: number;
-  riscosAltos: number;
-  totalAtivos: number;
-  totalUsuarios: number;
-  tratamentosPendentes: number;
-  tratamentosConcluidos: number;
+  securityScore: number;
+  criticalAlerts: number;
+  complianceRate: number;
+  monthlyTrend: number;
 }
 
 export default function Dashboard() {
   const { profile } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
-    totalRiscos: 0,
-    riscosAltos: 0,
-    totalAtivos: 0,
-    totalUsuarios: 0,
-    tratamentosPendentes: 0,
-    tratamentosConcluidos: 0
+    securityScore: 0,
+    criticalAlerts: 0,
+    complianceRate: 0,
+    monthlyTrend: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -36,47 +34,59 @@ export default function Dashboard() {
 
   const fetchDashboardStats = async () => {
     try {
-      // Buscar estatísticas de riscos
+      // Buscar riscos
       const { data: riscos } = await supabase
         .from('riscos')
         .select('nivel_risco_inicial');
 
-      // Buscar estatísticas de ativos
-      const { data: ativos } = await supabase
-        .from('ativos')
-        .select('id');
+      // Buscar denúncias pendentes
+      const { data: denuncias } = await supabase
+        .from('denuncias')
+        .select('status')
+        .in('status', ['nova', 'em_investigacao']);
 
-      // Buscar estatísticas de usuários (apenas para super admin)
-      let usuarios = [];
-      if (profile?.role === 'super_admin') {
-        const { data: usuariosData } = await supabase
-          .from('profiles')
-          .select('id');
-        usuarios = usuariosData || [];
-      } else {
-        const { data: usuariosData } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('empresa_id', profile?.empresa_id);
-        usuarios = usuariosData || [];
-      }
+      // Buscar controles vencidos
+      const { data: controles } = await supabase
+        .from('controles')
+        .select('proxima_avaliacao')
+        .lt('proxima_avaliacao', new Date().toISOString());
 
-      // Buscar estatísticas de tratamentos
-      const { data: tratamentos } = await supabase
-        .from('riscos_tratamentos')
-        .select('status');
+      // Buscar auditorias pendentes
+      const { data: auditorias } = await supabase
+        .from('auditorias')
+        .select('status')
+        .eq('status', 'planejamento');
+
+      // Calcular score de segurança baseado na distribuição de riscos
+      const totalRiscos = riscos?.length || 0;
+      const riscosAltos = riscos?.filter(r => 
+        r.nivel_risco_inicial === 'Alto' || 
+        r.nivel_risco_inicial === 'Crítico' || 
+        r.nivel_risco_inicial === 'Muito Alto'
+      ).length || 0;
+
+      const securityScore = totalRiscos > 0 
+        ? Math.round(((totalRiscos - riscosAltos) / totalRiscos) * 100)
+        : 100;
+
+      // Alertas críticos
+      const criticalAlerts = 
+        (denuncias?.length || 0) + 
+        (controles?.length || 0) + 
+        (auditorias?.length || 0) + 
+        riscosAltos;
+
+      // Taxa de conformidade (simplificada)
+      const complianceRate = Math.max(0, 100 - (riscosAltos * 10));
+
+      // Tendência mensal (simulada - seria calculada com dados históricos)
+      const monthlyTrend = securityScore > 70 ? 5 : securityScore > 50 ? 0 : -3;
 
       const newStats: DashboardStats = {
-        totalRiscos: riscos?.length || 0,
-        riscosAltos: riscos?.filter(r => 
-          r.nivel_risco_inicial === 'Alto' || 
-          r.nivel_risco_inicial === 'Crítico' || 
-          r.nivel_risco_inicial === 'Muito Alto'
-        ).length || 0,
-        totalAtivos: ativos?.length || 0,
-        totalUsuarios: usuarios.length,
-        tratamentosPendentes: tratamentos?.filter(t => t.status === 'pendente').length || 0,
-        tratamentosConcluidos: tratamentos?.filter(t => t.status === 'concluído').length || 0
+        securityScore,
+        criticalAlerts,
+        complianceRate,
+        monthlyTrend
       };
 
       setStats(newStats);
@@ -102,26 +112,44 @@ export default function Dashboard() {
 
   return (
     <div className="container mx-auto py-6 px-4 max-w-7xl space-y-6">
-      {/* Título */}
+      {/* Saudação personalizada */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">
+          Olá, {profile?.nome || 'Usuário'}! 👋
+        </h1>
         <p className="text-muted-foreground">
-          Visão geral dos riscos e ativos da organização
+          Aqui está um resumo da sua situação de segurança e conformidade
         </p>
       </div>
 
-      {/* Cards de Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* 1ª Linha - KPIs Principais */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Riscos</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Score Global de Segurança</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalRiscos}</div>
+            <div className="text-2xl font-bold">{stats.securityScore}%</div>
             <div className="flex items-center mt-2">
-              <Badge variant="destructive" className="mr-2">
-                {stats.riscosAltos} Altos/Críticos
+              <TrendingUp className={`h-4 w-4 mr-1 ${stats.monthlyTrend >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+              <span className={`text-xs ${stats.monthlyTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {stats.monthlyTrend >= 0 ? '+' : ''}{stats.monthlyTrend}% este mês
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Alertas Críticos</CardTitle>
+            <Bell className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.criticalAlerts}</div>
+            <div className="flex items-center mt-2">
+              <Badge variant={stats.criticalAlerts > 5 ? "destructive" : stats.criticalAlerts > 0 ? "outline" : "default"}>
+                {stats.criticalAlerts > 5 ? 'Atenção urgente' : stats.criticalAlerts > 0 ? 'Monitorar' : 'Tudo ok'}
               </Badge>
             </div>
           </CardContent>
@@ -129,87 +157,41 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ativos Cadastrados</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Conformidade Regulatória</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalAtivos}</div>
+            <div className="text-2xl font-bold">{stats.complianceRate}%</div>
             <p className="text-xs text-muted-foreground mt-2">
-              Total de ativos monitorados
+              Taxa de conformidade atual
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuários</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Tendência Mensal</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalUsuarios}</div>
+            <div className={`text-2xl font-bold ${stats.monthlyTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {stats.monthlyTrend >= 0 ? '+' : ''}{stats.monthlyTrend}%
+            </div>
             <p className="text-xs text-muted-foreground mt-2">
-              {profile?.role === 'super_admin' ? 'Total no sistema' : 'Na sua empresa'}
+              Variação do score
             </p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tratamentos Pendentes</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.tratamentosPendentes}</div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Requerem atenção
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tratamentos Concluídos</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.tratamentosConcluidos}</div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Com sucesso
-            </p>
-          </CardContent>
-        </Card>
-
-        {profile?.role === 'super_admin' && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Empresas Ativas</CardTitle>
-              <Building className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">-</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Total no sistema
-              </p>
-            </CardContent>
-          </Card>
-        )}
       </div>
 
-      {/* Matriz de Risco */}
+      {/* 2ª Linha - Matriz de Risco e Atividades Recentes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <MatrizVisualizacao />
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Atividades Recentes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-center py-8">
-              Funcionalidade em desenvolvimento. Em breve você verá aqui as atividades mais recentes relacionadas aos riscos e tratamentos.
-            </p>
-          </CardContent>
-        </Card>
+        <RecentActivities />
       </div>
+
+      {/* 3ª Linha - Timeline do Score de Risco */}
+      <RiskScoreTimeline />
     </div>
   );
 }

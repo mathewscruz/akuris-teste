@@ -1,0 +1,238 @@
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/AuthProvider';
+import { FileText, AlertTriangle, Shield, Users, Calendar, Building } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+interface Activity {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  created_at: string;
+  module: string;
+  icon: React.ReactNode;
+  status?: string;
+}
+
+export function RecentActivities() {
+  const { profile } = useAuth();
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (profile) {
+      fetchRecentActivities();
+    }
+  }, [profile]);
+
+  const getIcon = (module: string) => {
+    switch (module) {
+      case 'riscos': return <AlertTriangle className="h-4 w-4" />;
+      case 'controles': return <Shield className="h-4 w-4" />;
+      case 'documentos': return <FileText className="h-4 w-4" />;
+      case 'auditorias': return <Calendar className="h-4 w-4" />;
+      case 'usuarios': return <Users className="h-4 w-4" />;
+      case 'contratos': return <Building className="h-4 w-4" />;
+      default: return <FileText className="h-4 w-4" />;
+    }
+  };
+
+  const getStatusBadge = (module: string, status?: string) => {
+    if (!status) return null;
+    
+    const statusMap: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
+      'alto': { variant: 'destructive', label: 'Alto' },
+      'critico': { variant: 'destructive', label: 'Crítico' },
+      'ativo': { variant: 'default', label: 'Ativo' },
+      'pendente': { variant: 'outline', label: 'Pendente' },
+      'concluido': { variant: 'default', label: 'Concluído' },
+      'aprovado': { variant: 'default', label: 'Aprovado' },
+      'nova': { variant: 'secondary', label: 'Nova' }
+    };
+
+    const statusInfo = statusMap[status.toLowerCase()] || { variant: 'outline' as const, label: status };
+    return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
+  };
+
+  const fetchRecentActivities = async () => {
+    try {
+      const activities: Activity[] = [];
+
+      // Riscos recentes
+      const { data: riscos } = await supabase
+        .from('riscos')
+        .select('id, nome, nivel_risco_inicial, created_at')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      riscos?.forEach(risco => {
+        activities.push({
+          id: `risco-${risco.id}`,
+          type: 'creation',
+          title: risco.nome,
+          description: 'Novo risco identificado',
+          created_at: risco.created_at,
+          module: 'riscos',
+          icon: getIcon('riscos'),
+          status: risco.nivel_risco_inicial
+        });
+      });
+
+      // Controles recentes
+      const { data: controles } = await supabase
+        .from('controles')
+        .select('id, nome, status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      controles?.forEach(controle => {
+        activities.push({
+          id: `controle-${controle.id}`,
+          type: 'creation',
+          title: controle.nome,
+          description: 'Novo controle implementado',
+          created_at: controle.created_at,
+          module: 'controles',
+          icon: getIcon('controles'),
+          status: controle.status
+        });
+      });
+
+      // Documentos recentes
+      const { data: documentos } = await supabase
+        .from('documentos')
+        .select('id, nome, status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      documentos?.forEach(documento => {
+        activities.push({
+          id: `documento-${documento.id}`,
+          type: 'creation',
+          title: documento.nome,
+          description: 'Documento adicionado',
+          created_at: documento.created_at,
+          module: 'documentos',
+          icon: getIcon('documentos'),
+          status: documento.status
+        });
+      });
+
+      // Auditorias recentes
+      const { data: auditorias } = await supabase
+        .from('auditorias')
+        .select('id, nome, status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(2);
+
+      auditorias?.forEach(auditoria => {
+        activities.push({
+          id: `auditoria-${auditoria.id}`,
+          type: 'creation',
+          title: auditoria.nome,
+          description: 'Nova auditoria iniciada',
+          created_at: auditoria.created_at,
+          module: 'auditorias',
+          icon: getIcon('auditorias'),
+          status: auditoria.status
+        });
+      });
+
+      // Denúncias recentes
+      const { data: denuncias } = await supabase
+        .from('denuncias')
+        .select('id, titulo, status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(2);
+
+      denuncias?.forEach(denuncia => {
+        activities.push({
+          id: `denuncia-${denuncia.id}`,
+          type: 'creation',
+          title: denuncia.titulo,
+          description: 'Nova denúncia recebida',
+          created_at: denuncia.created_at,
+          module: 'denuncias',
+          icon: getIcon('usuarios'),
+          status: denuncia.status
+        });
+      });
+
+      // Ordenar por data mais recente e limitar a 10
+      const sortedActivities = activities
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 10);
+
+      setActivities(sortedActivities);
+    } catch (error) {
+      console.error('Erro ao carregar atividades recentes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Atividades Recentes</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-muted rounded-full"></div>
+                  <div className="flex-1">
+                    <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-1/2"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : activities.length > 0 ? (
+          <div className="space-y-4">
+            {activities.map((activity) => (
+              <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-lg border bg-card/50">
+                <div className="flex-shrink-0 mt-1">
+                  {activity.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {activity.title}
+                    </p>
+                    {activity.status && getStatusBadge(activity.module, activity.status)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {activity.description}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formatDistanceToNow(new Date(activity.created_at), {
+                      addSuffix: true,
+                      locale: ptBR
+                    })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <div className="mx-auto h-12 w-12 text-muted-foreground mb-4">
+              <Calendar className="h-12 w-12" />
+            </div>
+            <p className="text-muted-foreground">
+              Nenhuma atividade recente encontrada
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
