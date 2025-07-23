@@ -31,7 +31,6 @@ interface AuthContextType {
   refetchProfile: () => Promise<void>;
   hasTemporaryPassword: boolean;
   checkTemporaryPassword: () => Promise<void>;
-  getCompanyByEmail: (email: string) => Promise<Company | null>;
   logoUpdateKey: number;
   forceLogoUpdate: () => void;
 }
@@ -101,60 +100,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 100);
   };
 
-  const getCompanyByEmail = async (email: string): Promise<Company | null> => {
-    if (!email || !email.includes('@')) return null;
-
-    try {
-      // Primeiro, tenta encontrar um usuário com esse email
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select(`
-          empresa_id,
-          empresas:empresa_id (
-            id,
-            nome,
-            logo_url,
-            cnpj,
-            contato
-          )
-        `)
-        .eq('email', email)
-        .single();
-
-      if (!profileError && profileData?.empresas) {
-        return profileData.empresas as Company;
-      }
-
-      // Se não encontrar pelo email exato, tenta pelo domínio
-      const domain = email.split('@')[1];
-      if (!domain) return null;
-
-      const { data: domainData, error: domainError } = await supabase
-        .from('profiles')
-        .select(`
-          empresa_id,
-          empresas:empresa_id (
-            id,
-            nome,
-            logo_url,
-            cnpj,
-            contato
-          )
-        `)
-        .like('email', `%@${domain}`)
-        .limit(1)
-        .single();
-
-      if (!domainError && domainData?.empresas) {
-        return domainData.empresas as Company;
-      }
-
-      return null;
-    } catch (error) {
-      console.error('Error fetching company by email:', error);
-      return null;
-    }
-  };
 
   const checkTemporaryPassword = async () => {
     if (!user) {
@@ -277,7 +222,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refetchProfile,
     hasTemporaryPassword,
     checkTemporaryPassword,
-    getCompanyByEmail,
     logoUpdateKey,
     forceLogoUpdate,
   };

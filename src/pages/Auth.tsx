@@ -13,14 +13,12 @@ import { Eye, EyeOff } from 'lucide-react';
 import logoImage from '@/assets/governaii-logo-main.png';
 
 const Auth = () => {
-  const { user, loading, getCompanyByEmail, logoUpdateKey } = useAuth();
+  const { user, loading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
-  const [isLoadingLogo, setIsLoadingLogo] = useState(false);
 
   // Redirect if already authenticated - usando useEffect para evitar loops
   useEffect(() => {
@@ -29,26 +27,6 @@ const Auth = () => {
     }
   }, [user, loading]);
 
-  // Debounce para buscar logo da empresa
-  useEffect(() => {
-    const timeoutId = setTimeout(async () => {
-      if (email && email.includes('@')) {
-        setIsLoadingLogo(true);
-        try {
-          const company = await getCompanyByEmail(email);
-          setCompanyLogo(company?.logo_url || null);
-        } catch (error) {
-          console.error('Erro ao buscar logo da empresa:', error);
-        } finally {
-          setIsLoadingLogo(false);
-        }
-      } else {
-        setCompanyLogo(null);
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [email, getCompanyByEmail]);
 
   // Early return AFTER all hooks
   if (loading) {
@@ -91,11 +69,6 @@ const Auth = () => {
   };
 
   const getCurrentLogo = () => {
-    if (companyLogo) {
-      // Se o logo da empresa já tem timestamp, usar como está; senão, adicionar timestamp
-      const hasTimestamp = companyLogo.includes('?t=');
-      return hasTimestamp ? companyLogo : `${companyLogo}?t=${Date.now()}`;
-    }
     return logoImage;
   };
 
@@ -104,26 +77,11 @@ const Auth = () => {
       <div className="w-full max-w-md">
         {/* Logo fora do card */}
         <div className="text-center mb-8">
-          <div className="relative">
-            <img 
-              key={`auth-logo-${logoUpdateKey}-${Date.now()}-${companyLogo || 'default'}`} // Chave única que força re-render completo
-              src={getCurrentLogo()} 
-              alt="Logo" 
-              className={`h-20 mx-auto object-contain transition-opacity duration-300 ${
-                isLoadingLogo ? 'opacity-50' : 'opacity-100'
-              }`}
-              onError={(e) => {
-                // Fallback para logo padrão em caso de erro
-                const target = e.target as HTMLImageElement;
-                target.src = logoImage;
-              }}
-            />
-            {isLoadingLogo && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white/50"></div>
-              </div>
-            )}
-          </div>
+          <img 
+            src={getCurrentLogo()} 
+            alt="Logo" 
+            className="h-20 mx-auto object-contain"
+          />
         </div>
         
         <Card className="shadow-2xl border-0 bg-white">
