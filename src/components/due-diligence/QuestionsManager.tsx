@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Edit, Trash2, MoveUp, MoveDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -431,73 +432,79 @@ export function QuestionsManager({ templateId, templateName }: QuestionsManagerP
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {questions.map((question, index) => (
-            <Card key={question.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-lg">{question.titulo}</CardTitle>
-                      <Badge className={getTypeColor(question.tipo)}>
-                        {getTypeLabel(question.tipo)}
-                      </Badge>
-                      {question.obrigatoria && (
-                        <Badge variant="destructive">Obrigatória</Badge>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Perguntas ({questions.length})</CardTitle>
+            <CardDescription>Lista de perguntas do template</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ScrollArea className="h-[600px]">
+              <div className="p-4 space-y-1">
+                {questions.map((question, index) => (
+                  <div key={question.id} className="flex items-center justify-between p-3 rounded-lg border bg-background/50 hover:bg-accent/50 transition-colors">
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-medium text-sm truncate">{question.titulo}</h4>
+                        <Badge variant="secondary" className="text-xs h-5 px-2">
+                          {getTypeLabel(question.tipo)}
+                        </Badge>
+                        {question.obrigatoria && (
+                          <Badge variant="destructive" className="text-xs h-5 px-2">Obrigatória</Badge>
+                        )}
+                        <Badge variant="outline" className="text-xs h-5 px-2">Peso: {question.peso}</Badge>
+                      </div>
+                      {question.descricao && (
+                        <p className="text-xs text-muted-foreground truncate">{question.descricao}</p>
+                      )}
+                      {question.opcoes && question.opcoes.length > 0 && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          Opções: {question.opcoes.join(', ')}
+                        </p>
                       )}
                     </div>
-                    {question.descricao && (
-                      <CardDescription>{question.descricao}</CardDescription>
-                    )}
+                    
+                    <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => moveQuestion(question.id, 'up')}
+                        disabled={index === 0}
+                        className="h-7 w-7 p-0"
+                      >
+                        <MoveUp className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => moveQuestion(question.id, 'down')}
+                        disabled={index === questions.length - 1}
+                        className="h-7 w-7 p-0"
+                      >
+                        <MoveDown className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(question)}
+                        className="h-7 w-7 p-0"
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteConfirm({ open: true, question })}
+                        className="h-7 w-7 p-0"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => moveQuestion(question.id, 'up')}
-                      disabled={index === 0}
-                    >
-                      <MoveUp className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => moveQuestion(question.id, 'down')}
-                      disabled={index === questions.length - 1}
-                    >
-                      <MoveDown className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(question)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleteConfirm({ open: true, question })}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-0">
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span>Peso: {question.peso}</span>
-                  <span>Ordem: {question.ordem}</span>
-                  {question.opcoes && question.opcoes.length > 0 && (
-                    <span>Opções: {question.opcoes.join(', ')}</span>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
       )}
 
       <ConfirmDialog
