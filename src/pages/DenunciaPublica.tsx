@@ -44,6 +44,7 @@ export default function DenunciaPublica() {
   const [empresa, setEmpresa] = useState<Empresa | null>(null);
   const [config, setConfig] = useState<EmpresaConfig | null>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [logoUrl, setLogoUrl] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [protocolo, setProtocolo] = useState<string>('');
@@ -145,6 +146,28 @@ export default function DenunciaPublica() {
       if (!categoriasError && categoriasData) {
         console.log('✅ [SUCCESS] Categorias carregadas:', categoriasData.length);
         setCategorias(categoriasData);
+      }
+
+      // Buscar logotipo da empresa
+      console.log('🔍 [DEBUG] Buscando logotipo para empresa ID:', empresaData.id);
+      const logoPath = `${empresaData.id}/logo.png`;
+      const { data: logoData } = await supabase.storage
+        .from('empresa-logos')
+        .getPublicUrl(logoPath);
+        
+      if (logoData?.publicUrl) {
+        // Verificar se o arquivo existe fazendo uma requisição HEAD
+        try {
+          const response = await fetch(logoData.publicUrl, { method: 'HEAD' });
+          if (response.ok) {
+            console.log('✅ [SUCCESS] Logotipo encontrado:', logoData.publicUrl);
+            setLogoUrl(logoData.publicUrl);
+          } else {
+            console.log('ℹ️ [INFO] Logotipo não encontrado para empresa');
+          }
+        } catch (error) {
+          console.log('ℹ️ [INFO] Erro ao verificar logotipo:', error);
+        }
       }
     } catch (error) {
       console.error('❌ [ERROR] Erro geral ao carregar configuração:', error);
@@ -339,8 +362,23 @@ export default function DenunciaPublica() {
   return (
     <div className="min-h-screen bg-muted/20 py-8">
       <div className="container max-w-2xl mx-auto px-4">
-        {/* Header com link de consulta */}
+        {/* Header com logotipo e informações da empresa */}
         <div className="text-center mb-6">
+          {/* Logotipo da empresa */}
+          {logoUrl && (
+            <div className="mb-4">
+              <img 
+                src={logoUrl} 
+                alt={`Logo ${empresa?.nome}`}
+                className="mx-auto h-16 w-auto object-contain"
+                onError={(e) => {
+                  console.log('Erro ao carregar logotipo:', e);
+                  setLogoUrl('');
+                }}
+              />
+            </div>
+          )}
+          
           <h1 className="text-3xl font-bold flex items-center justify-center gap-2 mb-2">
             <Shield className="w-8 h-8 text-primary" />
             {empresa?.nome}
