@@ -465,6 +465,255 @@ export type Database = {
         }
         Relationships: []
       }
+      contrato_aditivos: {
+        Row: {
+          aprovado_por: string | null
+          contrato_id: string
+          created_at: string
+          created_by: string | null
+          data_assinatura: string | null
+          data_fim_anterior: string | null
+          data_fim_nova: string | null
+          data_inicio_anterior: string | null
+          data_inicio_nova: string | null
+          id: string
+          justificativa: string | null
+          motivo: string
+          numero_aditivo: string
+          status: string
+          tipo: string
+          updated_at: string
+          valor_anterior: number | null
+          valor_novo: number | null
+        }
+        Insert: {
+          aprovado_por?: string | null
+          contrato_id: string
+          created_at?: string
+          created_by?: string | null
+          data_assinatura?: string | null
+          data_fim_anterior?: string | null
+          data_fim_nova?: string | null
+          data_inicio_anterior?: string | null
+          data_inicio_nova?: string | null
+          id?: string
+          justificativa?: string | null
+          motivo: string
+          numero_aditivo: string
+          status?: string
+          tipo: string
+          updated_at?: string
+          valor_anterior?: number | null
+          valor_novo?: number | null
+        }
+        Update: {
+          aprovado_por?: string | null
+          contrato_id?: string
+          created_at?: string
+          created_by?: string | null
+          data_assinatura?: string | null
+          data_fim_anterior?: string | null
+          data_fim_nova?: string | null
+          data_inicio_anterior?: string | null
+          data_inicio_nova?: string | null
+          id?: string
+          justificativa?: string | null
+          motivo?: string
+          numero_aditivo?: string
+          status?: string
+          tipo?: string
+          updated_at?: string
+          valor_anterior?: number | null
+          valor_novo?: number | null
+        }
+        Relationships: []
+      }
+      contrato_documentos: {
+        Row: {
+          arquivo_nome: string | null
+          arquivo_tamanho: number | null
+          arquivo_tipo: string | null
+          arquivo_url: string | null
+          contrato_id: string
+          created_at: string
+          data_upload: string | null
+          descricao: string | null
+          id: string
+          is_current_version: boolean | null
+          nome: string
+          tipo: string
+          uploaded_by: string | null
+          versao: number | null
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          contrato_id: string
+          created_at?: string
+          data_upload?: string | null
+          descricao?: string | null
+          id?: string
+          is_current_version?: boolean | null
+          nome: string
+          tipo: string
+          uploaded_by?: string | null
+          versao?: number | null
+        }
+        Update: {
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          contrato_id?: string
+          created_at?: string
+          data_upload?: string | null
+          descricao?: string | null
+          id?: string
+          is_current_version?: boolean | null
+          nome?: string
+          tipo?: string
+          uploaded_by?: string | null
+          versao?: number | null
+        }
+        Relationships: []
+      }
+      contrato_marcos: {
+        Row: {
+          alerta_antecedencia: number | null
+          contrato_id: string
+          created_at: string
+          data_prevista: string
+          data_realizada: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          responsavel: string | null
+          status: string
+          tipo: string
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          alerta_antecedencia?: number | null
+          contrato_id: string
+          created_at?: string
+          data_prevista: string
+          data_realizada?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          responsavel?: string | null
+          status?: string
+          tipo: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          alerta_antecedencia?: number | null
+          contrato_id?: string
+          created_at?: string
+          data_prevista?: string
+          data_realizada?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          responsavel?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: []
+      }
+      contratos: {
+        Row: {
+          area_solicitante: string | null
+          clausulas_especiais: string | null
+          confidencial: boolean | null
+          created_at: string
+          created_by: string | null
+          data_assinatura: string | null
+          data_fim: string | null
+          data_inicio: string | null
+          empresa_id: string
+          fornecedor_id: string
+          gestor_contrato: string | null
+          id: string
+          moeda: string | null
+          nome: string
+          numero_contrato: string
+          objeto: string | null
+          observacoes: string | null
+          penalidades: string | null
+          prazo_renovacao: number | null
+          renovacao_automatica: boolean | null
+          sla_principal: string | null
+          status: string
+          tipo: string
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          area_solicitante?: string | null
+          clausulas_especiais?: string | null
+          confidencial?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          data_assinatura?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          empresa_id: string
+          fornecedor_id: string
+          gestor_contrato?: string | null
+          id?: string
+          moeda?: string | null
+          nome: string
+          numero_contrato: string
+          objeto?: string | null
+          observacoes?: string | null
+          penalidades?: string | null
+          prazo_renovacao?: number | null
+          renovacao_automatica?: boolean | null
+          sla_principal?: string | null
+          status?: string
+          tipo: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          area_solicitante?: string | null
+          clausulas_especiais?: string | null
+          confidencial?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          data_assinatura?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          empresa_id?: string
+          fornecedor_id?: string
+          gestor_contrato?: string | null
+          id?: string
+          moeda?: string | null
+          nome?: string
+          numero_contrato?: string
+          objeto?: string | null
+          observacoes?: string | null
+          penalidades?: string | null
+          prazo_renovacao?: number | null
+          renovacao_automatica?: boolean | null
+          sla_principal?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: []
+      }
       controles: {
         Row: {
           area: string | null
@@ -774,6 +1023,63 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fornecedores: {
+        Row: {
+          avaliacao_risco: string | null
+          categoria: string | null
+          cnpj: string | null
+          contato_responsavel: string | null
+          created_at: string
+          data_cadastro: string | null
+          email: string | null
+          empresa_id: string
+          endereco: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          status: string
+          telefone: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          avaliacao_risco?: string | null
+          categoria?: string | null
+          cnpj?: string | null
+          contato_responsavel?: string | null
+          created_at?: string
+          data_cadastro?: string | null
+          email?: string | null
+          empresa_id: string
+          endereco?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          avaliacao_risco?: string | null
+          categoria?: string | null
+          cnpj?: string | null
+          contato_responsavel?: string | null
+          created_at?: string
+          data_cadastro?: string | null
+          email?: string | null
+          empresa_id?: string
+          endereco?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          tipo?: string
           updated_at?: string
         }
         Relationships: []
@@ -1247,6 +1553,10 @@ export type Database = {
     Functions: {
       auditoria_pertence_empresa: {
         Args: { auditoria_id: string }
+        Returns: boolean
+      }
+      contrato_pertence_empresa: {
+        Args: { contrato_id: string }
         Returns: boolean
       }
       controle_pertence_empresa: {
