@@ -19,6 +19,7 @@ import DueDiligence from '@/pages/DueDiligence';
 import Assessment from '@/pages/Assessment';
 import Denuncia from '@/pages/Denuncia';
 import DenunciaExterna from '@/pages/DenunciaExterna';
+import DenunciaExternaRedirect from '@/pages/DenunciaExternaRedirect';
 import DenunciaMenu from '@/pages/DenunciaMenu';
 import DenunciaFormulario from '@/pages/DenunciaFormulario';
 import DenunciaConsulta from '@/pages/DenunciaConsulta';
@@ -36,7 +37,7 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/assessment/:token" element={<Assessment />} />
             {/* Rotas antigas para compatibilidade */}
-            <Route path="/denuncia/externa/:token" element={<DenunciaExterna />} />
+            <Route path="/denuncia/externa/:token" element={<DenunciaExternaRedirect />} />
             {/* Novas rotas amigáveis para canal de denúncias */}
             <Route path="/:empresa/denuncia" element={<DenunciaMenu />} />
             <Route path="/:empresa/denuncia/registrar" element={<DenunciaFormulario />} />
