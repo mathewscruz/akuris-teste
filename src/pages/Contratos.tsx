@@ -350,10 +350,13 @@ export default function Contratos() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={currentTab} onValueChange={setCurrentTab}>
+      <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="contratos">Contratos</TabsTrigger>
           <TabsTrigger value="fornecedores">Fornecedores</TabsTrigger>
+          <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="integracoes">Integrações</TabsTrigger>
         </TabsList>
 
         {/* Contratos Tab */}

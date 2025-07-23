@@ -228,58 +228,56 @@ export default function Incidentes() {
         <IncidenteDialog onSuccess={loadIncidentes} />
       </div>
 
-      {/* Cards de KPI */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Incidentes</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{statsIncidentes?.total || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {statsIncidentes?.mes || 0} este mês
+              {statsIncidentes?.abertos || 0} abertos
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Em Aberto</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Críticos/Altos</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{statsIncidentes?.abertos || 0}</div>
+            <div className="text-2xl font-bold text-red-600">{(statsIncidentes?.criticos || 0) + (statsIncidentes?.altos || 0)}</div>
             <p className="text-xs text-muted-foreground">
-              {statsIncidentes?.investigacao || 0} em investigação
+              {statsIncidentes?.criticos || 0} críticos, {statsIncidentes?.altos || 0} altos
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Críticos</CardTitle>
-            <XCircle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Em Investigação</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{statsIncidentes?.criticos || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Necessitam atenção imediata
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa de Resolução</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {statsIncidentes?.total ? Math.round((statsIncidentes?.resolvidos / statsIncidentes?.total) * 100) : 0}%
-            </div>
+            <div className="text-2xl font-bold text-amber-600">{statsIncidentes?.investigacao || 0}</div>
             <p className="text-xs text-muted-foreground">
               {statsIncidentes?.resolvidos || 0} resolvidos
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Este Mês</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{statsIncidentes?.mes || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Novos incidentes
             </p>
           </CardContent>
         </Card>
