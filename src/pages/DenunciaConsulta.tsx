@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Shield, FileText, Clock, CheckCircle, AlertCircle, Eye } from 'lucide-react';
+import { Search, Shield, FileText, Clock, CheckCircle, AlertCircle, Eye, ArrowLeft } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -269,6 +269,17 @@ export default function DenunciaConsulta() {
   return (
     <div className="min-h-screen bg-muted/20 py-8">
       <div className="container max-w-4xl mx-auto px-4">
+        {/* Breadcrumb */}
+        <div className="mb-6">
+          <Link 
+            to={`/${empresaSlug}/denuncia`}
+            className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Voltar ao menu inicial
+          </Link>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold flex items-center justify-center gap-2 mb-2">
