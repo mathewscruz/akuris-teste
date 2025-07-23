@@ -94,14 +94,17 @@ export default function Assessment() {
       setLoading(true);
       
       if (!token) {
+        console.log('ASSESSMENT DEBUG: Token não fornecido');
         toast({
           title: "Token inválido",
           description: "O link fornecido não é válido.",
           variant: "destructive"
         });
-        navigate('/');
+        setAssessment(null);
         return;
       }
+
+      console.log('ASSESSMENT DEBUG: Buscando assessment com token:', token);
 
       // Buscar assessment pelo token
       const assessmentData = await supabaseRequest(
@@ -109,36 +112,45 @@ export default function Assessment() {
       );
       
       if (!assessmentData || assessmentData.length === 0) {
+        console.log('ASSESSMENT DEBUG: Assessment não encontrado para token:', token);
         toast({
           title: "Assessment não encontrado",
           description: "O link fornecido não é válido ou expirou.",
           variant: "destructive"
         });
-        navigate('/');
+        setAssessment(null);
         return;
       }
+
+      console.log('ASSESSMENT DEBUG: Assessment encontrado:', assessmentData[0]);
 
       const assessment = assessmentData[0];
 
       // Verificar se já expirou
       if (new Date() > new Date(assessment.data_expiracao)) {
+        console.log('ASSESSMENT DEBUG: Assessment expirado');
         toast({
           title: "Assessment expirado",
           description: "O prazo para responder este questionário já expirou.",
           variant: "destructive"
         });
+        setAssessment({ ...assessment, status: 'expirado' } as AssessmentData);
         return;
       }
 
       // Verificar se já foi concluído
       if (assessment.status === 'concluido') {
+        console.log('ASSESSMENT DEBUG: Assessment já concluído');
         toast({
           title: "Assessment já concluído",
           description: "Este questionário já foi respondido anteriormente.",
           variant: "destructive"
         });
+        setAssessment({ ...assessment, status: 'concluido' } as AssessmentData);
         return;
       }
+
+      console.log('ASSESSMENT DEBUG: Assessment válido, continuando...');
 
       // Buscar template
       const templateData = await supabaseRequest(
@@ -199,12 +211,13 @@ export default function Assessment() {
       setResponses(existingResponses);
 
     } catch (error: any) {
-      console.error('Erro ao carregar assessment:', error);
+      console.error('ASSESSMENT DEBUG: Erro ao carregar assessment:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar o questionário.",
+        description: "Não foi possível carregar o questionário. Verifique sua conexão e tente novamente.",
         variant: "destructive"
       });
+      setAssessment(null);
     } finally {
       setLoading(false);
     }
@@ -352,7 +365,7 @@ export default function Assessment() {
       // Enviar email de conclusão (simplificado)
       try {
         // Buscar dados da empresa do assessment
-        const { data: assessmentData } = await supabaseRequest(
+        const assessmentData = await supabaseRequest(
           `due_diligence_assessments?id=eq.${assessment.id}&select=empresa_id`
         );
         
@@ -360,7 +373,7 @@ export default function Assessment() {
         let empresaLogoUrl = null;
 
         if (assessmentData && assessmentData[0]?.empresa_id) {
-          const { data: empresaData } = await supabaseRequest(
+          const empresaData = await supabaseRequest(
             `empresas?id=eq.${assessmentData[0].empresa_id}&select=nome,logo_url`
           );
           
@@ -537,6 +550,46 @@ export default function Assessment() {
             <h2 className="text-xl font-semibold mb-2">Assessment não encontrado</h2>
             <p className="text-muted-foreground">
               O link fornecido não é válido ou expirou.
+            </p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => window.location.reload()}
+            >
+              Tentar novamente
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Verificar se assessment foi marcado como expirado ou concluído
+  if (assessment.status === 'expirado') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="text-center py-8">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Assessment Expirado</h2>
+            <p className="text-muted-foreground">
+              O prazo para responder este questionário já expirou.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (assessment.status === 'concluido' && currentStep < questions.length) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="text-center py-8">
+            <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Assessment já Concluído</h2>
+            <p className="text-muted-foreground">
+              Este questionário já foi respondido anteriormente.
             </p>
           </CardContent>
         </Card>
