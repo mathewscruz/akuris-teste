@@ -16,6 +16,7 @@ import ContasPrivilegiadas from '@/pages/ContasPrivilegiadas';
 import Incidentes from '@/pages/Incidentes';
 import Dados from '@/pages/Dados';
 import DueDiligence from '@/pages/DueDiligence';
+import Assessment from '@/pages/Assessment';
 import Configuracoes from '@/pages/Configuracoes';
 import NotFound from '@/pages/NotFound';
 
@@ -28,6 +29,7 @@ function App() {
         <Router>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/assessment/:token" element={<Assessment />} />
             <Route path="/" element={<Layout><Navigate to="/dashboard" replace /></Layout>} />
             <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
             <Route path="/ativos" element={<Layout><Ativos /></Layout>} />

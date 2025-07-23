@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { FornecedorSelector } from './FornecedorSelector';
 import { useToast } from '@/hooks/use-toast';
 import { Copy, Mail, ExternalLink } from 'lucide-react';
 
@@ -342,28 +343,17 @@ export function AssessmentDialog({
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="fornecedor_nome">Nome do Fornecedor *</Label>
-            <Input
-              id="fornecedor_nome"
-              value={formData.fornecedor_nome}
-              onChange={(e) => setFormData({ ...formData, fornecedor_nome: e.target.value })}
-              placeholder="Nome da empresa fornecedora"
-              required
+            <FornecedorSelector
+              value={{
+                nome: formData.fornecedor_nome,
+                email: formData.fornecedor_email
+              }}
+              onChange={(fornecedor) => setFormData(prev => ({
+                ...prev,
+                fornecedor_nome: fornecedor.nome,
+                fornecedor_email: fornecedor.email
+              }))}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="fornecedor_email">Email do Fornecedor *</Label>
-            <Input
-              id="fornecedor_email"
-              type="email"
-              value={formData.fornecedor_email}
-              onChange={(e) => setFormData({ ...formData, fornecedor_email: e.target.value })}
-              placeholder="contato@fornecedor.com"
-              required
-            />
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="observacoes">Observações</Label>
