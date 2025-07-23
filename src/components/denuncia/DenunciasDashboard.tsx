@@ -39,7 +39,7 @@ interface Denuncia {
   };
   responsavel?: {
     nome: string;
-  };
+  } | null;
 }
 
 const statusMap = {
@@ -90,8 +90,7 @@ export function DenunciasDashboard() {
         .from('denuncias')
         .select(`
           *,
-          categoria:denuncias_categorias(nome, cor),
-          responsavel:profiles(nome)
+          categoria:denuncias_categorias(nome, cor)
         `)
         .order('created_at', { ascending: false });
 

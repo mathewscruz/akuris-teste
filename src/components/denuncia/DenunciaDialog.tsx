@@ -42,7 +42,7 @@ interface Movimentacao {
   created_at: string;
   usuario?: {
     nome: string;
-  };
+  } | null;
 }
 
 interface Anexo {
@@ -92,13 +92,10 @@ export function DenunciaDialog({
   const carregarDados = async () => {
     setLoading(true);
     try {
-      // Carregar movimentações
+      // Carregar movimentações (sem join por enquanto)
       const { data: movData } = await supabase
         .from('denuncias_movimentacoes')
-        .select(`
-          *,
-          usuario:profiles(nome)
-        `)
+        .select('*')
         .eq('denuncia_id', denuncia.id)
         .order('created_at', { ascending: false });
 

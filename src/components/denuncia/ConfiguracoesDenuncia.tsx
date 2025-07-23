@@ -136,8 +136,9 @@ export function ConfiguracoesDenuncia() {
         const { data, error } = await supabase
           .from('denuncias_configuracoes')
           .insert({
-            ...configData,
-            token_publico: token
+            empresa_id: 'current-empresa-id', // Será obtido automaticamente pelo RLS
+            token_publico: token,
+            ...configData
           })
           .select()
           .single();
