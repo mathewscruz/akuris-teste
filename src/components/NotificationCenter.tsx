@@ -19,6 +19,7 @@ interface Notification {
   read: boolean;
   link_to: string | null;
   created_at: string;
+  isAutomatic?: boolean;
 }
 
 const NotificationCenter: React.FC = () => {

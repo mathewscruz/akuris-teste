@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DatePicker } from '@/components/ui/date-picker';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface Categoria {
   id: string;
@@ -52,12 +55,12 @@ export function BuscaAvancadaDocumentos({
 
   const handleSearch = () => {
     // Criar filtros limpos (sem valores vazios)
-    const cleanFilters = Object.entries(filters).reduce((acc, [key, value]) => {
+    const cleanFilters: Partial<FiltrosAvancados> = {};
+    Object.entries(filters).forEach(([key, value]) => {
       if (value !== '' && value !== undefined && value !== null) {
-        acc[key as keyof FiltrosAvancados] = value;
+        (cleanFilters as any)[key] = value;
       }
-      return acc;
-    }, {} as Partial<FiltrosAvancados>);
+    });
 
     onSearch(cleanFilters as FiltrosAvancados);
     onOpenChange(false);
@@ -73,9 +76,39 @@ export function BuscaAvancadaDocumentos({
     });
   };
 
-  const updateFilter = (key: keyof FiltrosAvancados, value: any) => {
+  const updateFilter = <K extends keyof FiltrosAvancados>(key: K, value: FiltrosAvancados[K]) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
+
+  const DatePicker = ({ date, onDateChange, placeholder }: { 
+    date?: Date; 
+    onDateChange: (date: Date | undefined) => void;
+    placeholder: string;
+  }) => (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant={"outline"}
+          className={cn(
+            "w-full justify-start text-left font-normal",
+            !date && "text-muted-foreground"
+          )}
+        >
+          <CalendarIcon className="mr-2 h-4 w-4" />
+          {date ? format(date, "PPP") : <span>{placeholder}</span>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={onDateChange}
+          initialFocus
+          className="p-3 pointer-events-auto"
+        />
+      </PopoverContent>
+    </Popover>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -177,6 +210,7 @@ export function BuscaAvancadaDocumentos({
                 <DatePicker
                   date={filters.dataInicio}
                   onDateChange={(date) => updateFilter('dataInicio', date)}
+                  placeholder="Selecione a data"
                 />
               </div>
               <div className="space-y-2">
@@ -184,6 +218,7 @@ export function BuscaAvancadaDocumentos({
                 <DatePicker
                   date={filters.dataFim}
                   onDateChange={(date) => updateFilter('dataFim', date)}
+                  placeholder="Selecione a data"
                 />
               </div>
             </div>
@@ -194,6 +229,7 @@ export function BuscaAvancadaDocumentos({
                 <DatePicker
                   date={filters.dataVencimentoInicio}
                   onDateChange={(date) => updateFilter('dataVencimentoInicio', date)}
+                  placeholder="Selecione a data"
                 />
               </div>
               <div className="space-y-2">
@@ -201,6 +237,7 @@ export function BuscaAvancadaDocumentos({
                 <DatePicker
                   date={filters.dataVencimentoFim}
                   onDateChange={(date) => updateFilter('dataVencimentoFim', date)}
+                  placeholder="Selecione a data"
                 />
               </div>
             </div>
@@ -237,7 +274,7 @@ export function BuscaAvancadaDocumentos({
                 <Checkbox
                   id="confidencial"
                   checked={filters.confidencial || false}
-                  onCheckedChange={(checked) => updateFilter('confidencial', checked)}
+                  onCheckedChange={(checked) => updateFilter('confidencial', checked as boolean)}
                 />
                 <Label htmlFor="confidencial">Apenas documentos confidenciais</Label>
               </div>
@@ -246,7 +283,7 @@ export function BuscaAvancadaDocumentos({
                 <Checkbox
                   id="comArquivo"
                   checked={filters.comArquivo || false}
-                  onCheckedChange={(checked) => updateFilter('comArquivo', checked)}
+                  onCheckedChange={(checked) => updateFilter('comArquivo', checked as boolean)}
                 />
                 <Label htmlFor="comArquivo">Apenas com arquivo anexado</Label>
               </div>

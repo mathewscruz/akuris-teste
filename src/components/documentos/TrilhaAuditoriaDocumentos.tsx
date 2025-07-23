@@ -29,7 +29,7 @@ interface AuditLog {
   profiles?: {
     nome: string;
     email: string;
-  };
+  } | null;
 }
 
 export function TrilhaAuditoriaDocumentos({ 
@@ -44,15 +44,36 @@ export function TrilhaAuditoriaDocumentos({
       const { data, error } = await supabase
         .from('audit_logs')
         .select(`
-          *,
-          profiles:user_id(nome, email)
+          id,
+          action,
+          old_values,
+          new_values,
+          changed_fields,
+          created_at,
+          user_id,
+          profiles(nome, email)
         `)
         .eq('table_name', 'documentos')
         .eq('record_id', documentoId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as AuditLog[];
+      
+      // Mapear dados para garantir tipagem correta
+      const mappedData: AuditLog[] = (data || []).map(item => ({
+        id: item.id,
+        action: item.action,
+        old_values: item.old_values,
+        new_values: item.new_values,
+        changed_fields: item.changed_fields,
+        created_at: item.created_at,
+        user_id: item.user_id,
+        profiles: Array.isArray(item.profiles) && item.profiles.length > 0 
+          ? item.profiles[0] 
+          : null
+      }));
+      
+      return mappedData;
     },
     enabled: open && !!documentoId,
   });
