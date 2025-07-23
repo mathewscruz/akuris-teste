@@ -453,17 +453,12 @@ export default function Assessment() {
         return;
       }
 
-      // Validar transição de status
-      if (!validateStatusTransition(assessment.status, 'concluido')) {
-        throw new Error(`Transição de status inválida: ${assessment.status} -> concluido`);
-      }
-
-      // Verificar perguntas obrigatórias
+      // Verificar perguntas obrigatórias de forma simplificada
       const requiredQuestions = questions.filter(q => q.obrigatoria);
-      const missingRequired = requiredQuestions.filter(q => !responses[q.id]);
+      const missingRequired = requiredQuestions.filter(q => !responses[q.id] || !responses[q.id].toString().trim());
 
       if (missingRequired.length > 0) {
-        const missingTitles = missingRequired.map(q => q.pergunta).join(', ');
+        const missingTitles = missingRequired.map(q => q.pergunta || q.titulo).join(', ');
         assessmentLogger.warn('Perguntas obrigatórias não respondidas:', missingTitles);
         toast.error(`Por favor, responda as seguintes perguntas obrigatórias: ${missingTitles}`);
         return;
@@ -471,36 +466,39 @@ export default function Assessment() {
 
       // Salvar todas as respostas pendentes
       assessmentLogger.info('Salvando respostas finais');
-      await Promise.all(
-        Object.entries(responses).map(([questionId, value]) => 
-          saveResponse(questionId, value)
-        )
-      );
+      for (const [questionId, value] of Object.entries(responses)) {
+        if (value && value.toString().trim()) {
+          await saveResponse(questionId, value);
+        }
+      }
 
-      // Finalizar assessment
+      // Finalizar assessment usando Supabase client
       assessmentLogger.info('Finalizando assessment');
-      const updateData = {
-        status: 'concluido',
-        data_conclusao: new Date().toISOString()
-      };
+      const { error: updateError } = await supabase
+        .from('due_diligence_assessments')
+        .update({
+          status: 'concluido',
+          data_conclusao: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('link_token', token);
 
-      // Usar apenas link_token para satisfazer a política RLS
-      await supabaseRequest(`due_diligence_assessments?link_token=eq.${token}`, {
-        method: 'PATCH',
-        body: JSON.stringify(updateData)
-      });
+      if (updateError) {
+        assessmentLogger.error('Erro ao finalizar assessment:', updateError);
+        throw new Error(`Erro ao finalizar assessment: ${updateError.message}`);
+      }
 
       // Calcular score com IA
       assessmentLogger.info('Iniciando cálculo de score com IA...');
       try {
-        const { data: scoreResult, error: scoreError } = await supabase.functions.invoke('calculate-assessment-score', {
+        const { error: scoreError } = await supabase.functions.invoke('calculate-assessment-score', {
           body: { assessment_id: assessment.id }
         });
 
         if (scoreError) {
           assessmentLogger.warn('Erro no cálculo de score:', scoreError);
         } else {
-          assessmentLogger.info('Score calculado com sucesso:', scoreResult);
+          assessmentLogger.info('Score calculado com sucesso');
         }
       } catch (scoreError) {
         assessmentLogger.warn('Erro ao calcular score:', scoreError);
@@ -520,19 +518,12 @@ export default function Assessment() {
 
     } catch (error: any) {
       assessmentLogger.error('Erro ao finalizar assessment:', error);
-      
-      // Log específico para RLS violation
-      if (error.message?.includes('violates row-level security policy') || error.message?.includes('RLS')) {
-        assessmentLogger.error('Erro de RLS - verificar política de acesso:', error);
-        toast.error('Erro de permissão ao enviar questionário. Verifique o acesso.');
-      } else {
-        toast.error('Erro ao enviar o questionário. Tente novamente.');
-      }
+      toast.error(`Erro ao enviar questionário: ${error.message || 'Erro desconhecido'}`);
     } finally {
       setSubmitting(false);
       setShowConfirmDialog(false);
     }
-  }, [assessment, questions, responses, validateStatusTransition, saveResponse]);
+  }, [assessment, questions, responses, saveResponse, token]);
 
   // Carregar assessment ao montar o componente
   useEffect(() => {
