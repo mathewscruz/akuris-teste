@@ -17,7 +17,9 @@ import {
   Settings,
   Mail,
   Eye,
-  EyeOff
+  EyeOff,
+  Search,
+  RefreshCw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -39,6 +41,7 @@ export function ConfiguracoesDenuncia() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showToken, setShowToken] = useState(false);
+  const [empresaSlug, setEmpresaSlug] = useState<string>('');
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -57,6 +60,7 @@ export function ConfiguracoesDenuncia() {
 
   const carregarConfiguracao = async () => {
     try {
+      // Buscar configuração da denúncia
       const { data, error } = await supabase
         .from('denuncias_configuracoes')
         .select('*')
@@ -77,6 +81,16 @@ export function ConfiguracoesDenuncia() {
           notificar_administradores: data.notificar_administradores,
           emails_notificacao: data.emails_notificacao?.join(', ') || ''
         });
+      }
+
+      // Buscar slug da empresa
+      const { data: empresaData, error: empresaError } = await supabase
+        .from('empresas')
+        .select('slug')
+        .single();
+
+      if (!empresaError && empresaData?.slug) {
+        setEmpresaSlug(empresaData.slug);
       }
     } catch (error) {
       console.error('Erro ao carregar configuração:', error);
@@ -165,20 +179,35 @@ export function ConfiguracoesDenuncia() {
   };
 
   const copiarLink = () => {
-    if (config?.token_publico) {
-      const link = `${window.location.origin}/denuncia/externa/${config.token_publico}`;
-      navigator.clipboard.writeText(link);
-      toast({
-        title: "Copiado!",
-        description: "Link copiado para a área de transferência"
-      });
-    }
+    const baseUrl = window.location.origin;
+    const link = empresaSlug 
+      ? `${baseUrl}/${empresaSlug}/denuncia` 
+      : `${baseUrl}/denuncia/externa/${config?.token_publico}`;
+    
+    navigator.clipboard.writeText(link);
+    toast({
+      title: "Copiado!",
+      description: "Link copiado para a área de transferência"
+    });
   };
 
   const abrirFormulario = () => {
-    if (config?.token_publico) {
-      const link = `${window.location.origin}/denuncia/externa/${config.token_publico}`;
-      window.open(link, '_blank');
+    const baseUrl = window.location.origin;
+    const link = empresaSlug 
+      ? `${baseUrl}/${empresaSlug}/denuncia` 
+      : `${baseUrl}/denuncia/externa/${config?.token_publico}`;
+    
+    window.open(link, '_blank');
+  };
+
+  const copiarLinkConsulta = () => {
+    if (empresaSlug) {
+      const link = `${window.location.origin}/${empresaSlug}/denuncia/consulta`;
+      navigator.clipboard.writeText(link);
+      toast({
+        title: "Copiado!",
+        description: "Link de consulta copiado para a área de transferência"
+      });
     }
   };
 
@@ -232,54 +261,90 @@ export function ConfiguracoesDenuncia() {
       </div>
 
       {/* Link Público */}
-      {config?.token_publico && (
+      {(config?.token_publico || empresaSlug) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Link2 className="h-5 w-5" />
-              Link Público do Canal de Denúncia
+              Links Públicos do Canal de Denúncia
             </CardTitle>
             <CardDescription>
-              Este é o link que deve ser compartilhado para receber denúncias
+              Links que devem ser compartilhados para receber denúncias e consultas
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="flex-1 p-3 bg-muted rounded-lg font-mono text-sm">
-                {showToken 
-                  ? `${window.location.origin}/denuncia/externa/${config.token_publico}`
-                  : `${window.location.origin}/denuncia/externa/***`
-                }
+            {/* Link para criar denúncia */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Formulário de Denúncia</Label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 p-3 bg-muted rounded-lg font-mono text-sm">
+                  {empresaSlug 
+                    ? `${window.location.origin}/${empresaSlug}/denuncia`
+                    : `${window.location.origin}/denuncia/externa/${config?.token_publico}`
+                  }
+                </div>
+                <Button variant="outline" size="sm" onClick={copiarLink}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={abrirFormulario}>
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowToken(!showToken)}
-              >
-                {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-              <Button variant="outline" size="sm" onClick={copiarLink}>
-                <Copy className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm" onClick={abrirFormulario}>
-                <ExternalLink className="h-4 w-4" />
-              </Button>
             </div>
+
+            {/* Link para consultar denúncia (apenas com slug) */}
+            {empresaSlug && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Consulta de Protocolo</Label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 p-3 bg-muted rounded-lg font-mono text-sm">
+                    {window.location.origin}/{empresaSlug}/denuncia/consulta
+                  </div>
+                  <Button variant="outline" size="sm" onClick={copiarLinkConsulta}>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => window.open(`${window.location.origin}/${empresaSlug}/denuncia/consulta`, '_blank')}
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
             
             <div className="flex items-center gap-2">
               <Badge variant={formData.ativo ? "default" : "secondary"}>
                 {formData.ativo ? "Ativo" : "Inativo"}
               </Badge>
-              <Button variant="outline" size="sm" onClick={regenerarToken}>
-                Regenerar Link
-              </Button>
+              {empresaSlug ? (
+                <Badge variant="outline" className="text-green-600">
+                  URLs Amigáveis
+                </Badge>
+              ) : (
+                <Button variant="outline" size="sm" onClick={regenerarToken}>
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Regenerar Link
+                </Button>
+              )}
             </div>
 
             <Alert>
               <Shield className="h-4 w-4" />
               <AlertDescription>
-                Mantenha este link seguro. Qualquer pessoa com acesso poderá enviar denúncias.
-                Ao regenerar o link, o anterior deixará de funcionar.
+                {empresaSlug ? (
+                  <>
+                    <strong>URLs Amigáveis Ativas:</strong> Suas denúncias agora usam links 
+                    profissionais com o nome da empresa. Os denunciantes podem acompanhar 
+                    o status usando o protocolo recebido.
+                  </>
+                ) : (
+                  <>
+                    Mantenha este link seguro. Qualquer pessoa com acesso poderá enviar denúncias.
+                    Ao regenerar o link, o anterior deixará de funcionar.
+                  </>
+                )}
               </AlertDescription>
             </Alert>
           </CardContent>

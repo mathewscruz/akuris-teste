@@ -19,6 +19,8 @@ import DueDiligence from '@/pages/DueDiligence';
 import Assessment from '@/pages/Assessment';
 import Denuncia from '@/pages/Denuncia';
 import DenunciaExterna from '@/pages/DenunciaExterna';
+import DenunciaPublica from '@/pages/DenunciaPublica';
+import DenunciaConsulta from '@/pages/DenunciaConsulta';
 import Configuracoes from '@/pages/Configuracoes';
 import NotFound from '@/pages/NotFound';
 
@@ -32,7 +34,11 @@ function App() {
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/assessment/:token" element={<Assessment />} />
+            {/* Rotas antigas para compatibilidade */}
             <Route path="/denuncia/externa/:token" element={<DenunciaExterna />} />
+            {/* Novas rotas amigáveis */}
+            <Route path="/:empresa/denuncia" element={<DenunciaPublica />} />
+            <Route path="/:empresa/denuncia/consulta" element={<DenunciaConsulta />} />
             <Route path="/" element={<Layout><Navigate to="/dashboard" replace /></Layout>} />
             <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
             <Route path="/ativos" element={<Layout><Ativos /></Layout>} />

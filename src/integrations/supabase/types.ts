@@ -2068,6 +2068,7 @@ export type Database = {
           id: string
           logo_url: string | null
           nome: string
+          slug: string | null
           updated_at: string
         }
         Insert: {
@@ -2078,6 +2079,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nome: string
+          slug?: string | null
           updated_at?: string
         }
         Update: {
@@ -2088,6 +2090,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nome?: string
+          slug?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -3022,6 +3025,10 @@ export type Database = {
       }
       gerar_token_publico: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_empresa_by_slug: {
+        Args: { empresa_slug: string }
         Returns: string
       }
       get_user_empresa_id: {
