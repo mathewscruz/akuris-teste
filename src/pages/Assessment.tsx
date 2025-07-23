@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { CheckCircle, FileText, ArrowRight, ArrowLeft, AlertCircle, Upload, Building2 } from 'lucide-react';
+import { CheckCircle, FileText, ArrowRight, ArrowLeft, AlertCircle, Upload, Building2, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 // ETAPA 5: Sistema de logs para debugging
@@ -405,7 +405,8 @@ export default function Assessment() {
         data_conclusao: new Date().toISOString()
       };
 
-      await supabaseRequest(`due_diligence_assessments?id=eq.${assessment.id}`, {
+      // Usar id e link_token para satisfazer a política RLS
+      await supabaseRequest(`due_diligence_assessments?id=eq.${assessment.id}&link_token=eq.${token}`, {
         method: 'PATCH',
         body: JSON.stringify(updateData)
       });
@@ -421,9 +422,16 @@ export default function Assessment() {
       assessmentLogger.info('Assessment finalizado com sucesso');
       toast.success('Questionário enviado com sucesso!');
 
-    } catch (error) {
+    } catch (error: any) {
       assessmentLogger.error('Erro ao finalizar assessment:', error);
-      toast.error('Erro ao enviar o questionário. Tente novamente.');
+      
+      // Log específico para RLS violation
+      if (error.message?.includes('violates row-level security policy') || error.message?.includes('RLS')) {
+        assessmentLogger.error('Erro de RLS - verificar política de acesso:', error);
+        toast.error('Erro de permissão ao enviar questionário. Verifique o acesso.');
+      } else {
+        toast.error('Erro ao enviar o questionário. Tente novamente.');
+      }
     } finally {
       setSubmitting(false);
       setShowConfirmDialog(false);
@@ -460,6 +468,26 @@ export default function Assessment() {
             </p>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // Se já concluído, mostrar tela de sucesso
+  if (assessment.status === 'concluido') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check className="w-8 h-8 text-green-600" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Questionário Enviado!</h2>
+          <p className="text-muted-foreground mb-6">
+            Obrigado por responder ao questionário. Suas respostas foram enviadas com sucesso.
+          </p>
+          <Button onClick={() => window.close()} className="w-full">
+            Fechar
+          </Button>
+        </div>
       </div>
     );
   }
