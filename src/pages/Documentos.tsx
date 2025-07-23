@@ -76,6 +76,9 @@ export function Documentos() {
   const [activeTab, setActiveTab] = useState('lista');
   const [filtrosAvancados, setFiltrosAvancados] = useState<any>(null);
   const { toast } = useToast();
+  
+  // Buscar estatísticas dos documentos
+  const { data: statsDocumentos } = useDocumentosStats();
 
   useEffect(() => {
     fetchDocumentos();

@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, FileText, Calendar, DollarSign, Users, AlertCircle, CheckCircle, Clock, XCircle, Edit, FileEdit, Bell, BarChart3, Filter, Link2 } from 'lucide-react';
+import { Plus, Search, FileText, Calendar, DollarSign, Users, AlertCircle, CheckCircle, Clock, XCircle, Edit, FileEdit, BarChart3, Filter, Link2, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ContratoDialog } from '@/components/contratos/ContratoDialog';
@@ -15,8 +15,8 @@ import { DocumentosDialog } from '@/components/contratos/DocumentosDialog';
 import { AditivosDialog } from '@/components/contratos/AditivosDialog';
 import RelatoriosContratos from '@/components/contratos/RelatoriosContratos';
 import IntegracaoModulos from '@/components/contratos/IntegracaoModulos';
-import { useContratosStats } from '@/hooks/useContratosStats';
 import TemplatesContratos from '@/components/contratos/TemplatesContratos';
+import { useContratosStats } from '@/hooks/useContratosStats';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -95,6 +95,9 @@ export default function Contratos() {
   const [currentTab, setCurrentTab] = useState('contratos');
   const [aditivosDialogOpen, setAditivosDialogOpen] = useState(false);
   const { toast } = useToast();
+  
+  // Buscar estatísticas dos contratos
+  const { data: statsContratos } = useContratosStats();
 
   useEffect(() => {
     fetchData();
@@ -273,45 +276,28 @@ export default function Contratos() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto py-6">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Gestão de Contratos</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Contratos</h1>
           <p className="text-muted-foreground">
             Gerencie contratos, fornecedores e acompanhe vencimentos
           </p>
         </div>
       </div>
 
-      {/* Dashboard Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+      {/* Cards de KPI */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Contratos</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.totalContratos}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Contratos Ativos</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{dashboardData.contratosAtivos}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Vencendo (30 dias)</CardTitle>
-            <AlertCircle className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{dashboardData.contratosVencendo}</div>
+            <div className="text-2xl font-bold">{statsContratos?.total || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {statsContratos?.ativos || 0} ativos
+            </p>
           </CardContent>
         </Card>
 
@@ -324,19 +310,41 @@ export default function Contratos() {
             <div className="text-2xl font-bold">
               {new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
-                currency: 'BRL'
-              }).format(dashboardData.valorTotal)}
+                currency: 'BRL',
+                notation: 'compact'
+              }).format(statsContratos?.valorTotal || 0)}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Valor em contratos ativos
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fornecedores Ativos</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Vencimentos</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.fornecedoresAtivos}</div>
+            <div className="text-2xl font-bold">{statsContratos?.vencendo30Dias || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Próximos 30 dias
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Renovação Automática</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {statsContratos?.total ? Math.round((statsContratos?.renovacaoAutomatica / statsContratos?.total) * 100) : 0}%
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {statsContratos?.renovacaoAutomatica || 0} de {statsContratos?.total || 0}
+            </p>
           </CardContent>
         </Card>
       </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useIncidentesStats } from '@/hooks/useIncidentesStats';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,6 +77,9 @@ export default function Incidentes() {
     criticos: 0,
   });
   const { toast } = useToast();
+  
+  // Buscar estatísticas dos incidentes
+  const { data: statsIncidentes } = useIncidentesStats();
 
   const loadIncidentes = async () => {
     try {
@@ -213,67 +217,70 @@ export default function Incidentes() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto py-6">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Gestão de Incidentes</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Incidentes</h1>
           <p className="text-muted-foreground">
-            Registre e gerencie incidentes de segurança e privacidade
+            Gerencie incidentes de segurança e acompanhe tratamentos
           </p>
         </div>
         <IncidenteDialog onSuccess={loadIncidentes} />
       </div>
 
-      {/* Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      {/* Cards de KPI */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total de Incidentes</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics.total}</div>
+            <div className="text-2xl font-bold">{statsIncidentes?.total || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {statsIncidentes?.mes || 0} este mês
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Abertos</CardTitle>
-            <XCircle className="h-4 w-4 text-destructive" />
+            <CardTitle className="text-sm font-medium">Em Aberto</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{metrics.abertos}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Investigação</CardTitle>
-            <AlertCircle className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-500">{metrics.investigacao}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resolvidos</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-500">{metrics.resolvidos}</div>
+            <div className="text-2xl font-bold">{statsIncidentes?.abertos || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {statsIncidentes?.investigacao || 0} em investigação
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Críticos</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-destructive" />
+            <XCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{metrics.criticos}</div>
+            <div className="text-2xl font-bold">{statsIncidentes?.criticos || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Necessitam atenção imediata
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Taxa de Resolução</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {statsIncidentes?.total ? Math.round((statsIncidentes?.resolvidos / statsIncidentes?.total) * 100) : 0}%
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {statsIncidentes?.resolvidos || 0} resolvidos
+            </p>
           </CardContent>
         </Card>
       </div>
