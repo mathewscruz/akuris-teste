@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Filter } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, Server, Activity, AlertTriangle, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { useAtivosStats } from '@/hooks/useAtivosStats';
 
 interface Ativo {
   id: string;
@@ -62,6 +63,7 @@ const Ativos = () => {
   const { profile } = useAuth();
   const [ativos, setAtivos] = useState<Ativo[]>([]);
   const [loading, setLoading] = useState(true);
+  const { data: stats, isLoading: statsLoading } = useAtivosStats();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAtivo, setEditingAtivo] = useState<Ativo | null>(null);
@@ -140,6 +142,9 @@ const Ativos = () => {
       setEditingAtivo(null);
       resetForm();
       fetchAtivos();
+      
+      // Invalidar cache das estatísticas para atualizar os cards
+      window.location.reload(); // Força atualização das estatísticas
     } catch (error: any) {
       console.error('Error saving ativo:', error);
       toast.error(error.message || 'Erro ao salvar ativo');
@@ -178,6 +183,9 @@ const Ativos = () => {
       if (error) throw error;
       toast.success('Ativo excluído com sucesso!');
       fetchAtivos();
+      
+      // Invalidar cache das estatísticas para atualizar os cards
+      window.location.reload(); // Força atualização das estatísticas
     } catch (error: any) {
       console.error('Error deleting ativo:', error);
       toast.error(error.message || 'Erro ao excluir ativo');
@@ -396,6 +404,63 @@ const Ativos = () => {
             </form>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* Cards de Indicadores */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Ativos</CardTitle>
+            <Server className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{statsLoading ? '...' : stats?.total || 0}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Críticos: {stats?.criticos || 0} | Altos: {stats?.altos || 0} | Médios: {stats?.medios || 0} | Baixos: {stats?.baixos || 0}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Status dos Ativos</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{statsLoading ? '...' : stats?.ativos || 0}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Inativos: {stats?.inativos || 0} | Descontinuados: {stats?.descontinuados || 0}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ativos Críticos</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{statsLoading ? '...' : (stats?.criticos || 0) + (stats?.altos || 0)}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              <Badge variant={((stats?.criticos || 0) + (stats?.altos || 0)) > 5 ? 'destructive' : ((stats?.criticos || 0) + (stats?.altos || 0)) > 0 ? 'secondary' : 'default'}>
+                {((stats?.criticos || 0) + (stats?.altos || 0)) > 5 ? 'Atenção Especial' : ((stats?.criticos || 0) + (stats?.altos || 0)) > 0 ? 'Monitoramento' : 'Sob Controle'}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Alto Valor de Negócio</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{statsLoading ? '...' : stats?.altoValorNegocio || 0}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {stats?.percentualAltoValor || 0}% do total de ativos
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card className="shadow-card">
