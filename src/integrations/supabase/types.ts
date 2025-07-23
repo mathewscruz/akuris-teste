@@ -1920,6 +1920,84 @@ export type Database = {
           },
         ]
       }
+      due_diligence_integration_logs: {
+        Row: {
+          assessment_id: string
+          empresa_id: string
+          erro_mensagem: string | null
+          executed_at: string
+          id: string
+          integration_id: string
+          resultado: Json | null
+          status: string
+        }
+        Insert: {
+          assessment_id: string
+          empresa_id: string
+          erro_mensagem?: string | null
+          executed_at?: string
+          id?: string
+          integration_id: string
+          resultado?: Json | null
+          status?: string
+        }
+        Update: {
+          assessment_id?: string
+          empresa_id?: string
+          erro_mensagem?: string | null
+          executed_at?: string
+          id?: string
+          integration_id?: string
+          resultado?: Json | null
+          status?: string
+        }
+        Relationships: []
+      }
+      due_diligence_integrations: {
+        Row: {
+          acao: string
+          ativo: boolean | null
+          condicao: string
+          created_at: string
+          descricao: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          parametros_acao: Json | null
+          tipo_integracao: string
+          updated_at: string
+          valor_condicao: string
+        }
+        Insert: {
+          acao: string
+          ativo?: boolean | null
+          condicao: string
+          created_at?: string
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          parametros_acao?: Json | null
+          tipo_integracao: string
+          updated_at?: string
+          valor_condicao: string
+        }
+        Update: {
+          acao?: string
+          ativo?: boolean | null
+          condicao?: string
+          created_at?: string
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          parametros_acao?: Json | null
+          tipo_integracao?: string
+          updated_at?: string
+          valor_condicao?: string
+        }
+        Relationships: []
+      }
       due_diligence_questions: {
         Row: {
           configuracoes: Json | null
