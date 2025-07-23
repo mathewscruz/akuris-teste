@@ -147,13 +147,38 @@ export default function Assessment() {
         return;
       }
 
-      // Verificar se já foi concluído
-      if (assessment.status === 'concluido') {
-        console.log('ASSESSMENT DEBUG: Assessment já concluído');
-        setIsFinished(true);
-        setAssessment({ ...assessment, status: 'concluido' } as AssessmentData);
-        return;
+  // Verificar se já foi concluído
+  if (assessment.status === 'concluido') {
+    console.log('ASSESSMENT DEBUG: Assessment já concluído');
+    setIsFinished(true);
+    
+    // Buscar dados da empresa mesmo quando concluído
+    let empresaNome = '';
+    let empresaLogoUrl = '';
+    
+    if (assessment.empresa_id) {
+      try {
+        const empresaData = await supabaseRequest(
+          `empresas?id=eq.${assessment.empresa_id}&select=nome,logo_url`
+        );
+        
+        if (empresaData && empresaData[0]) {
+          empresaNome = empresaData[0].nome;
+          empresaLogoUrl = empresaData[0].logo_url;
+        }
+      } catch (error) {
+        console.log('ASSESSMENT DEBUG: Erro ao buscar dados da empresa:', error);
       }
+    }
+    
+    setAssessment({ 
+      ...assessment, 
+      status: 'concluido',
+      empresa_nome: empresaNome,
+      empresa_logo_url: empresaLogoUrl
+    } as AssessmentData);
+    return;
+  }
 
       console.log('ASSESSMENT DEBUG: Assessment válido, continuando...');
 
@@ -733,23 +758,20 @@ export default function Assessment() {
               {/* Logo da Empresa */}
               <div className="flex items-center space-x-3">
                 {assessment?.empresa_logo_url ? (
-                  <div className="relative">
-                    <img 
-                      src={assessment.empresa_logo_url} 
-                      alt={`Logo ${assessment.empresa_nome}`}
-                      className="h-12 w-12 object-contain rounded-lg border border-sidebar-border shadow-sm bg-white"
-                      onError={(e) => {
-                        console.log('ASSESSMENT DEBUG: Erro ao carregar logo da empresa:', assessment.empresa_logo_url);
-                        const target = e.currentTarget as HTMLImageElement;
-                        const fallback = target.parentElement?.nextElementSibling as HTMLElement;
-                        target.style.display = 'none';
-                        if (fallback) fallback.style.display = 'flex';
-                      }}
-                      onLoad={() => {
-                        console.log('ASSESSMENT DEBUG: Logo carregada com sucesso:', assessment.empresa_logo_url);
-                      }}
-                    />
-                  </div>
+                  <img 
+                    src={assessment.empresa_logo_url} 
+                    alt={`Logo ${assessment.empresa_nome}`}
+                    className="h-12 w-12 object-contain rounded-lg border border-sidebar-border shadow-sm bg-white"
+                    onError={(e) => {
+                      console.log('ASSESSMENT DEBUG: Erro ao carregar logo da empresa:', assessment.empresa_logo_url);
+                      e.currentTarget.style.display = 'none';
+                      const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                      if (fallback) fallback.style.display = 'flex';
+                    }}
+                    onLoad={() => {
+                      console.log('ASSESSMENT DEBUG: Logo carregada com sucesso:', assessment.empresa_logo_url);
+                    }}
+                  />
                 ) : null}
                 <div className={`h-12 w-12 bg-sidebar-accent rounded-lg flex items-center justify-center shadow-md ${assessment?.empresa_logo_url ? 'hidden' : 'flex'}`}>
                   <Building className="h-6 w-6 text-sidebar-foreground" />
