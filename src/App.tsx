@@ -12,6 +12,7 @@ import Controles from '@/pages/Controles';
 import Contratos from '@/pages/Contratos';
 import Auditorias from '@/pages/Auditorias';
 import Documentos from '@/pages/Documentos';
+import ContasPrivilegiadas from '@/pages/ContasPrivilegiadas';
 import Configuracoes from '@/pages/Configuracoes';
 import NotFound from '@/pages/NotFound';
 
@@ -32,7 +33,7 @@ function App() {
             <Route path="/auditorias" element={<Layout><Auditorias /></Layout>} />
             <Route path="/contratos" element={<Layout><Contratos /></Layout>} />
             <Route path="/documentos" element={<Layout><Documentos /></Layout>} />
-            <Route path="/contas-privilegiadas" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Contas Privilegiadas</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
+            <Route path="/contas-privilegiadas" element={<Layout><ContasPrivilegiadas /></Layout>} />
             <Route path="/incidentes" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Incidentes</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
             <Route path="/dados" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Dados</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
             <Route path="/due-diligence" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Due Diligence</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
