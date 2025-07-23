@@ -302,12 +302,14 @@ export function Riscos() {
 
   return (
     <TooltipProvider>
-      <div className="container mx-auto py-6 px-4 max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Gestão de Riscos</h1>
-          <p className="text-muted-foreground">
-            Identifique, avalie e monitore riscos organizacionais de forma estruturada
-          </p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Gestão de Riscos</h1>
+            <p className="text-muted-foreground">
+              Identifique, avalie e monitore riscos organizacionais de forma estruturada
+            </p>
+          </div>
         </div>
 
         {/* KPI Cards */}
@@ -365,7 +367,7 @@ export function Riscos() {
           </Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="riscos">Riscos</TabsTrigger>
             <TabsTrigger value="tratamentos">Tratamentos</TabsTrigger>
