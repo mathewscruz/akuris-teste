@@ -40,7 +40,7 @@ interface Contrato {
   fornecedores?: {
     nome: string;
     avaliacao_risco: string;
-  };
+  } | null;
 }
 
 interface Fornecedor {
@@ -117,17 +117,29 @@ export default function Contratos() {
   const fetchContratos = async () => {
     const { data, error } = await supabase
       .from('contratos')
-      .select(`
-        *,
-        fornecedores (
-          nome,
-          avaliacao_risco
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    setContratos(data || []);
+    
+    // Buscar dados dos fornecedores separadamente
+    if (data && data.length > 0) {
+      const fornecedorIds = [...new Set(data.map(c => c.fornecedor_id).filter(Boolean))];
+      const { data: fornecedoresData } = await supabase
+        .from('fornecedores')
+        .select('id, nome, avaliacao_risco')
+        .in('id', fornecedorIds);
+
+      // Combinar os dados
+      const contratosComFornecedores = data.map(contrato => ({
+        ...contrato,
+        fornecedores: fornecedoresData?.find(f => f.id === contrato.fornecedor_id) || null
+      }));
+      
+      setContratos(contratosComFornecedores as Contrato[]);
+    } else {
+      setContratos([]);
+    }
   };
 
   const fetchFornecedores = async () => {
