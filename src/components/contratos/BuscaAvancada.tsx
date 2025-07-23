@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { Search, Filter, X, Calendar, DollarSign } from 'lucide-react';
+import { Search, Filter, X, CalendarIcon, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
@@ -255,32 +258,56 @@ export default function BuscaAvancada({ filtros, onFiltrosChange, fornecedores }
                 <div>
                   <label className="text-sm font-medium mb-2 block">Data de Início</label>
                   <div className="grid grid-cols-2 gap-2">
-                    <DatePicker
-                      date={filtros.dataInicioFrom}
-                      onDateChange={(date) => handleFiltroChange('dataInicioFrom', date)}
-                      placeholder="De"
-                    />
-                    <DatePicker
-                      date={filtros.dataInicioTo}
-                      onDateChange={(date) => handleFiltroChange('dataInicioTo', date)}
-                      placeholder="Até"
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("justify-start text-left font-normal", !filtros.dataInicioFrom && "text-muted-foreground")}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {filtros.dataInicioFrom ? format(filtros.dataInicioFrom, "dd/MM/yyyy", { locale: ptBR }) : "De"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={filtros.dataInicioFrom} onSelect={(date) => handleFiltroChange('dataInicioFrom', date)} className="p-3 pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("justify-start text-left font-normal", !filtros.dataInicioTo && "text-muted-foreground")}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {filtros.dataInicioTo ? format(filtros.dataInicioTo, "dd/MM/yyyy", { locale: ptBR }) : "Até"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={filtros.dataInicioTo} onSelect={(date) => handleFiltroChange('dataInicioTo', date)} className="p-3 pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">Data de Fim</label>
                   <div className="grid grid-cols-2 gap-2">
-                    <DatePicker
-                      date={filtros.dataFimFrom}
-                      onDateChange={(date) => handleFiltroChange('dataFimFrom', date)}
-                      placeholder="De"
-                    />
-                    <DatePicker
-                      date={filtros.dataFimTo}
-                      onDateChange={(date) => handleFiltroChange('dataFimTo', date)}
-                      placeholder="Até"
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("justify-start text-left font-normal", !filtros.dataFimFrom && "text-muted-foreground")}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {filtros.dataFimFrom ? format(filtros.dataFimFrom, "dd/MM/yyyy", { locale: ptBR }) : "De"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={filtros.dataFimFrom} onSelect={(date) => handleFiltroChange('dataFimFrom', date)} className="p-3 pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("justify-start text-left font-normal", !filtros.dataFimTo && "text-muted-foreground")}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {filtros.dataFimTo ? format(filtros.dataFimTo, "dd/MM/yyyy", { locale: ptBR }) : "Até"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={filtros.dataFimTo} onSelect={(date) => handleFiltroChange('dataFimTo', date)} className="p-3 pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
 

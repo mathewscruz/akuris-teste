@@ -4,7 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { FileText, Download, TrendingUp, TrendingDown, DollarSign, Calendar, Users, BarChart3 } from 'lucide-react';
+import { FileText, Download, TrendingUp, TrendingDown, DollarSign, CalendarIcon, Users, BarChart3 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
@@ -245,20 +247,32 @@ export default function RelatoriosContratos() {
                   </SelectContent>
                 </Select>
 
-                {filtros.periodo === 'personalizado' && (
-                  <>
-                    <DatePicker
-                      date={filtros.dataInicio}
-                      onDateChange={(date) => setFiltros(prev => ({ ...prev, dataInicio: date }))}
-                      placeholder="Data início"
-                    />
-                    <DatePicker
-                      date={filtros.dataFim}
-                      onDateChange={(date) => setFiltros(prev => ({ ...prev, dataFim: date }))}
-                      placeholder="Data fim"
-                    />
-                  </>
-                )}
+                  {filtros.periodo === 'personalizado' && (
+                    <>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className={cn("justify-start text-left font-normal", !filtros.dataInicio && "text-muted-foreground")}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {filtros.dataInicio ? format(filtros.dataInicio, "dd/MM/yyyy", { locale: ptBR }) : "Data início"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={filtros.dataInicio} onSelect={(date) => setFiltros(prev => ({ ...prev, dataInicio: date }))} className="p-3 pointer-events-auto" />
+                        </PopoverContent>
+                      </Popover>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className={cn("justify-start text-left font-normal", !filtros.dataFim && "text-muted-foreground")}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {filtros.dataFim ? format(filtros.dataFim, "dd/MM/yyyy", { locale: ptBR }) : "Data fim"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={filtros.dataFim} onSelect={(date) => setFiltros(prev => ({ ...prev, dataFim: date }))} className="p-3 pointer-events-auto" />
+                        </PopoverContent>
+                      </Popover>
+                    </>
+                  )}
 
                 <div className="flex gap-2">
                   <Button onClick={() => exportarRelatorio('excel')} size="sm">
