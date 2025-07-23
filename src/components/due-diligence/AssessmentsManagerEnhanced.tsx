@@ -9,7 +9,7 @@ import { Plus, Send, Clock, AlertTriangle, FileText, Eye, User, Edit2, Trash2, R
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AssessmentDialog } from './AssessmentDialog';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface Assessment {
   id: string;
@@ -19,8 +19,10 @@ interface Assessment {
   data_inicio?: string;
   data_conclusao?: string;
   data_expiracao: string;
+  data_envio?: string;
   score_final?: number;
   token: string;
+  link_token: string;
   template: {
     nome: string;
     categoria: string;
@@ -122,7 +124,7 @@ export function AssessmentsManagerEnhanced() {
   const [assessmentDialog, setAssessmentDialog] = useState<{ 
     open: boolean; 
     assessment: Assessment | null; 
-    mode: 'create' | 'edit' | 'view' 
+    mode: 'create' | 'view' 
   }>({
     open: false,
     assessment: null,
@@ -164,8 +166,10 @@ export function AssessmentsManagerEnhanced() {
         data_inicio: assessment.data_inicio,
         data_conclusao: assessment.data_conclusao,
         data_expiracao: assessment.data_expiracao,
+        data_envio: assessment.data_envio,
         score_final: assessment.score_final,
         token: assessment.link_token,
+        link_token: assessment.link_token,
         template: {
           nome: assessment.templates?.nome || 'Template não encontrado',
           categoria: assessment.templates?.categoria || 'N/A'
@@ -401,10 +405,10 @@ export function AssessmentsManagerEnhanced() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setAssessmentDialog({ open: true, assessment, mode: 'edit' })}
+                    onClick={() => setAssessmentDialog({ open: true, assessment, mode: 'view' })}
                   >
                     <Edit2 className="h-4 w-4 mr-1" />
-                    Editar
+                    Visualizar Dados
                   </Button>
 
                   <Button
@@ -467,7 +471,7 @@ export function AssessmentsManagerEnhanced() {
       <AssessmentDialog
         open={assessmentDialog.open}
         onOpenChange={(open) => setAssessmentDialog({ open, assessment: null, mode: 'create' })}
-        assessment={assessmentDialog.assessment}
+        assessment={assessmentDialog.assessment as any}
         mode={assessmentDialog.mode}
         onSuccess={fetchAssessments}
       />
