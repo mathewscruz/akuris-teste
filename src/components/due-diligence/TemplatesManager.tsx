@@ -220,17 +220,29 @@ export function TemplatesManager() {
             </p>
           </div>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-3">
           {[...Array(6)].map((_, i) => (
             <Card key={i}>
-              <CardHeader>
-                <div className="h-4 bg-muted rounded w-3/4 animate-pulse"></div>
-                <div className="h-3 bg-muted rounded w-1/2 animate-pulse"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="h-3 bg-muted rounded animate-pulse"></div>
-                  <div className="h-3 bg-muted rounded w-3/4 animate-pulse"></div>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="h-5 bg-muted rounded w-3/4 animate-pulse mb-2"></div>
+                        <div className="h-3 bg-muted rounded w-1/2 animate-pulse"></div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="h-3 bg-muted rounded w-16 animate-pulse"></div>
+                        <div className="h-3 bg-muted rounded w-16 animate-pulse"></div>
+                        <div className="h-5 bg-muted rounded w-12 animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 ml-4">
+                    {[...Array(5)].map((_, j) => (
+                      <div key={j} className="h-8 w-8 bg-muted rounded animate-pulse"></div>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>

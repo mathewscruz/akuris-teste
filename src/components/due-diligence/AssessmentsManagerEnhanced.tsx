@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AssessmentDialog } from './AssessmentDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { ScoreVisualization } from './ScoreVisualization';
+import { AssessmentResponsesViewer } from './AssessmentResponsesViewer';
 
 interface Assessment {
   id: string;
@@ -25,6 +26,7 @@ interface Assessment {
   token: string;
   link_token: string;
   template: {
+    id: string;
     nome: string;
     categoria: string;
   };
@@ -174,6 +176,13 @@ export function AssessmentsManagerEnhanced() {
     assessment: null,
     scoreData: null
   });
+  const [responsesDialog, setResponsesDialog] = useState<{ 
+    open: boolean; 
+    assessment: Assessment | null; 
+  }>({
+    open: false,
+    assessment: null
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -196,7 +205,7 @@ export function AssessmentsManagerEnhanced() {
         .from('due_diligence_assessments')
         .select(`
           *,
-          templates:template_id(nome, categoria)
+          templates:template_id(id, nome, categoria)
         `)
         .order('created_at', { ascending: false });
 
@@ -224,6 +233,7 @@ export function AssessmentsManagerEnhanced() {
           token: assessment.link_token,
           link_token: assessment.link_token,
           template: {
+            id: assessment.template_id,
             nome: assessment.templates?.nome || 'Template não encontrado',
             categoria: assessment.templates?.categoria || 'N/A'
           }
@@ -513,6 +523,17 @@ export function AssessmentsManagerEnhanced() {
                     </Button>
                   )}
 
+                  {assessment.status === 'concluido' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setResponsesDialog({ open: true, assessment })}
+                    >
+                      <FileText className="h-4 w-4 mr-1" />
+                      Ver Respostas
+                    </Button>
+                  )}
+
                   <Button
                     variant="outline"
                     size="sm"
@@ -612,6 +633,13 @@ export function AssessmentsManagerEnhanced() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de Respostas */}
+      <AssessmentResponsesViewer
+        open={responsesDialog.open}
+        onOpenChange={(open) => setResponsesDialog({ open, assessment: null })}
+        assessment={responsesDialog.assessment}
+      />
     </div>
   );
 }

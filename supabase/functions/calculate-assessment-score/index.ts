@@ -46,9 +46,9 @@ serve(async (req) => {
       .select(`
         question_id,
         resposta,
-        due_diligence_questions!inner(
+        question:question_id(
           id,
-          texto,
+          titulo,
           tipo,
           peso,
           categoria
@@ -66,11 +66,11 @@ serve(async (req) => {
 
     // Preparar dados para análise da IA
     const analysisData = responses.map(r => ({
-      question: r.due_diligence_questions.texto,
+      question: r.question.titulo,
       answer: r.resposta,
-      type: r.due_diligence_questions.tipo,
-      category: r.due_diligence_questions.categoria,
-      weight: r.due_diligence_questions.peso || 1
+      type: r.question.tipo,
+      category: r.question.categoria || 'geral',
+      weight: r.question.peso || 1
     }));
 
     // Analisar com OpenAI
