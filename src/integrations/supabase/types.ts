@@ -1974,7 +1974,9 @@ export type Database = {
         Row: {
           assessment_id: string
           created_at: string
+          evidencia: string | null
           id: string
+          justificativa: string | null
           pontuacao: number | null
           question_id: string
           resposta: string | null
@@ -1985,7 +1987,9 @@ export type Database = {
         Insert: {
           assessment_id: string
           created_at?: string
+          evidencia?: string | null
           id?: string
+          justificativa?: string | null
           pontuacao?: number | null
           question_id: string
           resposta?: string | null
@@ -1996,7 +2000,9 @@ export type Database = {
         Update: {
           assessment_id?: string
           created_at?: string
+          evidencia?: string | null
           id?: string
+          justificativa?: string | null
           pontuacao?: number | null
           question_id?: string
           resposta?: string | null

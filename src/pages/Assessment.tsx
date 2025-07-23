@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -28,11 +29,19 @@ const assessmentLogger = {
 interface QuestionData {
   id: string;
   pergunta: string;
-  tipo: 'texto' | 'multipla_escolha' | 'radio' | 'arquivo' | 'numerico' | 'booleano';
+  tipo: 'texto' | 'multipla_escolha' | 'radio' | 'arquivo' | 'numerico' | 'booleano' | 'select';
   opcoes?: string[];
   obrigatoria: boolean;
   peso?: number;
   ordem?: number;
+  configuracoes?: {
+    mostrar_evidencia_quando?: string;
+    mostrar_justificativa_quando?: string;
+    label_evidencia?: string;
+    label_justificativa?: string;
+    placeholder?: string;
+    min?: number;
+  };
 }
 
 interface AssessmentData {
@@ -248,7 +257,7 @@ export default function Assessment() {
           return [];
         }),
         supabaseRequest(
-          `due_diligence_responses?select=question_id,resposta,pontuacao&assessment_id=eq.${assessment.id}`,
+          `due_diligence_responses?select=question_id,resposta,pontuacao,evidencia,justificativa&assessment_id=eq.${assessment.id}`,
           { method: 'GET' }
         ).catch(error => {
           assessmentLogger.warn('Erro ao carregar respostas existentes:', error);
@@ -260,6 +269,13 @@ export default function Assessment() {
       const responsesMap: Record<string, any> = {};
       responsesData.forEach((response: any) => {
         responsesMap[response.question_id] = response.resposta || response.pontuacao;
+        // Adicionar evidências e justificativas se existirem
+        if (response.evidencia) {
+          responsesMap[`${response.question_id}_evidencia`] = response.evidencia;
+        }
+        if (response.justificativa) {
+          responsesMap[`${response.question_id}_justificativa`] = response.justificativa;
+        }
       });
 
       // ETAPA 5: Montar objeto final do assessment
@@ -282,7 +298,8 @@ export default function Assessment() {
         opcoes: q.opcoes,
         obrigatoria: q.obrigatoria,
         peso: q.peso,
-        ordem: q.ordem
+        ordem: q.ordem,
+        configuracoes: q.configuracoes
       })));
       setResponses(responsesMap);
       
@@ -306,13 +323,61 @@ export default function Assessment() {
     try {
       assessmentLogger.info('Salvando resposta', { questionId, value });
 
-      const question = questions.find(q => q.id === questionId);
+      // Verificar se é uma evidência ou justificativa
+      const isEvidencia = questionId.endsWith('_evidencia');
+      const isJustificativa = questionId.endsWith('_justificativa');
+      const baseQuestionId = isEvidencia || isJustificativa ? 
+        questionId.replace(/_evidencia|_justificativa$/, '') : questionId;
+
+      const question = questions.find(q => q.id === baseQuestionId);
       const responseData: any = {
         assessment_id: assessment.id,
-        question_id: questionId
+        question_id: baseQuestionId
       };
 
-      // Determinar o tipo de resposta
+      // Se for evidência ou justificativa, buscar resposta existente para atualizar
+      if (isEvidencia || isJustificativa) {
+        try {
+          const existingResponse = await supabaseRequest(
+            `due_diligence_responses?assessment_id=eq.${assessment.id}&question_id=eq.${baseQuestionId}`,
+            { method: 'GET' }
+          );
+          
+          if (existingResponse && existingResponse.length > 0) {
+            // Atualizar campo específico
+            const updateData: any = {};
+            if (isEvidencia) {
+              updateData.evidencia = value;
+            } else if (isJustificativa) {
+              updateData.justificativa = value;
+            }
+
+            await supabaseRequest(
+              `due_diligence_responses?assessment_id=eq.${assessment.id}&question_id=eq.${baseQuestionId}`,
+              {
+                method: 'PATCH',
+                body: JSON.stringify(updateData)
+              }
+            );
+          } else {
+            // Criar nova resposta com evidência/justificativa
+            if (isEvidencia) {
+              responseData.evidencia = value;
+            } else if (isJustificativa) {
+              responseData.justificativa = value;
+            }
+            await supabaseRequest('due_diligence_responses', {
+              method: 'POST',
+              body: JSON.stringify(responseData)
+            });
+          }
+        } catch (error) {
+          assessmentLogger.error('Erro ao salvar evidência/justificativa:', error);
+        }
+        return;
+      }
+
+      // Salvar resposta principal
       if (question?.tipo === 'numerico') {
         responseData.pontuacao = parseFloat(value) || 0;
       } else {
@@ -718,6 +783,24 @@ export default function Assessment() {
                   </RadioGroup>
                 )}
 
+                {question.tipo === 'select' && question.opcoes && (
+                  <Select
+                    value={responses[question.id] || ''}
+                    onValueChange={(value) => handleResponseChange(question.id, value)}
+                  >
+                    <SelectTrigger className="bg-background border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                      <SelectValue placeholder="Selecione uma opção..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {question.opcoes.map((opcao, index) => (
+                        <SelectItem key={index} value={opcao}>
+                          {opcao}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
                 {question.tipo === 'arquivo' && (
                   <div className="space-y-3">
                     <div className="border-2 border-dashed border-border/50 hover:border-primary/50 rounded-xl p-8 text-center transition-colors duration-200 bg-accent/10 hover:bg-accent/20">
@@ -743,6 +826,43 @@ export default function Assessment() {
                       </div>
                     )}
                   </div>
+                )}
+
+                {/* Campos condicionais para evidência e justificativa */}
+                {question.configuracoes && responses[question.id] && (
+                  <>
+                    {/* Campo de evidência */}
+                    {question.configuracoes.mostrar_evidencia_quando && 
+                     question.configuracoes.mostrar_evidencia_quando.split(',').includes(responses[question.id]) && (
+                      <div className="mt-4 p-4 bg-success/5 border border-success/20 rounded-lg animate-fade-in">
+                        <Label className="text-sm font-medium text-success mb-2 block">
+                          {question.configuracoes.label_evidencia || 'Evidência:'}
+                        </Label>
+                        <Textarea
+                          value={responses[`${question.id}_evidencia`] || ''}
+                          onChange={(e) => handleResponseChange(`${question.id}_evidencia`, e.target.value)}
+                          placeholder="Descreva as evidências que comprovam sua resposta..."
+                          className="min-h-[100px] bg-background border-border/50 focus:border-success/50 focus:ring-2 focus:ring-success/20 transition-all duration-200"
+                        />
+                      </div>
+                    )}
+
+                    {/* Campo de justificativa */}
+                    {question.configuracoes.mostrar_justificativa_quando && 
+                     question.configuracoes.mostrar_justificativa_quando.split(',').includes(responses[question.id]) && (
+                      <div className="mt-4 p-4 bg-warning/5 border border-warning/20 rounded-lg animate-fade-in">
+                        <Label className="text-sm font-medium text-warning mb-2 block">
+                          {question.configuracoes.label_justificativa || 'Justificativa:'}
+                        </Label>
+                        <Textarea
+                          value={responses[`${question.id}_justificativa`] || ''}
+                          onChange={(e) => handleResponseChange(`${question.id}_justificativa`, e.target.value)}
+                          placeholder="Explique o motivo e planos futuros..."
+                          className="min-h-[100px] bg-background border-border/50 focus:border-warning/50 focus:ring-2 focus:ring-warning/20 transition-all duration-200"
+                        />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             ))}
