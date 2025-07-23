@@ -142,7 +142,7 @@ export function BuscaAvancadaDocumentos({
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os tipos</SelectItem>
+                    <SelectItem value="all">Todos os tipos</SelectItem>
                     <SelectItem value="politica">Política</SelectItem>
                     <SelectItem value="procedimento">Procedimento</SelectItem>
                     <SelectItem value="instrucao">Instrução</SelectItem>
@@ -163,7 +163,7 @@ export function BuscaAvancadaDocumentos({
                     <SelectValue placeholder="Selecione a categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas as categorias</SelectItem>
+                    <SelectItem value="all">Todas as categorias</SelectItem>
                     {categorias.map((categoria) => (
                       <SelectItem key={categoria.id} value={categoria.nome}>
                         {categoria.nome}
@@ -180,7 +180,7 @@ export function BuscaAvancadaDocumentos({
                     <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os status</SelectItem>
+                    <SelectItem value="all">Todos os status</SelectItem>
                     <SelectItem value="ativo">Ativo</SelectItem>
                     <SelectItem value="inativo">Inativo</SelectItem>
                     <SelectItem value="arquivado">Arquivado</SelectItem>

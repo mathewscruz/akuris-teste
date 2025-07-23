@@ -317,7 +317,7 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, cate
                   <SelectValue placeholder="Selecione a categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sem categoria</SelectItem>
+                  <SelectItem value="sem-categoria">Sem categoria</SelectItem>
                   {categorias.map((categoria) => (
                     <SelectItem key={categoria.id} value={categoria.nome}>
                       {categoria.nome}
