@@ -5,9 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Send, Clock, AlertTriangle, FileText, Eye, User } from 'lucide-react';
+import { Plus, Send, Clock, AlertTriangle, FileText, Eye, User, Edit2, Trash2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { AssessmentDialog } from './AssessmentDialog';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 interface Assessment {
   id: string;
@@ -117,6 +119,19 @@ export function AssessmentsManagerEnhanced() {
     open: false,
     assessment: null
   });
+  const [assessmentDialog, setAssessmentDialog] = useState<{ 
+    open: boolean; 
+    assessment: Assessment | null; 
+    mode: 'create' | 'edit' | 'view' 
+  }>({
+    open: false,
+    assessment: null,
+    mode: 'create'
+  });
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; assessment: Assessment | null }>({
+    open: false,
+    assessment: null
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -220,6 +235,63 @@ export function AssessmentsManagerEnhanced() {
     window.open(url, '_blank');
   };
 
+  const resendAssessment = async (assessment: Assessment) => {
+    try {
+      const assessmentLink = `${window.location.origin}/assessment/${assessment.token}`;
+      
+      await supabase.functions.invoke('send-due-diligence-email', {
+        body: {
+          type: 'invitation',
+          assessment_id: assessment.id,
+          fornecedor_nome: assessment.fornecedor_nome,
+          fornecedor_email: assessment.fornecedor_email,
+          template_nome: assessment.template.nome,
+          assessment_link: assessmentLink,
+          data_expiracao: assessment.data_expiracao,
+          empresa_nome: 'GovernAI'
+        }
+      });
+
+      toast({
+        title: "Avaliação reenviada",
+        description: `Convite reenviado para ${assessment.fornecedor_nome}`,
+      });
+
+    } catch (error: any) {
+      toast({
+        title: "Erro ao reenviar avaliação",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deleteAssessment = async (assessment: Assessment) => {
+    try {
+      const { error } = await supabase
+        .from('due_diligence_assessments')
+        .delete()
+        .eq('id', assessment.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Avaliação excluída",
+        description: "Avaliação foi excluída com sucesso",
+      });
+
+      fetchAssessments();
+      setDeleteDialog({ open: false, assessment: null });
+
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir avaliação",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   if (loading) {
     return <div className="text-center p-8">Carregando assessments...</div>;
   }
@@ -228,6 +300,13 @@ export function AssessmentsManagerEnhanced() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Gestão de Assessments</h2>
+        <Button 
+          onClick={() => setAssessmentDialog({ open: true, assessment: null, mode: 'create' })}
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Nova Avaliação
+        </Button>
       </div>
 
       {/* Filtros */}
@@ -319,6 +398,25 @@ export function AssessmentsManagerEnhanced() {
                     Visualizar
                   </Button>
 
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAssessmentDialog({ open: true, assessment, mode: 'edit' })}
+                  >
+                    <Edit2 className="h-4 w-4 mr-1" />
+                    Editar
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => resendAssessment(assessment)}
+                    disabled={assessment.status === 'concluido'}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                    Reenviar
+                  </Button>
+
                   {canSendReminder(assessment) && (
                     <Button
                       variant="outline"
@@ -329,6 +427,15 @@ export function AssessmentsManagerEnhanced() {
                       Lembrete
                     </Button>
                   )}
+
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setDeleteDialog({ open: true, assessment })}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Excluir
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -355,6 +462,24 @@ export function AssessmentsManagerEnhanced() {
         open={reminderDialog.open}
         onOpenChange={(open) => setReminderDialog({ open, assessment: null })}
         onSuccess={fetchAssessments}
+      />
+
+      <AssessmentDialog
+        open={assessmentDialog.open}
+        onOpenChange={(open) => setAssessmentDialog({ open, assessment: null, mode: 'create' })}
+        assessment={assessmentDialog.assessment}
+        mode={assessmentDialog.mode}
+        onSuccess={fetchAssessments}
+      />
+
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ open, assessment: null })}
+        title="Confirmar Exclusão"
+        description={`Tem certeza que deseja excluir a avaliação de ${deleteDialog.assessment?.fornecedor_nome}? Esta ação não pode ser desfeita.`}
+        onConfirm={() => deleteDialog.assessment && deleteAssessment(deleteDialog.assessment)}
+        confirmText="Excluir"
+        cancelText="Cancelar"
       />
     </div>
   );
