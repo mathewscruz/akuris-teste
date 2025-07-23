@@ -183,13 +183,13 @@ export function AppSidebar() {
                             )}
                           </div>
                           {!isCollapsed && (
-                            <ChevronDown 
-                              className={`h-4 w-4 transition-all duration-500 ease-out flex-shrink-0 ${
-                                openGroups.includes(item.title) 
-                                  ? 'transform rotate-180 text-primary scale-110' 
-                                  : 'group-hover:scale-110 group-hover:rotate-12'
-                              }`} 
-                            />
+                             <ChevronDown 
+                               className={`h-4 w-4 transition-all duration-300 ease-out flex-shrink-0 ${
+                                 openGroups.includes(item.title) 
+                                   ? 'transform rotate-180 text-primary scale-110' 
+                                   : 'group-hover:scale-110 group-hover:rotate-12'
+                               }`} 
+                             />
                           )}
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
@@ -205,10 +205,13 @@ export function AppSidebar() {
                                   animationDelay: openGroups.includes(item.title) ? `${index * 75}ms` : '0ms'
                                 }}
                               >
-                                <NavLink to={subItem.url} className={getNavCls}>
-                                  <subItem.icon className="h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out" />
-                                  <span className="text-sm transition-all duration-300 ease-out truncate">{subItem.title}</span>
-                                </NavLink>
+                                 <NavLink 
+                                   to={subItem.url} 
+                                   className={({ isActive }) => getNavCls({ isActive })}
+                                 >
+                                   <subItem.icon className="h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out" />
+                                   <span className="text-sm transition-all duration-300 ease-out truncate">{subItem.title}</span>
+                                 </NavLink>
                               </SidebarMenuButton>
                             ))}
                           </div>
@@ -217,7 +220,7 @@ export function AppSidebar() {
                     </Collapsible>
                   ) : (
                     <SidebarMenuButton asChild className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-sm h-9">
-                      <NavLink to={item.url} className={getNavCls}>
+                      <NavLink to={item.url} className={({ isActive }) => getNavCls({ isActive })}>
                         <item.icon className="h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out" />
                         {!isCollapsed && (
                           <span className="text-sm font-medium transition-all duration-300 ease-out truncate">
@@ -238,7 +241,7 @@ export function AppSidebar() {
             <SidebarMenu className="space-y-1">
               <SidebarMenuItem>
                 <SidebarMenuButton asChild className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-sm h-9">
-                  <NavLink to="/configuracoes" className={getNavCls}>
+                  <NavLink to="/configuracoes" className={({ isActive }) => getNavCls({ isActive })}>
                     <Settings className="h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out" />
                     {!isCollapsed && (
                       <span className="text-sm font-medium transition-all duration-300 ease-out truncate">
