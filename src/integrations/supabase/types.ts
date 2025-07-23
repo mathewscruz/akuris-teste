@@ -1543,6 +1543,252 @@ export type Database = {
         }
         Relationships: []
       }
+      due_diligence_assessments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_conclusao: string | null
+          data_envio: string | null
+          data_expiracao: string | null
+          data_inicio: string | null
+          empresa_id: string
+          fornecedor_email: string
+          fornecedor_nome: string
+          id: string
+          link_token: string
+          observacoes: string | null
+          score_final: number | null
+          status: string
+          template_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_conclusao?: string | null
+          data_envio?: string | null
+          data_expiracao?: string | null
+          data_inicio?: string | null
+          empresa_id: string
+          fornecedor_email: string
+          fornecedor_nome: string
+          id?: string
+          link_token: string
+          observacoes?: string | null
+          score_final?: number | null
+          status?: string
+          template_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_conclusao?: string | null
+          data_envio?: string | null
+          data_expiracao?: string | null
+          data_inicio?: string | null
+          empresa_id?: string
+          fornecedor_email?: string
+          fornecedor_nome?: string
+          id?: string
+          link_token?: string
+          observacoes?: string | null
+          score_final?: number | null
+          status?: string
+          template_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "due_diligence_assessments_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "due_diligence_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      due_diligence_questions: {
+        Row: {
+          configuracoes: Json | null
+          created_at: string
+          descricao: string | null
+          id: string
+          obrigatoria: boolean
+          opcoes: Json | null
+          ordem: number
+          peso: number | null
+          template_id: string
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          configuracoes?: Json | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          obrigatoria?: boolean
+          opcoes?: Json | null
+          ordem?: number
+          peso?: number | null
+          template_id: string
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          configuracoes?: Json | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          obrigatoria?: boolean
+          opcoes?: Json | null
+          ordem?: number
+          peso?: number | null
+          template_id?: string
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "due_diligence_questions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "due_diligence_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      due_diligence_responses: {
+        Row: {
+          assessment_id: string
+          created_at: string
+          id: string
+          pontuacao: number | null
+          question_id: string
+          resposta: string | null
+          resposta_arquivo_nome: string | null
+          resposta_arquivo_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string
+          id?: string
+          pontuacao?: number | null
+          question_id: string
+          resposta?: string | null
+          resposta_arquivo_nome?: string | null
+          resposta_arquivo_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string
+          id?: string
+          pontuacao?: number | null
+          question_id?: string
+          resposta?: string | null
+          resposta_arquivo_nome?: string | null
+          resposta_arquivo_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "due_diligence_responses_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "due_diligence_assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "due_diligence_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "due_diligence_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      due_diligence_scores: {
+        Row: {
+          assessment_id: string
+          categoria: string | null
+          classificacao: string | null
+          created_at: string
+          id: string
+          percentual: number
+          pontuacao_maxima: number
+          pontuacao_obtida: number
+        }
+        Insert: {
+          assessment_id: string
+          categoria?: string | null
+          classificacao?: string | null
+          created_at?: string
+          id?: string
+          percentual?: number
+          pontuacao_maxima?: number
+          pontuacao_obtida?: number
+        }
+        Update: {
+          assessment_id?: string
+          categoria?: string | null
+          classificacao?: string | null
+          created_at?: string
+          id?: string
+          percentual?: number
+          pontuacao_maxima?: number
+          pontuacao_obtida?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "due_diligence_scores_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: true
+            referencedRelation: "due_diligence_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      due_diligence_templates: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          updated_at: string
+          versao: number
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          updated_at?: string
+          versao?: number
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+          versao?: number
+        }
+        Relationships: []
+      }
       empresas: {
         Row: {
           ativo: boolean
