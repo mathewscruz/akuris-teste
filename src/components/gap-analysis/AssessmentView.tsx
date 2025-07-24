@@ -50,23 +50,26 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
   ) as { data: Requirement[], loading: boolean, refetch: () => void };
 
   // Carregar avaliações existentes
-  const { data: existingEvaluations } = useOptimizedQuery(
+  const { data: existingEvaluations, refetch: refetchEvaluations } = useOptimizedQuery(
     async () => {
+      console.log('🔍 Buscando avaliações para framework:', frameworkId);
       const { data, error } = await supabase
         .from('gap_analysis_evaluations')
         .select('*')
         .eq('framework_id', frameworkId);
 
+      console.log('📊 Avaliações encontradas:', data?.length || 0, data);
       if (error) throw error;
       return { data: data || [], error: null };
     },
     [frameworkId],
     {
       cacheKey: `gap-evaluations-${frameworkId}`,
-      cacheDuration: 2,
-      staleTime: 1
+      cacheDuration: 0.2, // 12 segundos apenas
+      staleTime: 0.1, // 6 segundos apenas
+      refetchOnMount: true
     }
-  ) as { data: any[], loading: boolean };
+  ) as { data: any[], loading: boolean, refetch: () => void };
 
   // Inicializar estado com avaliações existentes
   useEffect(() => {
@@ -121,6 +124,11 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
         });
 
       if (error) throw error;
+      
+      // Invalidar cache e refetch após salvar
+      console.log('✅ Salvamento concluído, invalidando cache...');
+      refetchEvaluations();
+      toast.success("Avaliações salvas automaticamente!");
     } catch (error: any) {
       toast.error("Erro ao salvar: " + error.message);
     } finally {
