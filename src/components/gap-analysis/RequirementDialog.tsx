@@ -55,10 +55,28 @@ export const RequirementDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Erro de autenticação",
+        description: "Usuário não autenticado. Faça login novamente.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsLoading(true);
     try {
+      // Verificar se temos empresa_id válida
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('empresa_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError || !profileData?.empresa_id) {
+        throw new Error('Usuário não possui empresa associada');
+      }
+
       const requirementData = {
         ...formData,
         framework_id: frameworkId,
@@ -70,7 +88,10 @@ export const RequirementDialog = ({
           .update(requirementData)
           .eq('id', requirement.id);
         
-        if (error) throw error;
+        if (error) {
+          console.error('Erro na atualização:', error);
+          throw error;
+        }
         
         toast({
           title: "Requisito atualizado",
@@ -81,7 +102,10 @@ export const RequirementDialog = ({
           .from('gap_analysis_requirements')
           .insert([requirementData]);
         
-        if (error) throw error;
+        if (error) {
+          console.error('Erro na inserção:', error);
+          throw error;
+        }
         
         toast({
           title: "Requisito criado",
@@ -90,11 +114,22 @@ export const RequirementDialog = ({
       }
 
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar requisito:', error);
+      
+      let errorMessage = "Ocorreu um erro ao salvar o requisito.";
+      
+      if (error.message?.includes('row-level security')) {
+        errorMessage = "Erro de permissão: verifique se você tem acesso a este framework.";
+      } else if (error.message?.includes('empresa associada')) {
+        errorMessage = "Usuário não possui empresa associada. Entre em contato com o administrador.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Erro ao salvar",
-        description: "Ocorreu um erro ao salvar o requisito.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
