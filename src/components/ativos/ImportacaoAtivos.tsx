@@ -48,8 +48,22 @@ const ImportacaoAtivos: React.FC<ImportacaoAtivosProps> = ({ open, onOpenChange,
   const [errorCount, setErrorCount] = useState(0);
 
   const tiposAtivo = [
-    'servidor', 'aplicacao', 'banco_dados', 'rede', 'endpoint',
-    'dispositivo_movel', 'armazenamento', 'software', 'hardware'
+    // Tecnologia da Informação
+    'servidor', 'aplicacao', 'banco_dados', 'rede', 'endpoint', 'dispositivo_movel', 'armazenamento', 'software', 'hardware',
+    // Almoxarifado
+    'almoxarifado_equipamento', 'almoxarifado_ferramenta', 'almoxarifado_material', 'almoxarifado_epi',
+    // Escritório
+    'mobiliario', 'equipamento_escritorio', 'equipamento_comunicacao', 'material_escritorio',
+    // Veículos e Transporte
+    'veiculo_terrestre', 'veiculo_aereo', 'maquina_pesada', 'equipamento_transporte',
+    // Instalações e Infraestrutura
+    'imovel', 'estrutura_fisica', 'instalacao_eletrica', 'instalacao_hidraulica',
+    // Segurança
+    'equipamento_seguranca', 'sistema_monitoramento', 'controle_acesso', 'equipamento_bombeiro',
+    // Produção e Operações
+    'maquina_producao', 'ferramenta_producao', 'equipamento_medicao', 'equipamento_teste',
+    // Outros
+    'equipamento_medico', 'equipamento_laboratorio', 'outros'
   ];
 
   const criticidades = ['critico', 'alto', 'medio', 'baixo'];
