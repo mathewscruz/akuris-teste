@@ -139,10 +139,17 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     }
   };
 
-  const fetchUsersAccessInfo = async () => {
+  const fetchUsersAccessInfo = async (userIds: string[]) => {
+    if (!userIds || userIds.length === 0) {
+      setUsersAccessInfo(new Map());
+      return;
+    }
+
     try {
       setAccessInfoLoading(true);
-      const { data, error } = await supabase.functions.invoke('get-user-access-info');
+      const { data, error } = await supabase.functions.invoke('get-user-access-info', {
+        body: { user_ids: userIds }
+      });
       
       if (error) throw error;
       
@@ -176,16 +183,21 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([
-        fetchUsuarios(),
-        fetchEmpresas(),
-        fetchUsersAccessInfo()
-      ]);
+      await fetchUsuarios();
+      await fetchEmpresas();
       setLoading(false);
     };
 
     loadData();
   }, []);
+
+  // Load access info after usuarios are loaded
+  useEffect(() => {
+    if (usuarios.length > 0) {
+      const userIds = usuarios.map(u => u.user_id);
+      fetchUsersAccessInfo(userIds);
+    }
+  }, [usuarios]);
 
   const filteredUsuarios = usuarios.filter((usuario) => {
     const matchesSearch = usuario.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -228,7 +240,7 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
       }
 
       await fetchUsuarios();
-      await fetchUsersAccessInfo();
+      // fetchUsersAccessInfo será chamado automaticamente pelo useEffect quando usuarios mudar
       setDialogOpen(false);
       form.reset();
       setEditingUsuario(null);
@@ -485,9 +497,17 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
                 <TableRow key={usuario.user_id}>
                   <TableCell>
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <User className="h-4 w-4 text-primary" />
-                      </div>
+                      {usuario.foto_url ? (
+                        <img 
+                          src={usuario.foto_url} 
+                          alt={usuario.nome}
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                          <User className="h-4 w-4 text-primary" />
+                        </div>
+                      )}
                       <div>
                         <div className="font-medium">{usuario.nome}</div>
                         <div className="text-sm text-muted-foreground">{usuario.email}</div>
