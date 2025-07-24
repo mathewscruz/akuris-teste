@@ -128,7 +128,7 @@ export const AreaResponsavelInlineSelect: React.FC<AreaResponsavelInlineSelectPr
         <SelectTrigger className="min-w-[180px] h-8">
           <SelectValue placeholder="Selecionar área" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-background border z-50">
           <SelectItem value="">Nenhuma área</SelectItem>
           {allAreas.map((area) => (
             <SelectItem key={area} value={area}>
