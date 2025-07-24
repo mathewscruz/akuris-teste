@@ -22,11 +22,21 @@ interface Risco {
   id: string;
   nome: string;
   descricao?: string;
+  matriz_id?: string;
+  categoria_id?: string;
+  probabilidade_inicial?: string;
+  impacto_inicial?: string;
+  probabilidade_residual?: string;
+  impacto_residual?: string;
   nivel_risco_inicial: string;
   nivel_risco_residual?: string;
   status: string;
   responsavel?: string;
+  controles_existentes?: string;
+  causas?: string;
+  consequencias?: string;
   aceito: boolean;
+  justificativa_aceite?: string;
   categoria?: { nome: string; cor?: string };
   matriz?: { nome: string };
   created_at: string;
@@ -62,11 +72,21 @@ export function Riscos() {
           id,
           nome,
           descricao,
+          matriz_id,
+          categoria_id,
+          probabilidade_inicial,
+          impacto_inicial,
+          probabilidade_residual,
+          impacto_residual,
           nivel_risco_inicial,
           nivel_risco_residual,
           status,
           responsavel,
+          controles_existentes,
+          causas,
+          consequencias,
           aceito,
+          justificativa_aceite,
           created_at,
           categoria:riscos_categorias(nome, cor),
           matriz:riscos_matrizes(nome)
@@ -74,6 +94,7 @@ export function Riscos() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log('Riscos carregados:', data);
       setRiscos(data || []);
     } catch (error: any) {
       toast.error('Erro ao carregar riscos: ' + error.message);
