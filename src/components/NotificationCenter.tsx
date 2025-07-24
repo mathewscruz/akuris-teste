@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/AuthProvider';
 import { differenceInDays } from 'date-fns';
 
 interface Notification {
@@ -27,6 +28,7 @@ const NotificationCenter: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Buscar notificações manuais
   const { data: notifications = [], isLoading } = useQuery({
@@ -41,6 +43,8 @@ const NotificationCenter: React.FC = () => {
       if (error) throw error;
       return data as Notification[];
     },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 
   // Buscar todas as notificações automáticas do sistema
@@ -228,6 +232,8 @@ const NotificationCenter: React.FC = () => {
 
       return notificacoes;
     },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 
   // Combinar notificações manuais e automáticas
@@ -310,7 +316,11 @@ const NotificationCenter: React.FC = () => {
         </div>
         
         <ScrollArea className="h-80">
-          {isLoading ? (
+          {!user ? (
+            <div className="p-4 text-center text-muted-foreground">
+              Faça login para ver notificações
+            </div>
+          ) : isLoading ? (
             <div className="p-4 text-center text-muted-foreground">
               Carregando...
             </div>
