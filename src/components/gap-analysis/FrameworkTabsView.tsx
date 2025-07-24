@@ -47,9 +47,7 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
       cacheDuration: 5,
       staleTime: 2
     }
-  );
-
-  const frameworksData = (frameworks as any)?.data || [];
+  ) as { data: Framework[], loading: boolean, refetch: () => void, error: any };
 
   const handleFrameworkSuccess = () => {
     refetch();
@@ -127,7 +125,7 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
             Novo Framework
           </TabsTrigger>
           
-          {frameworksData.map((framework: Framework) => (
+          {frameworks.map((framework: Framework) => (
             <TabsTrigger
               key={framework.id}
               value={framework.id}
@@ -183,7 +181,7 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
           </Card>
         </TabsContent>
 
-        {frameworksData.map((framework: Framework) => (
+        {frameworks.map((framework: Framework) => (
           <TabsContent key={framework.id} value={framework.id} className="mt-6">
             <div className="space-y-6">
               <Card>

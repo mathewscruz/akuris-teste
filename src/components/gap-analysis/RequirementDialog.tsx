@@ -70,7 +70,7 @@ export const RequirementDialog = ({
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('empresa_id')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single();
 
       if (profileError || !profileData?.empresa_id) {
