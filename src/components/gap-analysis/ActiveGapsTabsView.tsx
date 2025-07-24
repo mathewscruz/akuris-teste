@@ -32,7 +32,7 @@ interface ActiveGapsTabsViewProps {
 export function ActiveGapsTabsView({ onSelectAssessment }: ActiveGapsTabsViewProps) {
   const [activeTab, setActiveTab] = useState<string>('all');
 
-  const { data: activeAssessments, loading } = useOptimizedQuery(
+  const { data: activeAssessments, loading, error } = useOptimizedQuery(
     async () => {
       const { data, error } = await supabase
         .from('gap_analysis_assessments')
@@ -57,8 +57,9 @@ export function ActiveGapsTabsView({ onSelectAssessment }: ActiveGapsTabsViewPro
     },
     [],
     {
-      staleTime: 2 * 60 * 1000,
-      cacheKey: 'active-gap-assessments'
+      cacheKey: 'active-gap-assessments',
+      cacheDuration: 3,
+      staleTime: 1
     }
   );
 
@@ -196,6 +197,23 @@ export function ActiveGapsTabsView({ onSelectAssessment }: ActiveGapsTabsViewPro
             {[1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-24 w-full" />
             ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Gaps em Andamento</CardTitle>
+          <CardDescription>Avaliações ativas que precisam da sua atenção</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center p-8 space-y-4">
+            <p className="text-muted-foreground">Erro ao carregar avaliações ativas</p>
+            <p className="text-sm text-muted-foreground">Tente recarregar a página</p>
           </div>
         </CardContent>
       </Card>

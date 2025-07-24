@@ -31,7 +31,7 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
   const [isFrameworkDialogOpen, setIsFrameworkDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("new");
 
-  const { data: frameworks = [], loading: isLoading, refetch } = useOptimizedQuery(
+  const { data: frameworks = [], loading: isLoading, refetch, error } = useOptimizedQuery(
     async () => {
       const { data, error } = await supabase
         .from('gap_analysis_frameworks')
@@ -43,8 +43,9 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
     },
     [],
     {
-      staleTime: 5 * 60 * 1000,
-      cacheKey: 'gap-frameworks-tabs'
+      cacheKey: 'gap-frameworks-tabs',
+      cacheDuration: 5,
+      staleTime: 2
     }
   );
 
@@ -95,6 +96,17 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
       <div className="animate-pulse space-y-4">
         <div className="h-12 bg-muted rounded"></div>
         <div className="h-64 bg-muted rounded"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 space-y-4">
+        <p className="text-muted-foreground">Erro ao carregar frameworks</p>
+        <Button onClick={() => refetch()} variant="outline">
+          Tentar Novamente
+        </Button>
       </div>
     );
   }

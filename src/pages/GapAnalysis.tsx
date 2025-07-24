@@ -13,6 +13,7 @@ import { RequirementsManager } from '@/components/gap-analysis/RequirementsManag
 import { AssessmentEvaluationView } from '@/components/gap-analysis/AssessmentEvaluationView';
 import { AssessmentsList } from '@/components/gap-analysis/AssessmentsList';
 import { ActiveGapsTabsView } from '@/components/gap-analysis/ActiveGapsTabsView';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 interface Framework {
   id: string;
@@ -216,19 +217,20 @@ export default function GapAnalysis() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Gap Analysis</h1>
-          <p className="text-muted-foreground">
-            Gerencie frameworks de conformidade e avalie maturidade organizacional
-          </p>
+    <ErrorBoundary>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Gap Analysis</h1>
+            <p className="text-muted-foreground">
+              Gerencie frameworks de conformidade e avalie maturidade organizacional
+            </p>
+          </div>
+          <Button onClick={() => setIsFrameworkDialogOpen(true)} size="lg">
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Framework
+          </Button>
         </div>
-        <Button onClick={() => setIsFrameworkDialogOpen(true)} size="lg">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Framework
-        </Button>
-      </div>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -361,6 +363,7 @@ export default function GapAnalysis() {
         assessment={selectedAssessment}
         onSuccess={handleAssessmentSuccess}
       />
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

@@ -70,7 +70,10 @@ export function useOptimizedQuery<T>(
     }
   }, [cacheKey]);
 
-  const executeQuery = useCallback(async (force = false) => {
+  const executeQuery = useCallback(async (force = false, retryCount = 0) => {
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1 segundo
+
     // Verificar cache primeiro se não forçado
     if (!force) {
       const cachedData = getCachedData();
@@ -90,12 +93,12 @@ export function useOptimizedQuery<T>(
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      logger.debug('Executing optimized query', { cacheKey, force });
+      logger.debug('Executing optimized query', { cacheKey, force, retryCount });
       
       const result = await measurePerformance(
         `query_${cacheKey || 'unnamed'}`,
         queryFn,
-        { cacheKey, module: 'query' }
+        { cacheKey, module: 'query', retryCount }
       );
 
       if (result.error) {
@@ -115,17 +118,32 @@ export function useOptimizedQuery<T>(
       logger.info('Query executed successfully', { 
         cacheKey, 
         hasData: !!result.data,
-        module: 'query'
+        module: 'query',
+        retryCount
       });
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const isNetworkError = errorMessage.includes('Failed to fetch') || errorMessage.includes('503');
       
       logger.error('Query execution failed', {
         error: errorMessage,
         cacheKey,
-        module: 'query'
+        module: 'query',
+        retryCount,
+        isNetworkError
       });
+
+      // Retry logic para erros de rede
+      if (isNetworkError && retryCount < maxRetries) {
+        const delay = baseDelay * Math.pow(2, retryCount); // Backoff exponencial
+        logger.info('Retrying query after delay', { cacheKey, delay, retryCount: retryCount + 1 });
+        
+        setTimeout(() => {
+          executeQuery(force, retryCount + 1);
+        }, delay);
+        return;
+      }
 
       setState(prev => ({
         ...prev,
@@ -141,7 +159,7 @@ export function useOptimizedQuery<T>(
     if (refetchOnMount || isStale()) {
       executeQuery();
     }
-  }, [...dependencies, executeQuery, refetchOnMount, isStale]);
+  }, [...dependencies, refetchOnMount]);
 
   return {
     ...state,

@@ -1,8 +1,8 @@
 import React, { Component, ReactNode } from 'react';
-import { logger } from '@/lib/logger';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface Props {
   children: ReactNode;
@@ -23,96 +23,79 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return {
+      hasError: true,
+      error
+    };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log detalhado do erro
-    logger.error('React Error Boundary caught an error', {
+    this.setState({
+      error,
+      errorInfo
+    });
+
+    // Log do erro
+    logger.error('React Error Boundary caught error', {
       error: error.message,
       stack: error.stack,
       componentStack: errorInfo.componentStack,
       module: 'error-boundary'
     });
 
-    // Callback personalizado
-    this.props.onError?.(error, errorInfo);
-
-    this.setState({ errorInfo });
+    // Callback opcional
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
   }
 
-  handleReload = () => {
-    logger.info('User triggered page reload from error boundary', { 
-      module: 'error-boundary' 
-    });
-    window.location.reload();
+  handleRetry = () => {
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
   };
 
-  handleRetry = () => {
-    logger.info('User triggered retry from error boundary', { 
-      module: 'error-boundary' 
-    });
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+  handleReload = () => {
+    window.location.reload();
   };
 
   render() {
     if (this.state.hasError) {
-      // Renderizar fallback customizado se fornecido
       if (this.props.fallbackComponent) {
         return this.props.fallbackComponent;
       }
 
-      // Fallback padrão
       return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-          <Card className="w-full max-w-md">
-            <CardHeader className="text-center">
-              <div className="flex justify-center mb-4">
-                <AlertTriangle className="h-12 w-12 text-destructive" />
-              </div>
-              <CardTitle className="text-xl">Ops! Algo deu errado</CardTitle>
-              <CardDescription>
-                Ocorreu um erro inesperado. Nossa equipe foi notificada e está trabalhando para resolver.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {import.meta.env.DEV && this.state.error && (
-                <details className="text-sm text-muted-foreground bg-muted p-3 rounded">
-                  <summary className="cursor-pointer font-medium">Detalhes técnicos</summary>
-                  <div className="mt-2 space-y-2">
-                    <div>
-                      <strong>Erro:</strong> {this.state.error.message}
-                    </div>
-                    {this.state.error.stack && (
-                      <div>
-                        <strong>Stack:</strong>
-                        <pre className="text-xs mt-1 overflow-auto">
-                          {this.state.error.stack}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                </details>
-              )}
-              
-              <div className="flex gap-2">
-                <Button 
-                  onClick={this.handleRetry}
-                  variant="outline" 
-                  className="flex-1"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Tentar novamente
-                </Button>
-                <Button 
-                  onClick={this.handleReload}
-                  className="flex-1"
-                >
-                  Recarregar página
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="flex items-center justify-center min-h-[400px] p-4">
+          <div className="max-w-md w-full space-y-4">
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Algo deu errado</AlertTitle>
+              <AlertDescription>
+                Ocorreu um erro inesperado. Tente novamente ou recarregue a página.
+              </AlertDescription>
+            </Alert>
+
+            <div className="flex space-x-2">
+              <Button onClick={this.handleRetry} variant="outline" className="flex-1">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Tentar Novamente
+              </Button>
+              <Button onClick={this.handleReload} className="flex-1">
+                Recarregar Página
+              </Button>
+            </div>
+
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <details className="mt-4 p-4 bg-muted rounded border text-xs">
+                <summary className="cursor-pointer font-medium">
+                  Detalhes do erro (desenvolvimento)
+                </summary>
+                <pre className="mt-2 overflow-x-auto">
+                  {this.state.error.toString()}
+                  {this.state.errorInfo?.componentStack}
+                </pre>
+              </details>
+            )}
+          </div>
         </div>
       );
     }
@@ -121,13 +104,13 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-// Hook para capturar erros em componentes funcionais
+// Hook para reportar erros manualmente
 export const useErrorHandler = () => {
-  return (error: Error, errorInfo?: any) => {
+  return (error: Error, context?: any) => {
     logger.error('Manual error report', {
       error: error.message,
       stack: error.stack,
-      additionalInfo: errorInfo,
+      context,
       module: 'error-handler'
     });
   };
