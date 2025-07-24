@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Filter, Server, Activity, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, Server, Activity, AlertTriangle, TrendingUp, Wrench, History, Upload, ArrowUpDown, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,9 @@ import { toast } from 'sonner';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useAtivosStats } from '@/hooks/useAtivosStats';
 import LocalizacaoSelect from '@/components/ativos/LocalizacaoSelect';
+import ManutencaoDialog from '@/components/ativos/ManutencaoDialog';
+import TrilhaAuditoriaAtivos from '@/components/ativos/TrilhaAuditoriaAtivos';
+import ImportacaoAtivos from '@/components/ativos/ImportacaoAtivos';
 
 interface Ativo {
   id: string;
@@ -69,7 +72,12 @@ const Ativos = () => {
   const [loading, setLoading] = useState(true);
   const { data: stats, isLoading: statsLoading } = useAtivosStats();
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState<string>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [manutencaoDialog, setManutencaoDialog] = useState<{open: boolean, ativoId: string, ativoNome: string}>({open: false, ativoId: '', ativoNome: ''});
+  const [auditDialog, setAuditDialog] = useState<{open: boolean, ativoId?: string}>({open: false});
+  const [importDialog, setImportDialog] = useState(false);
   const [editingAtivo, setEditingAtivo] = useState<Ativo | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; ativoId: string }>({
     open: false,
@@ -95,14 +103,14 @@ const Ativos = () => {
 
   useEffect(() => {
     fetchAtivos();
-  }, []);
+  }, [sortField, sortDirection]);
 
   const fetchAtivos = async () => {
     try {
       const { data, error } = await supabase
         .from('ativos')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order(sortField, { ascending: sortDirection === 'asc' });
 
       if (error) throw error;
       setAtivos(data || []);
@@ -244,6 +252,40 @@ const Ativos = () => {
     return stat?.color || 'default';
   };
 
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const exportData = () => {
+    const csvContent = [
+      ['Nome', 'Tipo', 'Status', 'Criticidade', 'Proprietário', 'Localização', 'Data Aquisição'].join(','),
+      ...filteredAtivos.map(ativo => [
+        ativo.nome,
+        ativo.tipo,
+        ativo.status,
+        ativo.criticidade,
+        ativo.proprietario || '',
+        ativo.localizacao || '',
+        ativo.data_aquisicao || ''
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `ativos-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -261,16 +303,29 @@ const Ativos = () => {
             Gerencie todos os ativos da organização
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => {
-              setEditingAtivo(null);
-              resetForm();
-            }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Ativo
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button onClick={exportData} variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Exportar
+          </Button>
+          <Button onClick={() => setImportDialog(true)} variant="outline">
+            <Upload className="h-4 w-4 mr-2" />
+            Importar
+          </Button>
+          <Button onClick={() => setAuditDialog({open: true})} variant="outline">
+            <History className="h-4 w-4 mr-2" />
+            Auditoria
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => {
+                setEditingAtivo(null);
+                resetForm();
+              }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Ativo
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>

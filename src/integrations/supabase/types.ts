@@ -118,6 +118,69 @@ export type Database = {
         }
         Relationships: []
       }
+      ativos_manutencoes: {
+        Row: {
+          ativo_id: string
+          created_at: string
+          created_by: string | null
+          criticidade: string | null
+          custo: number | null
+          data_conclusao: string | null
+          data_manutencao: string
+          data_prevista_conclusao: string | null
+          descricao: string
+          empresa_id: string
+          fornecedor: string | null
+          id: string
+          observacoes: string | null
+          proxima_manutencao: string | null
+          responsavel: string | null
+          status: string
+          tipo_manutencao: string
+          updated_at: string
+        }
+        Insert: {
+          ativo_id: string
+          created_at?: string
+          created_by?: string | null
+          criticidade?: string | null
+          custo?: number | null
+          data_conclusao?: string | null
+          data_manutencao: string
+          data_prevista_conclusao?: string | null
+          descricao: string
+          empresa_id: string
+          fornecedor?: string | null
+          id?: string
+          observacoes?: string | null
+          proxima_manutencao?: string | null
+          responsavel?: string | null
+          status?: string
+          tipo_manutencao: string
+          updated_at?: string
+        }
+        Update: {
+          ativo_id?: string
+          created_at?: string
+          created_by?: string | null
+          criticidade?: string | null
+          custo?: number | null
+          data_conclusao?: string | null
+          data_manutencao?: string
+          data_prevista_conclusao?: string | null
+          descricao?: string
+          empresa_id?: string
+          fornecedor?: string | null
+          id?: string
+          observacoes?: string | null
+          proxima_manutencao?: string | null
+          responsavel?: string | null
+          status?: string
+          tipo_manutencao?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
