@@ -12,43 +12,53 @@ export const useGapAnalysisStats = () => {
 
         if (frameworksError) throw frameworksError;
 
-        // Avaliações em andamento
-        const { count: assessmentsInProgress, error: assessmentsError } = await supabase
-          .from('gap_analysis_assessments')
-          .select('*', { count: 'exact', head: true })
-          .in('status', ['em_andamento', 'pausada']);
-
-        if (assessmentsError) throw assessmentsError;
-
-        // Calcular conformidade média baseada nas avaliações reais
+        // Buscar avaliações com join para frameworks ativos
         const { data: evaluations, error: evaluationsError } = await supabase
           .from('gap_analysis_evaluations')
-          .select('conformity_status');
+          .select(`
+            conformity_status,
+            evidence_status,
+            framework_id,
+            gap_analysis_frameworks!inner(id, empresa_id)
+          `);
 
         if (evaluationsError) throw evaluationsError;
 
+        // Conformidade média (nova fórmula)
         let averageCompliance = 0;
         if (evaluations && evaluations.length > 0) {
-          const conformeCount = evaluations.filter(e => e.conformity_status === 'conforme').length;
-          const totalEvaluated = evaluations.filter(e => e.conformity_status && e.conformity_status !== 'nao_aplicavel').length;
-          averageCompliance = totalEvaluated > 0 ? (conformeCount / totalEvaluated) * 100 : 0;
+          const evaluatedItems = evaluations.filter(e => 
+            e.conformity_status && e.conformity_status !== 'nao_aplicavel'
+          );
+          
+          if (evaluatedItems.length > 0) {
+            const totalScore = evaluatedItems.reduce((score, evaluation) => {
+              switch (evaluation.conformity_status) {
+                case 'conforme': return score + 100;
+                case 'parcial': return score + 50;
+                case 'nao_conforme': return score + 0;
+                default: return score;
+              }
+            }, 0);
+            
+            averageCompliance = totalScore / evaluatedItems.length;
+          }
         }
 
-        // Itens pendentes (avaliações não conformes + evidências pendentes)
-        const { data: pendingEvaluations, error: pendingError } = await supabase
-          .from('gap_analysis_evaluations')
-          .select('conformity_status, evidence_status');
+        // Itens pendentes (apenas evidências pendentes)
+        const pendingItems = evaluations?.filter(e => 
+          e.evidence_status === 'pendente'
+        ).length || 0;
 
-        let pendingItems = 0;
-        if (!pendingError && pendingEvaluations) {
-          const nonCompliantCount = pendingEvaluations.filter(e => 
-            e.conformity_status === 'nao_conforme' || e.conformity_status === 'parcial'
-          ).length;
-          const pendingEvidenceCount = pendingEvaluations.filter(e => 
-            e.evidence_status === 'pendente' || e.evidence_status === 'em_analise'
-          ).length;
-          pendingItems = nonCompliantCount + pendingEvidenceCount;
-        }
+        // Frameworks em andamento (que têm avaliações preenchidas mas não finalizadas)
+        const frameworksWithEvaluations = new Set();
+        evaluations?.forEach(evaluation => {
+          if (evaluation.conformity_status || evaluation.evidence_status) {
+            frameworksWithEvaluations.add(evaluation.framework_id);
+          }
+        });
+
+        const assessmentsInProgress = frameworksWithEvaluations.size;
 
         return {
           data: {
@@ -68,9 +78,9 @@ export const useGapAnalysisStats = () => {
     },
     [],
     {
-      staleTime: 5 * 60 * 1000, // 5 minutos
+      staleTime: 2 * 60 * 1000, // 2 minutos
       cacheKey: 'gap-analysis-stats',
-      cacheDuration: 10 // 10 minutos
+      cacheDuration: 5 // 5 minutos
     }
   );
 };
