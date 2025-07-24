@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
+import { logger, measurePerformance } from '@/lib/logger';
 
 interface ModulePermission {
   module_id: string;
@@ -36,20 +37,26 @@ export const usePermissions = (): UsePermissionsReturn => {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('user_module_permissions')
-        .select(`
-          module_id,
-          can_access,
-          can_create,
-          can_read,
-          can_update,
-          can_delete,
-          system_modules:module_id (
-            name
-          )
-        `)
-        .eq('user_id', user.id);
+      logger.debug('Fetching user permissions', { userId: user.id, module: 'permissions' });
+
+      const { data, error } = await measurePerformance(
+        'fetchUserPermissions',
+        () => supabase
+          .from('user_module_permissions')
+          .select(`
+            module_id,
+            can_access,
+            can_create,
+            can_read,
+            can_update,
+            can_delete,
+            system_modules:module_id (
+              name
+            )
+          `)
+          .eq('user_id', user.id),
+        { userId: user.id, module: 'permissions' }
+      );
 
       if (error) throw error;
 
@@ -64,8 +71,17 @@ export const usePermissions = (): UsePermissionsReturn => {
       }));
 
       setPermissions(formattedPermissions);
+      logger.info('User permissions loaded', { 
+        userId: user.id, 
+        permissionsCount: formattedPermissions.length,
+        module: 'permissions'
+      });
     } catch (error) {
-      console.error('Error fetching permissions:', error);
+      logger.error('Error fetching permissions', { 
+        error: error instanceof Error ? error.message : String(error),
+        userId: user.id,
+        module: 'permissions'
+      });
       setPermissions([]);
     } finally {
       setLoading(false);
@@ -76,9 +92,18 @@ export const usePermissions = (): UsePermissionsReturn => {
     fetchPermissions();
   }, [fetchPermissions]);
 
-  const getPermissionForModule = useCallback((moduleName: string) => {
-    return permissions.find(p => p.module_name === moduleName);
+  // Memoizar o mapa de permissões para melhor performance
+  const permissionsMap = useMemo(() => {
+    const map = new Map<string, ModulePermission>();
+    permissions.forEach(permission => {
+      map.set(permission.module_name, permission);
+    });
+    return map;
   }, [permissions]);
+
+  const getPermissionForModule = useCallback((moduleName: string) => {
+    return permissionsMap.get(moduleName);
+  }, [permissionsMap]);
 
   const canAccess = useCallback((moduleName: string) => {
     // Super-admin sempre tem acesso total

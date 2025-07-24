@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { logger, measurePerformance } from '@/lib/logger';
 
 interface Profile {
   id: string;
@@ -57,36 +58,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (userId: string) => {
     try {
-      console.log('Fetching profile for user:', userId);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          empresas:empresa_id (
-            id,
-            nome,
-            logo_url,
-            cnpj,
-            contato
-          )
-        `)
-        .eq('user_id', userId)
-        .single();
+      logger.debug('Fetching profile for user', { userId, module: 'auth' });
+      
+      const { data, error } = await measurePerformance(
+        'fetchProfile',
+        () => supabase
+          .from('profiles')
+          .select(`
+            *,
+            empresas:empresa_id (
+              id,
+              nome,
+              logo_url,
+              cnpj,
+              contato
+            )
+          `)
+          .eq('user_id', userId)
+          .single(),
+        { userId, module: 'auth' }
+      );
 
       if (error) throw error;
       
-      console.log('Profile fetched:', data);
+      logger.info('Profile fetched successfully', { 
+        userId, 
+        profileId: data.id, 
+        empresaId: data.empresa_id,
+        role: data.role 
+      });
       setProfile(data);
       
       const newCompany = data.empresas || null;
-      console.log('Company updated:', newCompany);
+      logger.debug('Company updated', { 
+        empresaId: newCompany?.id, 
+        empresaNome: newCompany?.nome 
+      });
       setCompany(newCompany);
       
       // Incrementar a chave para forçar re-render dos componentes que usam logo
       setLogoUpdateKey(prev => prev + 1);
-      console.log('Logo update key incremented');
+      logger.debug('Logo update key incremented');
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      logger.error('Error fetching profile', { 
+        error: error instanceof Error ? error.message : String(error), 
+        userId 
+      });
       setProfile(null);
       setCompany(null);
     }
@@ -123,44 +140,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkTemporaryPassword = async () => {
     if (!user) {
-      console.log('No user found, setting hasTemporaryPassword to false');
+      logger.debug('No user found, setting hasTemporaryPassword to false');
       setHasTemporaryPassword(false);
       return;
     }
 
     try {
-      console.log('Checking temporary password for user:', user.id);
-      const { data, error } = await supabase
-        .from('temporary_passwords')
-        .select('is_temporary, created_at, expires_at')
-        .eq('user_id', user.id)
-        .eq('is_temporary', true)
-        .single();
+      logger.debug('Checking temporary password for user', { userId: user.id });
+      
+      const { data, error } = await measurePerformance(
+        'checkTemporaryPassword',
+        () => supabase
+          .from('temporary_passwords')
+          .select('is_temporary, created_at, expires_at')
+          .eq('user_id', user.id)
+          .eq('is_temporary', true)
+          .single(),
+        { userId: user.id, module: 'auth' }
+      );
 
       if (error) {
-        console.log('No temporary password record found or error:', error.message);
+        logger.debug('No temporary password record found', { 
+          error: error.message, 
+          userId: user.id 
+        });
         setHasTemporaryPassword(false);
         return;
       }
 
-      console.log('Temporary password data:', data);
+      logger.debug('Temporary password data retrieved', { 
+        userId: user.id, 
+        hasData: !!data 
+      });
       
       // Verificar se a senha temporária não expirou
       if (data.expires_at) {
         const expirationDate = new Date(data.expires_at);
         const now = new Date();
         if (now > expirationDate) {
-          console.log('Temporary password expired');
+          logger.info('Temporary password expired', { userId: user.id });
           setHasTemporaryPassword(false);
           return;
         }
       }
 
       const hasTemp = !!data?.is_temporary;
-      console.log('Has temporary password:', hasTemp);
+      logger.info('Temporary password check completed', { 
+        userId: user.id, 
+        hasTemporaryPassword: hasTemp 
+      });
       setHasTemporaryPassword(hasTemp);
     } catch (error) {
-      console.error('Error checking temporary password:', error);
+      logger.error('Error checking temporary password', { 
+        error: error instanceof Error ? error.message : String(error),
+        userId: user.id 
+      });
       setHasTemporaryPassword(false);
     }
   };
@@ -180,7 +214,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       async (event, session) => {
         if (!isSubscribed) return;
 
-        console.log('Auth state changed:', event, 'User:', session?.user?.id);
+        logger.info('Auth state changed', { 
+          event, 
+          userId: session?.user?.id,
+          module: 'auth' 
+        });
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -208,7 +246,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!isSubscribed) return;
 
-      console.log('Initial session check:', session?.user?.id);
+      logger.debug('Initial session check', { 
+        userId: session?.user?.id,
+        module: 'auth' 
+      });
       setSession(session);
       setUser(session?.user ?? null);
       
