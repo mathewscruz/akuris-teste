@@ -45,6 +45,8 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
 
   // Carregar visibilidade dos frameworks do localStorage
   useEffect(() => {
+    if (!Array.isArray(frameworks) || frameworks.length === 0) return;
+    
     const saved = localStorage.getItem('gap-analysis-visible-frameworks');
     if (saved) {
       try {
@@ -53,7 +55,7 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
       } catch (error) {
         console.error('Erro ao carregar visibilidade dos frameworks:', error);
       }
-    } else if (frameworks.length > 0) {
+    } else {
       // Por padrão, mostrar todos os frameworks
       setVisibleFrameworks(new Set(frameworks.map(f => f.id)));
     }
@@ -66,7 +68,7 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
   };
 
   // Filtrar frameworks visíveis
-  const visibleFrameworksList = frameworks.filter(f => visibleFrameworks.has(f.id));
+  const visibleFrameworksList = Array.isArray(frameworks) ? frameworks.filter(f => visibleFrameworks.has(f.id)) : [];
 
   const handleFrameworkSuccess = () => {
     refetch();
