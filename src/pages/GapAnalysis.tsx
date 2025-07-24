@@ -219,17 +219,6 @@ export default function GapAnalysis() {
       {/* Framework Tabs View */}
       <FrameworkTabsView onCreateFramework={() => setIsFrameworkDialogOpen(true)} />
 
-      {/* Navigation to All Assessments */}
-      <div className="flex justify-center mt-6">
-        <Button 
-          variant="ghost"
-          onClick={() => setCurrentView('assessments')}
-          className="text-muted-foreground"
-        >
-          <BarChart3 className="h-4 w-4 mr-2" />
-          Ver Todas as Avaliações
-        </Button>
-      </div>
 
       {/* Dialogs */}
       <FrameworkDialog

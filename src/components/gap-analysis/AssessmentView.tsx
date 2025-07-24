@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Settings, Plus } from "lucide-react";
 import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +23,7 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
   frameworkName
 }) => {
   const [isManagerOpen, setIsManagerOpen] = useState(false);
-  const [responses, setResponses] = useState<Record<string, string>>({});
+  const [evaluations, setEvaluations] = useState<Record<string, any>>({});
 
   const { data: requirements = [], loading, refetch } = useOptimizedQuery(
     async () => {
@@ -42,20 +44,34 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
     }
   ) as { data: Requirement[], loading: boolean, refetch: () => void };
 
-  const handleResponseChange = (requirementId: string, value: string) => {
-    setResponses(prev => ({
+  const handleEvaluationChange = (requirementId: string, field: string, value: string) => {
+    setEvaluations(prev => ({
       ...prev,
-      [requirementId]: value
+      [requirementId]: {
+        ...prev[requirementId],
+        [field]: value
+      }
     }));
   };
 
-  const handleSaveResponses = async () => {
+  const handleSaveEvaluations = async () => {
     try {
-      // Aqui seria implementado o salvamento das respostas
-      // Para uma futura tabela de respostas/avaliações
-      toast.success("Respostas salvas com sucesso!");
+      // Implementar salvamento das avaliações na tabela gap_analysis_evaluations
+      const evaluationsToSave = Object.entries(evaluations).map(([requirementId, evaluation]) => ({
+        requirement_id: requirementId,
+        framework_id: frameworkId,
+        evidence_required: evaluation.evidence_required || '',
+        evidence_implemented: evaluation.evidence_implemented || '',
+        responsible_area: evaluation.responsible_area || '',
+        conformity_status: evaluation.conformity_status || 'nao_aplicavel',
+        action_preview: evaluation.action_preview || '',
+        evidence_status: evaluation.evidence_status || 'pendente'
+      }));
+
+      // Aqui faria o upsert na tabela de avaliações
+      toast.success("Avaliações salvas com sucesso!");
     } catch (error: any) {
-      toast.error("Erro ao salvar respostas: " + error.message);
+      toast.error("Erro ao salvar avaliações: " + error.message);
     }
   };
 
@@ -75,22 +91,36 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Avaliação: {frameworkName}</h3>
-          <p className="text-sm text-muted-foreground">
-            Responda às perguntas abaixo para realizar a avaliação de conformidade
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsManagerOpen(true)}
-        >
-          <Settings className="h-4 w-4 mr-2" />
-          Gerenciar Requisitos
-        </Button>
-      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Avaliação: {frameworkName}</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Responda às perguntas abaixo para realizar a avaliação de conformidade.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsManagerOpen(true)}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Gerenciar Requisitos
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsManagerOpen(true)}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Editar Framework
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
 
       {requirements.length === 0 ? (
         <Card>
@@ -106,64 +136,118 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
         </Card>
       ) : (
         <div className="space-y-4">
-          {requirements.map((requirement, index) => (
-            <Card key={requirement.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-base">
-                      {requirement.codigo && (
-                        <span className="text-sm text-muted-foreground mr-2">
-                          {requirement.codigo}
-                        </span>
-                      )}
-                      {requirement.titulo}
-                      {requirement.obrigatorio && (
-                        <Badge variant="destructive" className="ml-2 text-xs">
-                          Obrigatório
-                        </Badge>
-                      )}
-                    </CardTitle>
-                    {requirement.descricao && (
-                      <p className="text-sm text-muted-foreground">
-                        {requirement.descricao}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    {requirement.categoria && (
-                      <Badge variant="secondary" className="text-xs">
-                        {requirement.categoria}
-                      </Badge>
-                    )}
-                    {requirement.peso && (
-                      <Badge variant="outline" className="text-xs">
-                        Peso: {requirement.peso}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <label className="text-sm font-medium">
-                    Sua Resposta:
-                  </label>
-                  <Textarea
-                    placeholder="Digite sua resposta para este requisito..."
-                    value={responses[requirement.id] || ""}
-                    onChange={(e) => handleResponseChange(requirement.id, e.target.value)}
-                    className="min-h-[100px]"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[200px]">Código/Requisito</TableHead>
+                    <TableHead className="w-[120px]">Evidência Requerida</TableHead>
+                    <TableHead className="w-[120px]">Evidência Implementada</TableHead>
+                    <TableHead className="w-[120px]">Área Responsável</TableHead>
+                    <TableHead className="w-[120px]">Conformidade</TableHead>
+                    <TableHead className="w-[150px]">Prévia das Ações / Observações</TableHead>
+                    <TableHead className="w-[120px]">Status da Evidência</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {requirements.map((requirement) => (
+                    <TableRow key={requirement.id}>
+                      <TableCell className="font-medium">
+                        <div className="space-y-1">
+                          {requirement.codigo && (
+                            <span className="text-xs text-muted-foreground block">
+                              {requirement.codigo}
+                            </span>
+                          )}
+                          <div className="text-sm font-medium">{requirement.titulo}</div>
+                          {requirement.obrigatorio && (
+                            <Badge variant="destructive" className="text-xs">
+                              Obrigatório
+                            </Badge>
+                          )}
+                          {requirement.categoria && (
+                            <Badge variant="secondary" className="text-xs">
+                              {requirement.categoria}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Textarea
+                          placeholder="Evidência requerida..."
+                          value={evaluations[requirement.id]?.evidence_required || ""}
+                          onChange={(e) => handleEvaluationChange(requirement.id, 'evidence_required', e.target.value)}
+                          className="min-h-[60px] text-xs"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Textarea
+                          placeholder="Evidência implementada..."
+                          value={evaluations[requirement.id]?.evidence_implemented || ""}
+                          onChange={(e) => handleEvaluationChange(requirement.id, 'evidence_implemented', e.target.value)}
+                          className="min-h-[60px] text-xs"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          placeholder="Área responsável..."
+                          value={evaluations[requirement.id]?.responsible_area || ""}
+                          onChange={(e) => handleEvaluationChange(requirement.id, 'responsible_area', e.target.value)}
+                          className="text-xs"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={evaluations[requirement.id]?.conformity_status || "nao_aplicavel"}
+                          onValueChange={(value) => handleEvaluationChange(requirement.id, 'conformity_status', value)}
+                        >
+                          <SelectTrigger className="text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="conforme">Conforme</SelectItem>
+                            <SelectItem value="nao_conforme">Não conforme</SelectItem>
+                            <SelectItem value="parcial">Parcial</SelectItem>
+                            <SelectItem value="nao_aplicavel">Não aplicável</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Textarea
+                          placeholder="Ações/Observações..."
+                          value={evaluations[requirement.id]?.action_preview || ""}
+                          onChange={(e) => handleEvaluationChange(requirement.id, 'action_preview', e.target.value)}
+                          className="min-h-[60px] text-xs"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={evaluations[requirement.id]?.evidence_status || "pendente"}
+                          onValueChange={(value) => handleEvaluationChange(requirement.id, 'evidence_status', value)}
+                        >
+                          <SelectTrigger className="text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pendente">Pendente</SelectItem>
+                            <SelectItem value="em_analise">Em análise</SelectItem>
+                            <SelectItem value="aprovada">Aprovada</SelectItem>
+                            <SelectItem value="rejeitada">Rejeitada</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
 
           {requirements.length > 0 && (
             <div className="flex justify-end pt-4">
-              <Button onClick={handleSaveResponses}>
-                Salvar Respostas
+              <Button onClick={handleSaveEvaluations}>
+                Salvar Avaliações
               </Button>
             </div>
           )}

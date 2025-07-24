@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Settings, Trash2, Eye, EyeOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { AssessmentView } from "./AssessmentView";
 import { FrameworkDialog } from "./FrameworkDialog";
+import { FrameworkVisibilityDialog } from "./FrameworkVisibilityDialog";
 import { toast } from "sonner";
 import { Framework } from "./types";
 
@@ -20,8 +21,9 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
 }) => {
   const [selectedFramework, setSelectedFramework] = useState<Framework | null>(null);
   const [isFrameworkDialogOpen, setIsFrameworkDialogOpen] = useState(false);
+  const [isVisibilityDialogOpen, setIsVisibilityDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("new");
-  const [showFrameworks, setShowFrameworks] = useState<boolean>(true);
+  const [visibleFrameworks, setVisibleFrameworks] = useState<Set<string>>(new Set());
 
   const { data: frameworks = [], loading: isLoading, refetch, error } = useOptimizedQuery(
     async () => {
@@ -40,6 +42,31 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
       staleTime: 2
     }
   ) as { data: Framework[], loading: boolean, refetch: () => void, error: any };
+
+  // Carregar visibilidade dos frameworks do localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('gap-analysis-visible-frameworks');
+    if (saved) {
+      try {
+        const parsedVisible = JSON.parse(saved);
+        setVisibleFrameworks(new Set(parsedVisible));
+      } catch (error) {
+        console.error('Erro ao carregar visibilidade dos frameworks:', error);
+      }
+    } else if (frameworks.length > 0) {
+      // Por padrão, mostrar todos os frameworks
+      setVisibleFrameworks(new Set(frameworks.map(f => f.id)));
+    }
+  }, [frameworks]);
+
+  // Salvar visibilidade no localStorage
+  const saveVisibility = (visible: Set<string>) => {
+    setVisibleFrameworks(visible);
+    localStorage.setItem('gap-analysis-visible-frameworks', JSON.stringify(Array.from(visible)));
+  };
+
+  // Filtrar frameworks visíveis
+  const visibleFrameworksList = frameworks.filter(f => visibleFrameworks.has(f.id));
 
   const handleFrameworkSuccess = () => {
     refetch();
@@ -108,24 +135,15 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setShowFrameworks(!showFrameworks)}
+          onClick={() => setIsVisibilityDialogOpen(true)}
           className="flex items-center gap-2"
         >
-          {showFrameworks ? (
-            <>
-              <EyeOff className="h-4 w-4" />
-              Esconder Frameworks
-            </>
-          ) : (
-            <>
-              <Eye className="h-4 w-4" />
-              Mostrar Frameworks
-            </>
-          )}
+          <Settings className="h-4 w-4" />
+          Selecionar Visibilidade
         </Button>
       </div>
 
-      {showFrameworks && (
+      {visibleFrameworksList.length > 0 && (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0">
             <TabsTrigger
@@ -136,7 +154,7 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
               Novo Framework
             </TabsTrigger>
             
-            {frameworks.map((framework: Framework) => (
+            {visibleFrameworksList.map((framework: Framework) => (
               <TabsTrigger
                 key={framework.id}
                 value={framework.id}
@@ -192,7 +210,7 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
           </Card>
         </TabsContent>
 
-          {frameworks.map((framework: Framework) => (
+          {visibleFrameworksList.map((framework: Framework) => (
             <TabsContent key={framework.id} value={framework.id} className="mt-6">
               <div className="space-y-6">
                 <Card>
@@ -227,18 +245,18 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
         </Tabs>
       )}
 
-      {!showFrameworks && (
+      {visibleFrameworksList.length === 0 && frameworks.length > 0 && (
         <Card>
           <CardContent className="text-center py-12">
             <p className="text-muted-foreground mb-4">
-              Os frameworks estão ocultos. Clique em "Mostrar Frameworks" para exibi-los.
+              Nenhum framework selecionado para exibição.
             </p>
             <Button
               variant="outline"
-              onClick={() => setShowFrameworks(true)}
+              onClick={() => setIsVisibilityDialogOpen(true)}
             >
-              <Eye className="h-4 w-4 mr-2" />
-              Mostrar Frameworks
+              <Settings className="h-4 w-4 mr-2" />
+              Configurar Visibilidade
             </Button>
           </CardContent>
         </Card>
@@ -249,6 +267,14 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
         onOpenChange={setIsFrameworkDialogOpen}
         onSuccess={handleFrameworkSuccess}
         framework={selectedFramework}
+      />
+
+      <FrameworkVisibilityDialog
+        open={isVisibilityDialogOpen}
+        onOpenChange={setIsVisibilityDialogOpen}
+        frameworks={frameworks}
+        visibleFrameworks={visibleFrameworks}
+        onSave={saveVisibility}
       />
     </div>
   );
