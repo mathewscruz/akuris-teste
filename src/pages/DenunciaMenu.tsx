@@ -9,6 +9,7 @@ interface Empresa {
   id: string;
   nome: string;
   slug: string;
+  logo_url?: string;
 }
 
 export default function DenunciaMenu() {
@@ -34,7 +35,7 @@ export default function DenunciaMenu() {
         // Buscar empresa pelo slug
         const { data: empresaData, error: empresaError } = await supabase
           .from('empresas')
-          .select('id, nome, slug')
+          .select('id, nome, slug, logo_url')
           .eq('slug', normalizedSlug)
           .eq('ativo', true)
           .single();
@@ -54,32 +55,12 @@ export default function DenunciaMenu() {
         console.log('✅ [SUCCESS] Empresa encontrada:', empresaData);
         setEmpresa(empresaData);
 
-        // Buscar logotipo da empresa - tentar diferentes formatos
-        console.log('🔍 [DEBUG] Buscando logotipo para empresa ID:', empresaData.id);
-        const logoFormats = ['logo.png', 'logo.jpg', 'logo.jpeg', 'logotipo.png'];
-        
-        for (const format of logoFormats) {
-          const logoPath = `${empresaData.id}/${format}`;
-          const { data: logoData } = await supabase.storage
-            .from('empresa-logos')
-            .getPublicUrl(logoPath);
-          
-          if (logoData?.publicUrl) {
-            try {
-              const response = await fetch(logoData.publicUrl, { method: 'HEAD' });
-              if (response.ok) {
-                console.log('✅ [SUCCESS] Logotipo encontrado:', logoData.publicUrl);
-                setLogoUrl(logoData.publicUrl);
-                break; // Sai do loop se encontrou o logo
-              }
-            } catch (error) {
-              console.log('ℹ️ [INFO] Erro ao verificar formato:', format, error);
-            }
-          }
-        }
-        
-        if (!logoUrl) {
-          console.log('ℹ️ [INFO] Nenhum logotipo encontrado para empresa');
+        // Usar logo_url da base de dados se disponível
+        if (empresaData.logo_url) {
+          console.log('✅ [SUCCESS] Logotipo encontrado na base de dados:', empresaData.logo_url);
+          setLogoUrl(empresaData.logo_url);
+        } else {
+          console.log('ℹ️ [INFO] Nenhum logotipo cadastrado para esta empresa');
         }
       } catch (error) {
         console.error('❌ [ERROR] Erro geral ao carregar configuração:', error);
