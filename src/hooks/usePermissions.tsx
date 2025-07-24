@@ -24,7 +24,7 @@ interface UsePermissionsReturn {
 }
 
 export const usePermissions = (): UsePermissionsReturn => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [permissions, setPermissions] = useState<ModulePermission[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -81,29 +81,44 @@ export const usePermissions = (): UsePermissionsReturn => {
   }, [permissions]);
 
   const canAccess = useCallback((moduleName: string) => {
+    // Super-admin sempre tem acesso total
+    if (profile?.role === 'super_admin') return true;
+    
     const permission = getPermissionForModule(moduleName);
     return permission?.can_access || false;
-  }, [getPermissionForModule]);
+  }, [getPermissionForModule, profile?.role]);
 
   const canCreate = useCallback((moduleName: string) => {
+    // Super-admin sempre tem acesso total
+    if (profile?.role === 'super_admin') return true;
+    
     const permission = getPermissionForModule(moduleName);
     return permission?.can_create || false;
-  }, [getPermissionForModule]);
+  }, [getPermissionForModule, profile?.role]);
 
   const canRead = useCallback((moduleName: string) => {
+    // Super-admin sempre tem acesso total
+    if (profile?.role === 'super_admin') return true;
+    
     const permission = getPermissionForModule(moduleName);
     return permission?.can_read || false;
-  }, [getPermissionForModule]);
+  }, [getPermissionForModule, profile?.role]);
 
   const canUpdate = useCallback((moduleName: string) => {
+    // Super-admin sempre tem acesso total
+    if (profile?.role === 'super_admin') return true;
+    
     const permission = getPermissionForModule(moduleName);
     return permission?.can_update || false;
-  }, [getPermissionForModule]);
+  }, [getPermissionForModule, profile?.role]);
 
   const canDelete = useCallback((moduleName: string) => {
+    // Super-admin sempre tem acesso total
+    if (profile?.role === 'super_admin') return true;
+    
     const permission = getPermissionForModule(moduleName);
     return permission?.can_delete || false;
-  }, [getPermissionForModule]);
+  }, [getPermissionForModule, profile?.role]);
 
   const refetchPermissions = useCallback(async () => {
     setLoading(true);

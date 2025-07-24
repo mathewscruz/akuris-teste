@@ -31,6 +31,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
+  // Super-admin sempre tem acesso total
+  if (profile?.role === 'super_admin') {
+    return <>{children}</>;
+  }
+
   // Verificar permissões baseadas no novo sistema
   const hasPermission = () => {
     switch (action) {
