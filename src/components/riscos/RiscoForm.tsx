@@ -124,15 +124,16 @@ export function RiscoForm({ risco, onSuccess }: Props) {
   // Fix: Reset form when risco prop changes
   useEffect(() => {
     if (risco) {
+      console.log('Carregando risco para edição:', risco);
       form.reset({
         nome: risco.nome || '',
         descricao: risco.descricao || '',
         matriz_id: risco.matriz_id || '',
         categoria_id: risco.categoria_id || '',
-        probabilidade_inicial: risco.probabilidade_inicial || '',
-        impacto_inicial: risco.impacto_inicial || '',
-        probabilidade_residual: risco.probabilidade_residual || '',
-        impacto_residual: risco.impacto_residual || '',
+        probabilidade_inicial: risco.probabilidade_inicial?.toString() || '',
+        impacto_inicial: risco.impacto_inicial?.toString() || '',
+        probabilidade_residual: risco.probabilidade_residual?.toString() || '',
+        impacto_residual: risco.impacto_residual?.toString() || '',
         status: risco.status || 'identificado',
         responsavel: risco.responsavel || '',
         controles_existentes: risco.controles_existentes || '',
@@ -142,6 +143,17 @@ export function RiscoForm({ risco, onSuccess }: Props) {
         justificativa_aceite: risco.justificativa_aceite || '',
         ativos_vinculados: []
       });
+      
+      // Carregar anexos e ativos vinculados após um pequeno delay para garantir que o form foi resetado
+      setTimeout(() => {
+        if (risco.id) {
+          fetchAnexosAceite(risco.id);
+        }
+      }, 100);
+    } else {
+      // Limpar anexos quando não há risco
+      setAnexosAceite([]);
+      form.reset();
     }
   }, [risco, form]);
 
@@ -212,6 +224,7 @@ export function RiscoForm({ risco, onSuccess }: Props) {
 
   const fetchAnexosAceite = async (riscoId: string) => {
     try {
+      console.log('Buscando anexos para risco:', riscoId);
       const { data, error } = await supabase
         .from('riscos_anexos')
         .select('*')
@@ -231,9 +244,11 @@ export function RiscoForm({ risco, onSuccess }: Props) {
         created_at: anexo.created_at
       }));
       
+      console.log('Anexos carregados:', anexosFormatados);
       setAnexosAceite(anexosFormatados);
     } catch (error: any) {
       console.error('Erro ao buscar anexos:', error);
+      toast.error("Erro ao carregar anexos: " + error.message);
     }
   };
 

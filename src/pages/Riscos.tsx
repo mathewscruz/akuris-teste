@@ -454,6 +454,8 @@ export function Riscos() {
                             <TableCell>{risco.responsavel || '-'}</TableCell>
                             <TableCell>
                               <div className="flex gap-1">
+                                <RiscoAnexosIcone riscoId={risco.id} />
+                                
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
@@ -470,7 +472,6 @@ export function Riscos() {
                                   </TooltipContent>
                                 </Tooltip>
 
-
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
@@ -484,7 +485,7 @@ export function Riscos() {
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>Excluir risco</p>
-                  </TooltipContent>
+                                  </TooltipContent>
                                 </Tooltip>
                               </div>
                             </TableCell>
