@@ -5,29 +5,37 @@ export const useGapAnalysisStats = () => {
   return useOptimizedQuery(
     async () => {
       try {
-        // Total de frameworks
+        // Total de frameworks da empresa do usuário
         const { count: totalFrameworks, error: frameworksError } = await supabase
           .from('gap_analysis_frameworks')
           .select('*', { count: 'exact', head: true });
 
         if (frameworksError) throw frameworksError;
 
-        // Buscar avaliações com join para frameworks ativos
+        // Buscar frameworks ativos da empresa
+        const { data: frameworks, error: frameworksListError } = await supabase
+          .from('gap_analysis_frameworks')
+          .select('id');
+
+        if (frameworksListError) throw frameworksListError;
+
+        // Buscar todas as avaliações
         const { data: evaluations, error: evaluationsError } = await supabase
           .from('gap_analysis_evaluations')
-          .select(`
-            conformity_status,
-            evidence_status,
-            framework_id,
-            gap_analysis_frameworks!inner(id, empresa_id)
-          `);
+          .select('conformity_status, evidence_status, framework_id');
 
         if (evaluationsError) throw evaluationsError;
 
-        // Conformidade média (nova fórmula)
+        // Filtrar avaliações apenas dos frameworks da empresa do usuário
+        const frameworkIds = new Set(frameworks?.map(f => f.id) || []);
+        const filteredEvaluations = evaluations?.filter(e => 
+          frameworkIds.has(e.framework_id)
+        ) || [];
+
+        // Conformidade média
         let averageCompliance = 0;
-        if (evaluations && evaluations.length > 0) {
-          const evaluatedItems = evaluations.filter(e => 
+        if (filteredEvaluations.length > 0) {
+          const evaluatedItems = filteredEvaluations.filter(e => 
             e.conformity_status && e.conformity_status !== 'nao_aplicavel'
           );
           
@@ -45,14 +53,14 @@ export const useGapAnalysisStats = () => {
           }
         }
 
-        // Itens pendentes (apenas evidências pendentes)
-        const pendingItems = evaluations?.filter(e => 
+        // Itens pendentes (evidências pendentes)
+        const pendingItems = filteredEvaluations.filter(e => 
           e.evidence_status === 'pendente'
-        ).length || 0;
+        ).length;
 
-        // Frameworks em andamento (que têm avaliações preenchidas mas não finalizadas)
+        // Frameworks em andamento (que têm avaliações preenchidas)
         const frameworksWithEvaluations = new Set();
-        evaluations?.forEach(evaluation => {
+        filteredEvaluations.forEach(evaluation => {
           if (evaluation.conformity_status || evaluation.evidence_status) {
             frameworksWithEvaluations.add(evaluation.framework_id);
           }
@@ -70,17 +78,23 @@ export const useGapAnalysisStats = () => {
           error: null
         };
       } catch (error) {
+        console.error('Gap Analysis Stats Error:', error);
         return {
-          data: null,
+          data: {
+            totalFrameworks: 0,
+            assessmentsInProgress: 0,
+            averageCompliance: 0,
+            pendingItems: 0
+          },
           error: error
         };
       }
     },
     [],
     {
-      staleTime: 2 * 60 * 1000, // 2 minutos
+      staleTime: 30 * 1000, // 30 segundos
       cacheKey: 'gap-analysis-stats',
-      cacheDuration: 5 // 5 minutos
+      cacheDuration: 2 // 2 minutos
     }
   );
 };
