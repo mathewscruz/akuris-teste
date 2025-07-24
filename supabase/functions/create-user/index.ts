@@ -91,23 +91,83 @@ Deno.serve(async (req) => {
 
     console.log(`Criando usuário: ${email}`)
 
-    // Criar usuário no Auth usando service role com metadata admin_created
-    const { data: authData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-      email: email,
-      password: 'temp123456', // Senha temporária inicial
-      email_confirm: true,
-      user_metadata: {
-        nome: nome,
-        admin_created: 'true'
-      }
-    })
-
-    if (createUserError || !authData.user) {
-      console.error('Erro ao criar usuário no Auth:', createUserError)
-      throw new Error(createUserError?.message || 'Erro ao criar usuário')
+    // Verificar se já existe usuário com este email no Auth
+    const { data: existingAuthUsers, error: listUsersError } = await supabaseAdmin.auth.admin.listUsers()
+    
+    if (listUsersError) {
+      console.error('Erro ao verificar usuários existentes:', listUsersError)
+      throw new Error('Erro ao verificar usuários existentes')
     }
 
-    console.log('Usuário criado no Auth:', authData.user.id)
+    const existingAuthUser = existingAuthUsers.users.find(user => user.email === email)
+
+    let authData: any
+
+    if (existingAuthUser) {
+      console.log('Usuário já existe no Auth:', existingAuthUser.id)
+      
+      // Verificar se tem profile
+      const { data: existingProfile, error: profileCheckError } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('user_id', existingAuthUser.id)
+        .single()
+      
+      if (profileCheckError && profileCheckError.code !== 'PGRST116') { // PGRST116 = not found
+        console.error('Erro ao verificar profile existente:', profileCheckError)
+        throw new Error('Erro ao verificar dados do usuário')
+      }
+
+      if (existingProfile) {
+        // Usuário já existe completamente
+        return new Response(JSON.stringify({
+          error: 'DUPLICATE_USER',
+          message: 'Usuário já existe no sistema',
+          details: {
+            user_id: existingAuthUser.id,
+            profile_id: existingProfile.id,
+            email: email,
+            nome: existingProfile.nome,
+            created_at: existingProfile.created_at
+          },
+          suggestions: [
+            'Verifique se o email está correto',
+            'Use a opção "Reenviar Email de Boas-vindas" se necessário',
+            'Edite o usuário existente se precisar fazer alterações'
+          ]
+        }), {
+          status: 409, // Conflict
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        })
+      } else {
+        // Usuário órfão - existe no Auth mas não tem profile
+        console.log('Usuário órfão detectado - recriando profile para:', email)
+        authData = { user: existingAuthUser }
+      }
+    } else {
+      // Criar novo usuário no Auth
+      const { data: newAuthData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
+        email: email,
+        password: 'temp123456', // Senha temporária inicial
+        email_confirm: true,
+        user_metadata: {
+          nome: nome,
+          admin_created: 'true'
+        }
+      })
+
+      if (createUserError || !newAuthData.user) {
+        console.error('Erro ao criar usuário no Auth:', createUserError)
+        throw new Error(createUserError?.message || 'Erro ao criar usuário')
+      }
+
+      authData = newAuthData
+    }
+
+    console.log('Processando usuário no Auth:', authData.user.id)
 
     // Aguardar um pouco para garantir que o usuário foi criado
     await new Promise(resolve => setTimeout(resolve, 100))
@@ -125,8 +185,10 @@ Deno.serve(async (req) => {
 
     if (profileInsertError) {
       console.error('Erro ao criar perfil:', profileInsertError)
-      // Se falhar ao criar perfil, remover usuário do Auth
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+      // Se falhar ao criar perfil e o usuário foi criado agora, remover do Auth
+      if (!existingAuthUser) {
+        await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+      }
       throw new Error('Erro ao criar perfil do usuário')
     }
 

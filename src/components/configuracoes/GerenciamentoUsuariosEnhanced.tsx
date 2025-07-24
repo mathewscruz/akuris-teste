@@ -237,7 +237,23 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
           }
         });
 
-        if (error) throw error;
+        if (error) {
+          // Tratar erro específico de usuário duplicado
+          if (error.message?.includes('DUPLICATE_USER')) {
+            const errorData = typeof error === 'object' && 'details' in error ? error as any : null;
+            const suggestions = errorData?.suggestions || [];
+            
+            toast.error(
+              `Usuário já existe: ${data.email}`, 
+              {
+                description: suggestions.length > 0 ? suggestions.join(' • ') : 'Use as opções de gerenciamento para este usuário.',
+                duration: 6000
+              }
+            );
+            return; // Não fechar o dialog para permitir correção
+          }
+          throw error;
+        }
         toast.success('Usuário criado com sucesso');
       }
 
@@ -274,7 +290,7 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
   const handleDelete = async () => {
     if (!usuarioToDelete) return;
     
-    console.log('Iniciando exclusão do usuário:', usuarioToDelete);
+    console.log('Iniciando exclusão completa do usuário:', usuarioToDelete);
     
     try {
       // 1. Verificar se o usuário está autenticado
@@ -330,25 +346,36 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
         throw new Error('Você não tem permissão para excluir usuários');
       }
       
-      // 5. Tentar a exclusão
-      console.log('Tentando excluir usuário ID:', usuarioToDelete.id);
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', usuarioToDelete.id);
+      // 5. Chamar edge function para exclusão completa (profiles + auth.users)
+      console.log('Chamando edge function para exclusão completa...');
+      const { error: deleteError } = await supabase.functions.invoke('delete-user-complete', {
+        body: {
+          user_id: targetUser.user_id,
+          profile_id: usuarioToDelete.id
+        }
+      });
 
-      if (error) {
-        console.error('Erro detalhado ao excluir usuário:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        throw new Error(error.message || 'Erro ao excluir usuário');
+      if (deleteError) {
+        console.error('Erro na edge function de exclusão:', deleteError);
+        
+        // Fallback: tentar exclusão apenas do profile
+        console.log('Tentando fallback - exclusão apenas do profile...');
+        const { error: profileDeleteError } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', usuarioToDelete.id);
+
+        if (profileDeleteError) {
+          console.error('Erro na exclusão do profile:', profileDeleteError);
+          throw new Error('Erro ao excluir usuário. Entre em contato com o suporte.');
+        }
+        
+        toast.success('Usuário removido do sistema (profile excluído)');
+      } else {
+        toast.success('Usuário excluído completamente do sistema');
       }
       
-      console.log('Usuário excluído com sucesso');
-      toast.success('Usuário excluído com sucesso');
+      console.log('Exclusão concluída');
       await fetchUsuarios();
       setDeleteDialogOpen(false);
       setUsuarioToDelete(null);
