@@ -18,6 +18,7 @@ interface Empresa {
   id: string;
   nome: string;
   slug: string;
+  logo_url?: string;
 }
 
 interface EmpresaConfig {
@@ -100,7 +101,7 @@ export default function DenunciaFormulario() {
         // Buscar empresa pelo slug
         const { data: empresaData, error: empresaError } = await supabase
           .from('empresas')
-          .select('id, nome, slug')
+          .select('id, nome, slug, logo_url')
           .eq('slug', normalizedSlug)
           .eq('ativo', true)
           .single();
@@ -157,25 +158,12 @@ export default function DenunciaFormulario() {
           setCategorias(categoriasData);
         }
 
-        // Buscar logotipo da empresa
-        console.log('🔍 [DEBUG] Buscando logotipo para empresa ID:', empresaData.id);
-        const logoPath = `${empresaData.id}/logo.png`;
-        const { data: logoData } = await supabase.storage
-          .from('empresa-logos')
-          .getPublicUrl(logoPath);
-          
-        if (logoData?.publicUrl) {
-          try {
-            const response = await fetch(logoData.publicUrl, { method: 'HEAD' });
-            if (response.ok) {
-              console.log('✅ [SUCCESS] Logotipo encontrado:', logoData.publicUrl);
-              setLogoUrl(logoData.publicUrl);
-            } else {
-              console.log('ℹ️ [INFO] Logotipo não encontrado para empresa');
-            }
-          } catch (error) {
-            console.log('ℹ️ [INFO] Erro ao verificar logotipo:', error);
-          }
+        // Usar logo_url da base de dados se disponível
+        if (empresaData.logo_url) {
+          console.log('✅ [SUCCESS] Logotipo encontrado na base de dados:', empresaData.logo_url);
+          setLogoUrl(empresaData.logo_url);
+        } else {
+          console.log('ℹ️ [INFO] Nenhum logotipo cadastrado para esta empresa');
         }
       } catch (error) {
         console.error('❌ [ERROR] Erro geral ao carregar configuração:', error);
@@ -267,10 +255,10 @@ export default function DenunciaFormulario() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted/20 flex items-center justify-center">
+      <div className="min-h-screen bg-[hsl(215,35%,12%)] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Carregando...</p>
+          <p className="mt-2 text-sidebar-foreground">Carregando...</p>
         </div>
       </div>
     );
@@ -278,8 +266,8 @@ export default function DenunciaFormulario() {
 
   if (!empresa || !config) {
     return (
-      <div className="min-h-screen bg-muted/20 flex items-center justify-center">
-        <Card className="max-w-md mx-auto">
+      <div className="min-h-screen bg-[hsl(215,35%,12%)] flex items-center justify-center">
+        <Card className="max-w-md mx-auto bg-white">
           <CardContent className="text-center py-8">
             <Shield className="w-12 h-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Canal Indisponível</h2>
@@ -294,9 +282,9 @@ export default function DenunciaFormulario() {
 
   if (showSuccess) {
     return (
-      <div className="min-h-screen bg-muted/20 py-8">
+      <div className="min-h-screen bg-[hsl(215,35%,12%)] py-8">
         <div className="container max-w-2xl mx-auto px-4">
-          <Card className="bg-green-50 border-green-200">
+          <Card className="bg-white border-green-200">
             <CardContent className="text-center py-12">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Shield className="w-8 h-8 text-green-600" />
@@ -306,7 +294,7 @@ export default function DenunciaFormulario() {
                 Denúncia Registrada com Sucesso!
               </h2>
               
-              <div className="bg-white p-4 rounded-lg border border-green-200 mb-6">
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-6">
                 <p className="text-sm text-gray-600 mb-2">Seu protocolo de acompanhamento:</p>
                 <p className="text-2xl font-mono font-bold text-green-700">{protocolo}</p>
               </div>
@@ -333,7 +321,7 @@ export default function DenunciaFormulario() {
               </div>
               
               {config.politica_privacidade && (
-                <div className="mt-6 p-4 bg-white rounded-lg border border-green-200">
+                <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
                   <p className="text-sm text-gray-600">{config.politica_privacidade}</p>
                 </div>
               )}
@@ -345,53 +333,49 @@ export default function DenunciaFormulario() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/20 py-8">
+    <div className="min-h-screen bg-[hsl(215,35%,12%)] py-8">
       <div className="container max-w-2xl mx-auto px-4">
         {/* Breadcrumb */}
         <div className="mb-6">
           <Link 
             to={`/${empresaSlug}/denuncia`}
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
+            className="inline-flex items-center text-sm text-sidebar-foreground hover:text-primary transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             Voltar ao menu inicial
           </Link>
         </div>
 
-        {/* Header com logotipo e informações da empresa */}
+        {/* Header com logotipo */}
         <div className="text-center mb-6">
           {/* Logotipo da empresa */}
           {logoUrl && (
-            <div className="mb-4">
+            <div className="mb-6">
               <img 
                 src={logoUrl} 
                 alt={`Logo ${empresa?.nome}`}
-                className="mx-auto h-16 w-auto object-contain"
-                onError={(e) => {
-                  console.log('Erro ao carregar logotipo:', e);
-                  setLogoUrl('');
-                }}
+                className="mx-auto h-20 w-auto object-contain"
+                onError={() => setLogoUrl('')}
               />
             </div>
           )}
           
-          <h1 className="text-3xl font-bold flex items-center justify-center gap-2 mb-2">
-            <Shield className="w-8 h-8 text-primary" />
-            {empresa?.nome}
-          </h1>
-          <p className="text-muted-foreground">Canal de Denúncias - Registrar Nova Denúncia</p>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Shield className="w-6 h-6 text-primary" />
+            <h2 className="text-xl text-sidebar-foreground">Canal de Denúncias - Registrar Nova Denúncia</h2>
+          </div>
         </div>
 
         {/* Texto de apresentação */}
         {config.texto_apresentacao && (
-          <Alert className="mb-6">
+          <Alert className="mb-6 bg-white">
             <Shield className="h-4 w-4" />
             <AlertDescription>{config.texto_apresentacao}</AlertDescription>
           </Alert>
         )}
 
         {/* Formulário */}
-        <Card>
+        <Card className="bg-white">
           <CardHeader>
             <CardTitle>Registrar Denúncia</CardTitle>
           </CardHeader>

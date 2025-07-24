@@ -14,6 +14,7 @@ interface Empresa {
   id: string;
   nome: string;
   slug: string;
+  logo_url?: string;
 }
 
 interface Denuncia {
@@ -67,7 +68,7 @@ export default function DenunciaConsulta() {
     try {
       const { data: empresaData, error: empresaError } = await supabase
         .from('empresas')
-        .select('id, nome, slug')
+        .select('id, nome, slug, logo_url')
         .eq('slug', empresaSlug)
         .eq('ativo', true)
         .single();
@@ -267,32 +268,39 @@ export default function DenunciaConsulta() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/20 py-8">
+    <div className="min-h-screen bg-[hsl(215,35%,12%)] py-8">
       <div className="container max-w-4xl mx-auto px-4">
         {/* Breadcrumb */}
         <div className="mb-6">
           <Link 
             to={`/${empresaSlug}/denuncia`}
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
+            className="inline-flex items-center text-sm text-sidebar-foreground hover:text-primary transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             Voltar ao menu inicial
           </Link>
         </div>
 
-        {/* Header */}
+        {/* Header com logotipo */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold flex items-center justify-center gap-2 mb-2">
-            <Shield className="w-8 h-8 text-primary" />
-            {empresa?.nome}
-          </h1>
-          <p className="text-muted-foreground">
-            Consulte o andamento da sua denúncia
-          </p>
+          {empresa?.logo_url && (
+            <div className="mb-6">
+              <img 
+                src={empresa.logo_url} 
+                alt={`Logo ${empresa.nome}`}
+                className="mx-auto h-20 w-auto object-contain"
+              />
+            </div>
+          )}
+          
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Shield className="w-6 h-6 text-primary" />
+            <h2 className="text-xl text-sidebar-foreground">Consulte o andamento da sua denúncia</h2>
+          </div>
         </div>
 
         {/* Formulário de busca */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Search className="w-5 h-5" />
