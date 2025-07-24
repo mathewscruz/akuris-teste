@@ -54,25 +54,32 @@ export default function DenunciaMenu() {
         console.log('✅ [SUCCESS] Empresa encontrada:', empresaData);
         setEmpresa(empresaData);
 
-        // Buscar logotipo da empresa
+        // Buscar logotipo da empresa - tentar diferentes formatos
         console.log('🔍 [DEBUG] Buscando logotipo para empresa ID:', empresaData.id);
-        const logoPath = `${empresaData.id}/logo.png`;
-        const { data: logoData } = await supabase.storage
-          .from('empresa-logos')
-          .getPublicUrl(logoPath);
+        const logoFormats = ['logo.png', 'logo.jpg', 'logo.jpeg', 'logotipo.png'];
+        
+        for (const format of logoFormats) {
+          const logoPath = `${empresaData.id}/${format}`;
+          const { data: logoData } = await supabase.storage
+            .from('empresa-logos')
+            .getPublicUrl(logoPath);
           
-        if (logoData?.publicUrl) {
-          try {
-            const response = await fetch(logoData.publicUrl, { method: 'HEAD' });
-            if (response.ok) {
-              console.log('✅ [SUCCESS] Logotipo encontrado:', logoData.publicUrl);
-              setLogoUrl(logoData.publicUrl);
-            } else {
-              console.log('ℹ️ [INFO] Logotipo não encontrado para empresa');
+          if (logoData?.publicUrl) {
+            try {
+              const response = await fetch(logoData.publicUrl, { method: 'HEAD' });
+              if (response.ok) {
+                console.log('✅ [SUCCESS] Logotipo encontrado:', logoData.publicUrl);
+                setLogoUrl(logoData.publicUrl);
+                break; // Sai do loop se encontrou o logo
+              }
+            } catch (error) {
+              console.log('ℹ️ [INFO] Erro ao verificar formato:', format, error);
             }
-          } catch (error) {
-            console.log('ℹ️ [INFO] Erro ao verificar logotipo:', error);
           }
+        }
+        
+        if (!logoUrl) {
+          console.log('ℹ️ [INFO] Nenhum logotipo encontrado para empresa');
         }
       } catch (error) {
         console.error('❌ [ERROR] Erro geral ao carregar configuração:', error);

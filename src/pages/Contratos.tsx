@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, FileText, Calendar, DollarSign, Users, AlertCircle, CheckCircle, Clock, XCircle, Edit, FileEdit, BarChart3, Filter, Link2, TrendingUp } from 'lucide-react';
+import { Plus, Search, FileText, Calendar, DollarSign, Users, AlertCircle, CheckCircle, Clock, XCircle, Edit, FileEdit, BarChart3, Filter, Link2, TrendingUp, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ContratoDialog } from '@/components/contratos/ContratoDialog';
@@ -548,15 +548,22 @@ export default function Contratos() {
                       <span className="font-medium text-muted-foreground">Risco:</span>
                       <p className="capitalize">{fornecedor.avaliacao_risco}</p>
                     </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleEdit(fornecedor, 'fornecedor')}
-                      >
-                        Editar
-                      </Button>
-                    </div>
+                     <div className="flex gap-2">
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => handleEdit(fornecedor, 'fornecedor')}
+                       >
+                         <Edit className="h-4 w-4" />
+                       </Button>
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => handleDelete(fornecedor.id, 'fornecedor')}
+                       >
+                         <Trash2 className="h-4 w-4" />
+                       </Button>
+                     </div>
                   </div>
                 </CardContent>
               </Card>

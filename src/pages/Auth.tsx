@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
 import logoImage from '@/assets/governaii-logo-main.png';
+import { ForgotPasswordDialog } from '@/components/ForgotPasswordDialog';
 
 const Auth = () => {
   const { user, loading } = useAuth();
@@ -19,6 +20,7 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [forgotPasswordDialogOpen, setForgotPasswordDialogOpen] = useState(false);
 
   // Redirect if already authenticated - using Navigate instead of window.location
   if (!loading && user) {
@@ -63,7 +65,7 @@ const Auth = () => {
   };
 
   const handleForgotPassword = () => {
-    toast.info('Funcionalidade em desenvolvimento');
+    setForgotPasswordDialogOpen(true);
   };
 
   const getCurrentLogo = () => {
@@ -177,6 +179,11 @@ const Auth = () => {
           </p>
         </div>
       </div>
+
+      <ForgotPasswordDialog
+        open={forgotPasswordDialogOpen}
+        onOpenChange={setForgotPasswordDialogOpen}
+      />
     </div>
   );
 };
