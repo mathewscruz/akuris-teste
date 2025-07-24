@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { Requirement } from './types';
+import { logger } from '@/lib/logger';
 
 interface RequirementDialogProps {
   open: boolean;
@@ -38,14 +39,34 @@ export const RequirementDialog = ({
   
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, session, profile, debugAuthState } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
+    
+    // Debug do estado de autenticação
+    debugAuthState();
+    
+    logger.info('Attempting to save requirement', {
+      frameworkId,
+      requirementId: requirement?.id,
+      hasUser: !!user,
+      hasSession: !!session,
+      hasProfile: !!profile,
+      profileRole: profile?.role,
+      module: 'gap-analysis'
+    });
+
+    if (!user || !session) {
+      logger.error('Authentication required for requirement save', {
+        hasUser: !!user,
+        hasSession: !!session,
+        module: 'gap-analysis'
+      });
+      
       toast({
         title: "Erro de autenticação",
-        description: "Usuário não autenticado. Faça login novamente.",
+        description: "Sessão expirada. Faça login novamente.",
         variant: "destructive",
       });
       return;
@@ -53,21 +74,63 @@ export const RequirementDialog = ({
 
     setIsLoading(true);
     try {
-      // Verificar se temos empresa_id válida
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('empresa_id')
-        .eq('id', user.id)
-        .single();
+      // Para super-admin, permitir sem empresa_id
+      let empresaId = null;
+      
+      if (profile?.role === 'super_admin') {
+        logger.info('Super admin detected, bypassing empresa_id requirement', {
+          userId: user.id,
+          role: profile.role,
+          module: 'gap-analysis'
+        });
+      } else {
+        // Verificar se temos empresa_id válida para outros usuários
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('empresa_id, role')
+          .eq('user_id', user.id)
+          .single();
 
-      if (profileError || !profileData?.empresa_id) {
-        throw new Error('Usuário não possui empresa associada');
+        logger.debug('Profile data retrieved', {
+          userId: user.id,
+          profileData,
+          profileError: profileError?.message,
+          module: 'gap-analysis'
+        });
+
+        if (profileError) {
+          logger.error('Error fetching profile', {
+            error: profileError.message,
+            userId: user.id,
+            module: 'gap-analysis'
+          });
+          throw new Error('Erro ao verificar perfil do usuário');
+        }
+
+        if (!profileData?.empresa_id && profileData?.role !== 'super_admin') {
+          logger.error('User without empresa_id trying to save requirement', {
+            userId: user.id,
+            role: profileData?.role,
+            module: 'gap-analysis'
+          });
+          throw new Error('Usuário não possui empresa associada');
+        }
+        
+        empresaId = profileData.empresa_id;
       }
 
       const requirementData = {
         ...formData,
         framework_id: frameworkId,
       };
+
+      logger.debug('Saving requirement with data', {
+        requirementData,
+        isUpdate: !!requirement,
+        userId: user.id,
+        empresaId,
+        module: 'gap-analysis'
+      });
 
       if (requirement) {
         const { error } = await supabase
@@ -76,23 +139,43 @@ export const RequirementDialog = ({
           .eq('id', requirement.id);
         
         if (error) {
-          console.error('Erro na atualização:', error);
+          logger.error('Error updating requirement', {
+            error: error.message,
+            requirementId: requirement.id,
+            requirementData,
+            module: 'gap-analysis'
+          });
           throw error;
         }
+        
+        logger.info('Requirement updated successfully', {
+          requirementId: requirement.id,
+          module: 'gap-analysis'
+        });
         
         toast({
           title: "Requisito atualizado",
           description: "O requisito foi atualizado com sucesso.",
         });
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('gap_analysis_requirements')
-          .insert([requirementData]);
+          .insert([requirementData])
+          .select();
         
         if (error) {
-          console.error('Erro na inserção:', error);
+          logger.error('Error inserting requirement', {
+            error: error.message,
+            requirementData,
+            module: 'gap-analysis'
+          });
           throw error;
         }
+        
+        logger.info('Requirement created successfully', {
+          requirementId: data?.[0]?.id,
+          module: 'gap-analysis'
+        });
         
         toast({
           title: "Requisito criado",
@@ -102,7 +185,13 @@ export const RequirementDialog = ({
 
       onSuccess();
     } catch (error: any) {
-      console.error('Erro ao salvar requisito:', error);
+      logger.error('Error saving requirement', {
+        error: error.message || String(error),
+        frameworkId,
+        userId: user.id,
+        requirementId: requirement?.id,
+        module: 'gap-analysis'
+      });
       
       let errorMessage = "Ocorreu um erro ao salvar o requisito.";
       
@@ -110,6 +199,10 @@ export const RequirementDialog = ({
         errorMessage = "Erro de permissão: verifique se você tem acesso a este framework.";
       } else if (error.message?.includes('empresa associada')) {
         errorMessage = "Usuário não possui empresa associada. Entre em contato com o administrador.";
+      } else if (error.message?.includes('violates check constraint') || error.message?.includes('invalid input')) {
+        errorMessage = "Dados inválidos. Verifique os campos preenchidos.";
+      } else if (error.message?.includes('Authentication')) {
+        errorMessage = "Sessão expirada. Faça login novamente.";
       } else if (error.message) {
         errorMessage = error.message;
       }

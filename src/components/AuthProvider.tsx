@@ -35,6 +35,7 @@ interface AuthContextType {
   logoUpdateKey: number;
   forceLogoUpdate: () => void;
   initializeUserPermissions: () => Promise<void>;
+  debugAuthState: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -122,19 +123,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
 
     try {
-      console.log('Initializing permissions for user:', user.id);
+      logger.info('Initializing permissions for user', { userId: user.id, module: 'auth' });
       const { error } = await supabase.rpc('apply_default_permissions_for_user', {
         user_id_param: user.id
       });
 
       if (error) {
-        console.error('Error initializing user permissions:', error);
+        logger.error('Error initializing user permissions', { 
+          error: error.message, 
+          userId: user.id 
+        });
       } else {
-        console.log('User permissions initialized successfully');
+        logger.info('User permissions initialized successfully', { userId: user.id });
       }
     } catch (error) {
-      console.error('Error calling apply_default_permissions_for_user:', error);
+      logger.error('Error calling apply_default_permissions_for_user', { 
+        error: error instanceof Error ? error.message : String(error),
+        userId: user.id 
+      });
     }
+  };
+
+  // Função para debug do estado de autenticação
+  const debugAuthState = () => {
+    logger.debug('Current auth state', {
+      userId: user?.id,
+      sessionExists: !!session,
+      profileExists: !!profile,
+      companyExists: !!company,
+      profileRole: profile?.role,
+      profileEmpresaId: profile?.empresa_id,
+      module: 'auth'
+    });
   };
 
 
@@ -290,6 +310,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logoUpdateKey,
     forceLogoUpdate,
     initializeUserPermissions,
+    debugAuthState,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
