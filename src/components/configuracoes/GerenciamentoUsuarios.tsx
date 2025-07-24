@@ -291,23 +291,60 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
     try {
       setActionLoading(prev => ({ ...prev, [`delete-${usuarioToDelete.id}`]: true }));
       
-      // Debug: Verificar contexto do usuário antes da exclusão
+      // 1. Verificar se o usuário está autenticado
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.error('Usuário não autenticado:', userError);
+        throw new Error('Usuário não autenticado. Faça login novamente.');
+      }
+      
+      console.log('Usuário autenticado:', user.id);
+      
+      // 2. Verificar contexto detalhado do usuário
       const { data: debugData, error: debugError } = await supabase
         .rpc('debug_user_context');
       
-      console.log('Debug - Contexto do usuário:', debugData);
-      if (debugError) console.error('Erro no debug:', debugError);
+      console.log('Debug - Contexto do usuário logado:', debugData);
+      if (debugError) {
+        console.error('Erro no debug:', debugError);
+        throw new Error('Erro ao verificar permissões do usuário');
+      }
       
-      // Verificar se o usuário pode deletar (teste manual)
-      const { data: canDeleteTest, error: testError } = await supabase
+      // 3. Verificar dados do usuário alvo
+      const { data: targetUser, error: targetError } = await supabase
         .from('profiles')
-        .select('id, nome, role, empresa_id')
-        .eq('id', usuarioToDelete.id);
+        .select('id, nome, role, empresa_id, user_id')
+        .eq('id', usuarioToDelete.id)
+        .single();
       
-      console.log('Debug - Usuário alvo encontrado:', canDeleteTest);
-      if (testError) console.error('Erro ao buscar usuário alvo:', testError);
+      if (targetError || !targetUser) {
+        console.error('Erro ao buscar usuário alvo:', targetError);
+        throw new Error('Usuário não encontrado');
+      }
       
-      // Tentar a exclusão
+      console.log('Debug - Usuário alvo:', targetUser);
+      
+      // 4. Verificar se pode deletar baseado nas regras de negócio
+      const debugInfo = debugData as any;
+      const currentUserRole = debugInfo?.user_role;
+      const currentUserEmpresa = debugInfo?.user_empresa_id;
+      
+      if (currentUserRole === 'super_admin') {
+        console.log('Super admin pode deletar qualquer usuário');
+      } else if (currentUserRole === 'admin') {
+        if (targetUser.empresa_id !== currentUserEmpresa) {
+          throw new Error('Você só pode excluir usuários da sua empresa');
+        }
+        if (['admin', 'super_admin'].includes(targetUser.role)) {
+          throw new Error('Você não pode excluir outros administradores');
+        }
+        console.log('Admin pode deletar este usuário');
+      } else {
+        throw new Error('Você não tem permissão para excluir usuários');
+      }
+      
+      // 5. Tentar a exclusão
       console.log('Tentando excluir usuário ID:', usuarioToDelete.id);
       const { error } = await supabase
         .from('profiles')
