@@ -20,6 +20,7 @@ interface AssessmentFromList {
   data_conclusao: string;
   framework_id: string;
   framework: {
+    id: string;
     nome: string;
     tipo: string;
   };
