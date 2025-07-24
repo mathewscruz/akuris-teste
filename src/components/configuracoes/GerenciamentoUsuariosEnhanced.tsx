@@ -154,7 +154,9 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
       if (error) throw error;
       
       const accessMap = new Map<string, UserAccessInfo>();
-      data.forEach((info: UserAccessInfo) => {
+      // A função retorna um objeto com uma propriedade 'users' que contém o array
+      const users = data?.users || [];
+      users.forEach((info: UserAccessInfo) => {
         accessMap.set(info.user_id, info);
       });
       setUsersAccessInfo(accessMap);
