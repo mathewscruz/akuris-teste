@@ -323,13 +323,52 @@ export function RiscoForm({ risco, onSuccess }: Props) {
       let riscoId: string;
 
       if (risco?.id) {
-        // Atualizando risco existente
-        const { error } = await supabase
-          .from('riscos')
-          .update(riscoData)
-          .eq('id', risco.id);
+        // Detectar apenas campos alterados para otimização
+        const originalData = {
+          nome: risco.nome || '',
+          descricao: risco.descricao || '',
+          matriz_id: risco.matriz_id || null,
+          categoria_id: risco.categoria_id || null,
+          probabilidade_inicial: risco.probabilidade_inicial || '',
+          impacto_inicial: risco.impacto_inicial || '',
+          probabilidade_residual: risco.probabilidade_residual || null,
+          impacto_residual: risco.impacto_residual || null,
+          status: risco.status || '',
+          responsavel: risco.responsavel || null,
+          controles_existentes: risco.controles_existentes || null,
+          causas: risco.causas || null,
+          consequencias: risco.consequencias || null,
+          aceito: risco.aceito || false,
+          justificativa_aceite: risco.justificativa_aceite || null
+        };
 
-        if (error) throw error;
+        // Comparar e atualizar apenas campos alterados
+        const updatedFields: any = {};
+        Object.keys(riscoData).forEach(key => {
+          if (key !== 'empresa_id' && riscoData[key as keyof typeof riscoData] !== originalData[key as keyof typeof originalData]) {
+            updatedFields[key] = riscoData[key as keyof typeof riscoData];
+          }
+        });
+
+        // Sempre incluir campos calculados se probabilidade/impacto mudaram
+        if (updatedFields.probabilidade_inicial || updatedFields.impacto_inicial) {
+          updatedFields.nivel_risco_inicial = nivelInicial;
+        }
+        if (updatedFields.probabilidade_residual || updatedFields.impacto_residual) {
+          updatedFields.nivel_risco_residual = nivelResidual;
+        }
+
+        console.log('Campos alterados:', updatedFields);
+
+        if (Object.keys(updatedFields).length > 0) {
+          // Atualizando apenas campos alterados
+          const { error } = await supabase
+            .from('riscos')
+            .update(updatedFields)
+            .eq('id', risco.id);
+
+          if (error) throw error;
+        }
         riscoId = risco.id;
       } else {
         // Criando novo risco
