@@ -9,19 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
-
-interface Requirement {
-  id: string;
-  framework_id: string;
-  codigo: string;
-  titulo: string;
-  descricao: string;
-  categoria: string;
-  peso: number;
-  obrigatorio: boolean;
-  referencia_externa?: string;
-  ordem: number;
-}
+import { Requirement } from './types';
 
 interface RequirementDialogProps {
   open: boolean;
@@ -45,7 +33,6 @@ export const RequirementDialog = ({
     categoria: requirement?.categoria || '',
     peso: requirement?.peso || 1,
     obrigatorio: requirement?.obrigatorio || false,
-    referencia_externa: requirement?.referencia_externa || '',
     ordem: requirement?.ordem || 1
   });
   
@@ -249,15 +236,6 @@ export const RequirementDialog = ({
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="referencia_externa">Referência Externa</Label>
-            <Input
-              id="referencia_externa"
-              value={formData.referencia_externa}
-              onChange={(e) => setFormData(prev => ({ ...prev, referencia_externa: e.target.value }))}
-              placeholder="Ex: ISO 27001:2013 - A.5.1.1"
-            />
-          </div>
 
           <div className="flex justify-end gap-3 pt-4">
             <Button

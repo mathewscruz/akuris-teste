@@ -1,24 +1,15 @@
 import React, { useState } from "react";
-import { Plus, Settings, Trash2 } from "lucide-react";
+import { Plus, Settings, Trash2, Eye, EyeOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import { supabase } from "@/integrations/supabase/client";
-import { RequirementsManager } from "./RequirementsManager";
-import { AssessmentsList } from "./AssessmentsList";
+import { AssessmentView } from "./AssessmentView";
 import { FrameworkDialog } from "./FrameworkDialog";
 import { toast } from "sonner";
-
-interface Framework {
-  id: string;
-  nome: string;
-  versao: string;
-  tipo_framework: string;
-  descricao?: string;
-  assessment_count?: number;
-}
+import { Framework } from "./types";
 
 interface FrameworkTabsViewProps {
   onCreateFramework: () => void;
@@ -30,6 +21,7 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
   const [selectedFramework, setSelectedFramework] = useState<Framework | null>(null);
   const [isFrameworkDialogOpen, setIsFrameworkDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("new");
+  const [showFrameworks, setShowFrameworks] = useState<boolean>(true);
 
   const { data: frameworks = [], loading: isLoading, refetch, error } = useOptimizedQuery(
     async () => {
@@ -113,56 +105,75 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Análise de Conformidade</h1>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowFrameworks(!showFrameworks)}
+          className="flex items-center gap-2"
+        >
+          {showFrameworks ? (
+            <>
+              <EyeOff className="h-4 w-4" />
+              Esconder Frameworks
+            </>
+          ) : (
+            <>
+              <Eye className="h-4 w-4" />
+              Mostrar Frameworks
+            </>
+          )}
+        </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0">
-          <TabsTrigger
-            value="new"
-            className="flex items-center gap-2 h-10 px-4 rounded-t-md border-b-2 border-transparent data-[state=active]:border-primary"
-          >
-            <Plus className="h-4 w-4" />
-            Novo Framework
-          </TabsTrigger>
-          
-          {frameworks.map((framework: Framework) => (
+      {showFrameworks && (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0">
             <TabsTrigger
-              key={framework.id}
-              value={framework.id}
-              className="flex items-center gap-2 h-10 px-4 rounded-t-md border-b-2 border-transparent data-[state=active]:border-primary group"
+              value="new"
+              className="flex items-center gap-2 h-10 px-4 rounded-t-md border-b-2 border-transparent data-[state=active]:border-primary"
             >
-              <span>{framework.nome}</span>
-              <Badge variant="secondary" className="text-xs">
-                {framework.versao}
-              </Badge>
-              
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditFramework(framework);
-                  }}
-                >
-                  <Settings className="h-3 w-3" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteFramework(framework);
-                  }}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
+              <Plus className="h-4 w-4" />
+              Novo Framework
             </TabsTrigger>
-          ))}
-        </TabsList>
+            
+            {frameworks.map((framework: Framework) => (
+              <TabsTrigger
+                key={framework.id}
+                value={framework.id}
+                className="flex items-center gap-2 h-10 px-4 rounded-t-md border-b-2 border-transparent data-[state=active]:border-primary group"
+              >
+                <span>{framework.nome}</span>
+                <Badge variant="secondary" className="text-xs">
+                  {framework.versao}
+                </Badge>
+                
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditFramework(framework);
+                    }}
+                  >
+                    <Settings className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteFramework(framework);
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
         <TabsContent value="new" className="mt-6">
           <Card>
@@ -181,17 +192,16 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
           </Card>
         </TabsContent>
 
-        {frameworks.map((framework: Framework) => (
-          <TabsContent key={framework.id} value={framework.id} className="mt-6">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div>
-                      <span>{framework.nome}</span>
-                      <Badge className="ml-2">{framework.versao}</Badge>
-                    </div>
-                    <div className="flex gap-2">
+          {frameworks.map((framework: Framework) => (
+            <TabsContent key={framework.id} value={framework.id} className="mt-6">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <div>
+                        <span>{framework.nome}</span>
+                        <Badge className="ml-2">{framework.versao}</Badge>
+                      </div>
                       <Button
                         variant="outline"
                         size="sm"
@@ -200,42 +210,39 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
                         <Settings className="h-4 w-4 mr-2" />
                         Editar Framework
                       </Button>
-                    </div>
-                  </CardTitle>
-                  {framework.descricao && (
-                    <p className="text-muted-foreground">{framework.descricao}</p>
-                  )}
-                </CardHeader>
-              </Card>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Requisitos do Framework</CardTitle>
+                    </CardTitle>
+                    {framework.descricao && (
+                      <p className="text-muted-foreground">{framework.descricao}</p>
+                    )}
                   </CardHeader>
-                  <CardContent>
-                    <RequirementsManager
-                      frameworkId={framework.id}
-                      frameworkName={framework.nome}
-                    />
-                  </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Avaliações</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>Avaliações do framework disponíveis em breve.</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <AssessmentView
+                  frameworkId={framework.id}
+                  frameworkName={framework.nome}
+                />
               </div>
-            </div>
-          </TabsContent>
-        ))}
-      </Tabs>
+            </TabsContent>
+          ))}
+        </Tabs>
+      )}
+
+      {!showFrameworks && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <p className="text-muted-foreground mb-4">
+              Os frameworks estão ocultos. Clique em "Mostrar Frameworks" para exibi-los.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => setShowFrameworks(true)}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Mostrar Frameworks
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <FrameworkDialog
         open={isFrameworkDialogOpen}
