@@ -1,30 +1,25 @@
-import { useState } from 'react';
-import { Play, Edit2, Eye, BarChart3, Calendar, User } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Edit, Eye, Search } from 'lucide-react';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 interface AssessmentFromList {
   id: string;
-  nome: string;
-  descricao: string;
+  name: string;
+  description?: string;
   status: string;
-  data_inicio: string;
-  data_conclusao_prevista: string;
-  data_conclusao: string;
-  framework_id: string;
-  framework: {
-    id: string;
-    nome: string;
-    tipo: string;
-  };
-  created_at: string;
+  start_date?: string;
+  end_date?: string;
+  framework_name: string;
+  framework_version: string;
+  framework_type: string;
 }
 
 interface AssessmentsListProps {
@@ -32,40 +27,71 @@ interface AssessmentsListProps {
   onEditAssessment: (assessment: AssessmentFromList) => void;
 }
 
-export const AssessmentsList = ({ onSelectAssessment, onEditAssessment }: AssessmentsListProps) => {
+export const AssessmentsList: React.FC<AssessmentsListProps> = ({ 
+  onSelectAssessment, 
+  onEditAssessment 
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  const { data: assessments, loading, refetch } = useOptimizedQuery(
+  // Buscar frameworks (renomeado para compatibility)
+  const { data: frameworks, loading } = useOptimizedQuery(
     async () => {
       const { data, error } = await supabase
-        .from('gap_analysis_assessments')
-        .select(`
-          *,
-          framework:gap_analysis_frameworks(nome, tipo)
-        `)
+        .from('gap_analysis_frameworks')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return { data: data || [], error: null };
+
+      const formattedData = data?.map(framework => ({
+        id: framework.id,
+        name: framework.nome, // Corrigido: usar 'nome' em vez de 'name'
+        description: framework.descricao, // Corrigido: usar 'descricao' em vez de 'description'
+        status: 'nao_iniciada', // Status padrão para frameworks
+        start_date: framework.created_at,
+        end_date: null,
+        framework_name: framework.nome, // Corrigido: usar 'nome'
+        framework_version: framework.versao, // Corrigido: usar 'versao' em vez de 'version'
+        framework_type: framework.tipo_framework // Corrigido: usar 'tipo_framework' em vez de 'type'
+      })) || [];
+
+      return { data: formattedData, error: null };
     },
     [],
     {
-      staleTime: 5 * 60 * 1000,
-      cacheKey: 'gap-assessments-list'
+      cacheKey: 'gap-frameworks-list',
+      cacheDuration: 5
     }
-  );
+  ) as { data: AssessmentFromList[], loading: boolean };
 
-  const filteredAssessments = assessments?.filter((assessment: any) => {
-    const matchesSearch = assessment.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         assessment.framework?.nome.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filtrar frameworks/assessments
+  const filteredAssessments = frameworks?.filter(assessment => {
+    const matchesSearch = assessment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         assessment.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         assessment.framework_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    
     const matchesStatus = statusFilter === 'all' || assessment.status === statusFilter;
+    
     return matchesSearch && matchesStatus;
-  });
+  }) || [];
+
+  // Cálculos para paginação
+  const totalItems = filteredAssessments.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedAssessments = filteredAssessments.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset página quando filtros mudam
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, itemsPerPage]);
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      'rascunho': 'secondary',
+      'nao_iniciada': 'secondary',
       'em_andamento': 'default',
       'pausada': 'outline',
       'concluida': 'default',
@@ -73,7 +99,7 @@ export const AssessmentsList = ({ onSelectAssessment, onEditAssessment }: Assess
     } as const;
 
     const labels = {
-      'rascunho': 'Rascunho',
+      'nao_iniciada': 'Não Iniciada',
       'em_andamento': 'Em Andamento',
       'pausada': 'Pausada',
       'concluida': 'Concluída',
@@ -87,31 +113,15 @@ export const AssessmentsList = ({ onSelectAssessment, onEditAssessment }: Assess
     );
   };
 
-  const getFrameworkTypeBadge = (tipo: string) => {
-    const colors = {
-      'regulatorio': 'bg-blue-100 text-blue-800',
-      'normativo': 'bg-green-100 text-green-800',
-      'boas_praticas': 'bg-purple-100 text-purple-800',
-      'interno': 'bg-orange-100 text-orange-800'
-    };
-
-    return (
-      <Badge variant="outline" className={colors[tipo as keyof typeof colors] || 'bg-gray-100 text-gray-800'}>
-        {tipo}
-      </Badge>
-    );
-  };
-
   if (loading) {
     return (
       <Card>
         <CardHeader>
-          <Skeleton className="h-6 w-48 mb-2" />
-          <Skeleton className="h-4 w-64" />
+          <CardTitle>Frameworks Disponíveis</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
               <Skeleton key={i} className="h-16 w-full" />
             ))}
           </div>
@@ -123,132 +133,149 @@ export const AssessmentsList = ({ onSelectAssessment, onEditAssessment }: Assess
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" />
-          Avaliações de Gap Analysis
-        </CardTitle>
-        <CardDescription>
-          Gerencie suas avaliações de conformidade e maturidade
-        </CardDescription>
+        <CardTitle>Frameworks Disponíveis</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex gap-4 mb-6">
-          <div className="flex-1">
+        <div className="flex gap-4 mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome da avaliação ou framework..."
+              placeholder="Buscar frameworks..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
             />
           </div>
+          
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-48">
-              <SelectValue />
+              <SelectValue placeholder="Filtrar por status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos os Status</SelectItem>
-              <SelectItem value="rascunho">Rascunho</SelectItem>
+              <SelectItem value="all">Todos os status</SelectItem>
+              <SelectItem value="nao_iniciada">Não Iniciada</SelectItem>
               <SelectItem value="em_andamento">Em Andamento</SelectItem>
               <SelectItem value="pausada">Pausada</SelectItem>
               <SelectItem value="concluida">Concluída</SelectItem>
-              <SelectItem value="cancelada">Cancelada</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(parseInt(value))}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10 itens</SelectItem>
+              <SelectItem value="20">20 itens</SelectItem>
+              <SelectItem value="50">50 itens</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {filteredAssessments && filteredAssessments.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Avaliação</TableHead>
-                <TableHead>Framework</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Datas</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredAssessments.map((assessment: any) => (
-                <TableRow key={assessment.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{assessment.nome}</div>
-                      {assessment.descricao && (
-                        <div className="text-sm text-muted-foreground mt-1">
-                          {assessment.descricao}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="font-medium">{assessment.framework?.nome}</div>
-                      {assessment.framework?.tipo && (
-                        <div>{getFrameworkTypeBadge(assessment.framework.tipo)}</div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(assessment.status)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm space-y-1">
-                      {assessment.data_inicio && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          Início: {new Date(assessment.data_inicio).toLocaleDateString()}
-                        </div>
-                      )}
-                      {assessment.data_conclusao_prevista && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          Prevista: {new Date(assessment.data_conclusao_prevista).toLocaleDateString()}
-                        </div>
-                      )}
-                      {assessment.data_conclusao && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          Concluída: {new Date(assessment.data_conclusao).toLocaleDateString()}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onSelectAssessment(assessment)}
-                        title="Abrir avaliação"
-                      >
-                        {assessment.status === 'concluida' ? <Eye className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEditAssessment(assessment)}
-                        title="Editar configurações"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <div className="mb-4 text-sm text-muted-foreground">
+          Mostrando {startIndex + 1}-{Math.min(startIndex + itemsPerPage, totalItems)} de {totalItems} frameworks
+        </div>
+
+        {paginatedAssessments.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2 font-medium">Nome</th>
+                  <th className="text-left p-2 font-medium">Tipo</th>
+                  <th className="text-left p-2 font-medium">Versão</th>
+                  <th className="text-left p-2 font-medium">Status</th>
+                  <th className="text-left p-2 font-medium">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedAssessments.map((framework) => (
+                  <tr key={framework.id} className="border-b hover:bg-muted/50">
+                    <td className="p-2">
+                      <div>
+                        <div className="font-medium">{framework.name}</div>
+                        {framework.description && (
+                          <div className="text-sm text-muted-foreground">{framework.description}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <Badge variant="outline" className="text-xs">
+                        {framework.framework_type}
+                      </Badge>
+                    </td>
+                    <td className="p-2">
+                      <Badge variant="outline" className="text-xs">
+                        v{framework.framework_version}
+                      </Badge>
+                    </td>
+                    <td className="p-2">
+                      {getStatusBadge(framework.status)}
+                    </td>
+                    <td className="p-2">
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onSelectAssessment(framework)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEditAssessment(framework)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
-          <div className="text-center py-12">
-            <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-lg font-medium mb-2">
-              {searchTerm || statusFilter !== 'all' 
-                ? 'Nenhuma avaliação encontrada' 
-                : 'Nenhuma avaliação criada'}
-            </p>
-            <p className="text-muted-foreground">
-              {searchTerm || statusFilter !== 'all'
-                ? 'Tente ajustar os filtros de busca.'
-                : 'Comece criando uma nova avaliação para um framework.'}
-            </p>
+          <div className="text-center py-8 text-muted-foreground">
+            {searchTerm || statusFilter !== 'all' 
+              ? 'Nenhum framework encontrado com os filtros aplicados.' 
+              : 'Nenhum framework cadastrado ainda.'}
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="mt-4 flex justify-center">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(page)}
+                      isActive={currentPage === page}
+                      className="cursor-pointer"
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           </div>
         )}
       </CardContent>

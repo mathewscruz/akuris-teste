@@ -99,27 +99,44 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
     }));
   };
 
-  // Salvamento automático com debounce
-  const saveEvaluations = useCallback(async (evaluationsToSave: Record<string, any>) => {
-    if (Object.keys(evaluationsToSave).length === 0) return;
-    
+  // Função para salvar avaliações APENAS quando solicitado manualmente
+  const saveEvaluations = useCallback(async () => {
     setSaving(true);
     try {
-      const evaluationsArray = Object.entries(evaluationsToSave).map(([requirementId, evaluation]) => ({
-        requirement_id: requirementId,
-        framework_id: frameworkId,
-        assessment_id: frameworkId, // Mantendo para compatibilidade
-        evidence_implemented: evaluation.evidence_implemented || '',
-        responsible_area: evaluation.responsible_area || '',
-        conformity_status: evaluation.conformity_status || 'nao_aplicavel',
-        action_preview: evaluation.action_preview || '',
-        evidence_status: evaluation.evidence_status || 'pendente',
-        evidence_files: evaluation.evidence_files || []
-      }));
+      console.log('💾 Salvando avaliações manualmente...');
+      
+      // Filtrar apenas avaliações que têm pelo menos um campo preenchido
+      const evaluationsToSave = Object.entries(evaluations)
+        .filter(([_, evaluation]) => {
+          return evaluation.evidence_implemented || 
+                 evaluation.responsible_area || 
+                 evaluation.conformity_status !== 'nao_aplicavel' ||
+                 evaluation.action_preview ||
+                 evaluation.evidence_status !== 'pendente' ||
+                 (evaluation.evidence_files && evaluation.evidence_files.length > 0);
+        })
+        .map(([requirementId, evaluation]) => ({
+          requirement_id: requirementId,
+          framework_id: frameworkId,
+          assessment_id: frameworkId, // Mantendo para compatibilidade
+          evidence_implemented: evaluation.evidence_implemented || '',
+          responsible_area: evaluation.responsible_area || '',
+          conformity_status: evaluation.conformity_status || 'nao_aplicavel',
+          action_preview: evaluation.action_preview || '',
+          evidence_status: evaluation.evidence_status || 'pendente',
+          evidence_files: evaluation.evidence_files || []
+        }));
+
+      if (evaluationsToSave.length === 0) {
+        toast.info("Nenhuma avaliação preenchida para salvar");
+        return;
+      }
+
+      console.log('📝 Salvando', evaluationsToSave.length, 'avaliações preenchidas');
 
       const { error } = await supabase
         .from('gap_analysis_evaluations')
-        .upsert(evaluationsArray, {
+        .upsert(evaluationsToSave, {
           onConflict: 'framework_id,requirement_id'
         });
 
@@ -128,25 +145,16 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
       // Invalidar cache e refetch após salvar
       console.log('✅ Salvamento concluído, invalidando cache...');
       refetchEvaluations();
-      toast.success("Avaliações salvas automaticamente!");
+      toast.success(`${evaluationsToSave.length} avaliações salvas com sucesso!`);
     } catch (error: any) {
       toast.error("Erro ao salvar: " + error.message);
     } finally {
       setSaving(false);
     }
-  }, [frameworkId]);
+  }, [evaluations, frameworkId, refetchEvaluations]);
 
-  // Efeito para salvamento automático
-  useEffect(() => {
-    if (Object.keys(debouncedEvaluations).length > 0) {
-      saveEvaluations(debouncedEvaluations);
-    }
-  }, [debouncedEvaluations, saveEvaluations]);
-
-  const handleSaveEvaluations = async () => {
-    await saveEvaluations(evaluations);
-    toast.success("Avaliações salvas com sucesso!");
-  };
+  // REMOVIDO: Salvamento automático com debounce
+  // Agora só salva quando o usuário clicar no botão "Salvar Avaliações"
 
   const handleManagerSuccess = () => {
     refetch();
@@ -328,8 +336,12 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
 
           {requirements.length > 0 && (
             <div className="flex justify-end pt-4">
-              <Button onClick={handleSaveEvaluations}>
-                Salvar Avaliações
+              <Button 
+                onClick={saveEvaluations} 
+                disabled={saving}
+                className="ml-auto"
+              >
+                {saving ? 'Salvando...' : 'Salvar Avaliações'}
               </Button>
             </div>
           )}

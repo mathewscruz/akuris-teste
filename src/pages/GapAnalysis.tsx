@@ -27,18 +27,14 @@ interface Framework {
 
 interface Assessment {
   id: string;
-  nome: string;
-  descricao: string;
+  name: string;
+  description?: string;
   status: string;
-  data_inicio: string;
-  data_conclusao_prevista: string;
-  data_conclusao: string;
-  framework_id: string;
-  framework: {
-    id: string;
-    nome: string;
-    tipo: string;
-  };
+  start_date?: string;
+  end_date?: string;
+  framework_name: string;
+  framework_version: string;
+  framework_type: string;
 }
 
 export default function GapAnalysis() {
@@ -101,21 +97,17 @@ export default function GapAnalysis() {
   };
 
   const handleSelectAssessment = (assessment: Assessment | any) => {
-    // Convert ActiveAssessment to Assessment format if needed
+    // Convert framework data to Assessment format
     const convertedAssessment: Assessment = {
       id: assessment.id,
-      nome: assessment.nome,
-      descricao: assessment.descricao || '',
+      name: assessment.name || assessment.nome,
+      description: assessment.description || assessment.descricao || '',
       status: assessment.status,
-      data_inicio: assessment.data_inicio,
-      data_conclusao_prevista: assessment.data_prevista_conclusao || assessment.data_conclusao_prevista,
-      data_conclusao: assessment.data_conclusao || '',
-      framework_id: assessment.framework?.id || assessment.framework_id,
-      framework: {
-        id: assessment.framework?.id || assessment.framework_id,
-        nome: assessment.framework?.nome || '',
-        tipo: assessment.framework?.tipo_framework || assessment.framework?.tipo || ''
-      }
+      start_date: assessment.start_date || assessment.data_inicio,
+      end_date: assessment.end_date || assessment.data_conclusao,
+      framework_name: assessment.framework_name || assessment.framework?.nome || '',
+      framework_version: assessment.framework_version || assessment.versao || '',
+      framework_type: assessment.framework_type || assessment.framework?.tipo || assessment.tipo_framework || ''
     };
     setSelectedAssessment(convertedAssessment);
     setCurrentView('evaluation');
@@ -159,9 +151,9 @@ export default function GapAnalysis() {
         {renderBackButton()}
         <AssessmentEvaluationView
           assessmentId={selectedAssessment.id}
-          frameworkId={selectedAssessment.framework_id}
-          frameworkName={selectedAssessment.framework?.nome || ''}
-          assessmentName={selectedAssessment.nome}
+          frameworkId={selectedAssessment.id} // Usando o ID como framework_id para compatibilidade
+          frameworkName={selectedAssessment.framework_name || selectedAssessment.name}
+          assessmentName={selectedAssessment.name}
           onSave={() => console.log('Assessment saved')}
         />
       </div>
