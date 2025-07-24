@@ -290,9 +290,10 @@ export const AssessmentEvaluationView = ({
             </Button>
           </div>
 
-          <div className="rounded-lg border">
-            <Table>
-              <TableHeader>
+          <div className="rounded-lg border overflow-visible">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                 <TableRow>
                   <TableHead>Código</TableHead>
                   <TableHead>Requisito</TableHead>
@@ -347,7 +348,14 @@ export const AssessmentEvaluationView = ({
                               <SelectValue />
                             </div>
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent 
+                            className="bg-background border-border shadow-lg"
+                            position="popper"
+                            side="bottom"
+                            align="start"
+                            sideOffset={4}
+                            style={{ zIndex: 9999 }}
+                          >
                             <SelectItem value="conforme">
                               <div className="flex items-center gap-2">
                                 <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -404,7 +412,8 @@ export const AssessmentEvaluationView = ({
                   );
                 })}
               </TableBody>
-            </Table>
+              </Table>
+            </div>
           </div>
         </div>
       </div>
