@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,14 +28,40 @@ export const RequirementDialog = ({
   onSuccess
 }: RequirementDialogProps) => {
   const [formData, setFormData] = useState({
-    codigo: requirement?.codigo || '',
-    titulo: requirement?.titulo || '',
-    descricao: requirement?.descricao || '',
-    categoria: requirement?.categoria || '',
-    peso: requirement?.peso || 1,
-    obrigatorio: requirement?.obrigatorio || false,
-    ordem: requirement?.ordem || 1
+    codigo: '',
+    titulo: '',
+    descricao: '',
+    categoria: '',
+    peso: 1,
+    obrigatorio: false,
+    ordem: 1
   });
+
+  // Atualizar o formData quando o requirement mudar
+  useEffect(() => {
+    if (requirement) {
+      setFormData({
+        codigo: requirement.codigo || '',
+        titulo: requirement.titulo || '',
+        descricao: requirement.descricao || '',
+        categoria: requirement.categoria || '',
+        peso: requirement.peso || 1,
+        obrigatorio: requirement.obrigatorio || false,
+        ordem: requirement.ordem || 1
+      });
+    } else {
+      // Reset form para novo requisito
+      setFormData({
+        codigo: '',
+        titulo: '',
+        descricao: '',
+        categoria: '',
+        peso: 1,
+        obrigatorio: false,
+        ordem: 1
+      });
+    }
+  }, [requirement, open]);
   
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();

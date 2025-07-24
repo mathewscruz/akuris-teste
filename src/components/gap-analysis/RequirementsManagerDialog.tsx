@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -96,6 +96,60 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
     onSuccess();
   };
 
+  const handleMoveUp = async (requirement: Requirement) => {
+    const currentIndex = requirements.findIndex(r => r.id === requirement.id);
+    if (currentIndex <= 0) return;
+
+    const previousRequirement = requirements[currentIndex - 1];
+    
+    try {
+      // Trocar as ordens
+      const { error: error1 } = await supabase
+        .from('gap_analysis_requirements')
+        .update({ ordem: previousRequirement.ordem })
+        .eq('id', requirement.id);
+
+      const { error: error2 } = await supabase
+        .from('gap_analysis_requirements')
+        .update({ ordem: requirement.ordem })
+        .eq('id', previousRequirement.id);
+
+      if (error1 || error2) throw error1 || error2;
+
+      toast.success("Ordem alterada com sucesso!");
+      refetch();
+    } catch (error: any) {
+      toast.error("Erro ao alterar ordem: " + error.message);
+    }
+  };
+
+  const handleMoveDown = async (requirement: Requirement) => {
+    const currentIndex = requirements.findIndex(r => r.id === requirement.id);
+    if (currentIndex >= requirements.length - 1) return;
+
+    const nextRequirement = requirements[currentIndex + 1];
+    
+    try {
+      // Trocar as ordens
+      const { error: error1 } = await supabase
+        .from('gap_analysis_requirements')
+        .update({ ordem: nextRequirement.ordem })
+        .eq('id', requirement.id);
+
+      const { error: error2 } = await supabase
+        .from('gap_analysis_requirements')
+        .update({ ordem: requirement.ordem })
+        .eq('id', nextRequirement.id);
+
+      if (error1 || error2) throw error1 || error2;
+
+      toast.success("Ordem alterada com sucesso!");
+      refetch();
+    } catch (error: any) {
+      toast.error("Erro ao alterar ordem: " + error.message);
+    }
+  };
+
   if (loading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -151,6 +205,7 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Ordem</TableHead>
                       <TableHead>Código</TableHead>
                       <TableHead>Título</TableHead>
                       <TableHead>Categoria</TableHead>
@@ -160,8 +215,33 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {requirements.map((requirement) => (
+                    {requirements.map((requirement, index) => (
                       <TableRow key={requirement.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Badge variant="outline">{requirement.ordem || index + 1}</Badge>
+                            <div className="flex flex-col">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleMoveUp(requirement)}
+                                disabled={index === 0}
+                                className="h-5 w-5 p-0"
+                              >
+                                <ChevronUp className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleMoveDown(requirement)}
+                                disabled={index === requirements.length - 1}
+                                className="h-5 w-5 p-0"
+                              >
+                                <ChevronDown className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        </TableCell>
                         <TableCell className="font-mono text-sm">
                           {requirement.codigo || '-'}
                         </TableCell>
