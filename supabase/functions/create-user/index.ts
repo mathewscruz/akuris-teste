@@ -75,14 +75,18 @@ Deno.serve(async (req) => {
       throw new Error('Usuário não tem permissão para criar outros usuários')
     }
 
-    // Se não for super admin, só pode criar usuários da própria empresa
-    if (!isSuperAdmin && empresa_id !== currentUserProfile.empresa_id) {
-      throw new Error('Administradores só podem criar usuários da própria empresa')
-    }
-
     // Se não for super admin, não pode criar super admins
     if (!isSuperAdmin && role === 'super_admin') {
       throw new Error('Apenas super admins podem criar outros super admins')
+    }
+
+    // Para admins, forçar empresa_id para ser a mesma do usuário atual
+    let finalEmpresaId = empresa_id
+    if (!isSuperAdmin) {
+      finalEmpresaId = currentUserProfile.empresa_id
+    } else if (!empresa_id) {
+      // Se super admin não especificou empresa, usar a própria
+      finalEmpresaId = currentUserProfile.empresa_id
     }
 
     console.log(`Criando usuário: ${email}`)
@@ -116,7 +120,7 @@ Deno.serve(async (req) => {
         nome: nome,
         email: email,
         role: role,
-        empresa_id: empresa_id || currentUserProfile.empresa_id,
+        empresa_id: finalEmpresaId,
       })
 
     if (profileInsertError) {
