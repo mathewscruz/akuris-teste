@@ -20,12 +20,10 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Redirect if already authenticated - usando useEffect para evitar loops
-  useEffect(() => {
-    if (!loading && user) {
-      window.location.replace('/');
-    }
-  }, [user, loading]);
+  // Redirect if already authenticated - using Navigate instead of window.location
+  if (!loading && user) {
+    return <Navigate to="/" replace />;
+  }
 
 
   // Early return AFTER all hooks

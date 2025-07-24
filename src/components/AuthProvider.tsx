@@ -185,11 +185,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Usar setTimeout para não bloquear o callback
+          // Verificar senha temporária PRIMEIRO e de forma síncrona
+          await checkTemporaryPassword();
+          // Depois fazer outras operações
           setTimeout(async () => {
             if (isSubscribed) {
               await fetchProfile(session.user.id);
-              await checkTemporaryPassword();
               await initializeUserPermissions();
             }
           }, 0);
@@ -204,7 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!isSubscribed) return;
 
       console.log('Initial session check:', session?.user?.id);
@@ -212,10 +213,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        // Verificar senha temporária PRIMEIRO e de forma síncrona
+        await checkTemporaryPassword();
         setTimeout(async () => {
           if (isSubscribed) {
             await fetchProfile(session.user.id);
-            await checkTemporaryPassword();
             await initializeUserPermissions();
           }
         }, 0);
