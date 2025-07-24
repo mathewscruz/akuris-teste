@@ -163,8 +163,10 @@ Deno.serve(async (req) => {
     console.log('Senha temporária registrada')
 
     // Enviar e-mail de boas-vindas
+    let emailSent = false;
     try {
-      const { error: emailError } = await supabaseAdmin.functions.invoke('send-welcome-email', {
+      console.log('Tentando enviar e-mail de boas-vindas...')
+      const { data: emailData, error: emailError } = await supabaseAdmin.functions.invoke('send-welcome-email', {
         body: {
           userName: nome,
           userEmail: email,
@@ -174,13 +176,13 @@ Deno.serve(async (req) => {
 
       if (emailError) {
         console.error('Erro ao enviar e-mail:', emailError)
-        // Não falhar a criação do usuário por causa do e-mail
+        console.error('Detalhes do erro:', JSON.stringify(emailError, null, 2))
       } else {
-        console.log('E-mail de boas-vindas enviado')
+        console.log('E-mail de boas-vindas enviado com sucesso:', emailData)
+        emailSent = true;
       }
     } catch (emailError) {
-      console.error('Erro ao enviar e-mail:', emailError)
-      // Não falhar a criação do usuário por causa do e-mail
+      console.error('Exceção ao enviar e-mail:', emailError)
     }
 
     return new Response(JSON.stringify({ 
@@ -189,7 +191,9 @@ Deno.serve(async (req) => {
         id: authData.user.id,
         email: email,
         nome: nome
-      }
+      },
+      emailSent: emailSent,
+      message: emailSent ? 'Usuário criado com sucesso! E-mail de boas-vindas enviado.' : 'Usuário criado com sucesso! Falha no envio do e-mail.'
     }), {
       status: 200,
       headers: {

@@ -74,6 +74,8 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
   const [usuarioToDelete, setUsuarioToDelete] = useState<Usuario | null>(null);
   const [usersAccessInfo, setUsersAccessInfo] = useState<Map<string, UserAccessInfo>>(new Map());
   const [accessInfoLoading, setAccessInfoLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
 
   const form = useForm<UsuarioForm>({
     resolver: zodResolver(usuarioSchema),
@@ -192,11 +194,11 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
 
   const handleSubmit = async (data: UsuarioForm) => {
     try {
-      setLoading(true);
+      setSubmitting(true);
       
       if (!editingUsuario) {
         // Criar novo usuário usando Edge Function
-        const { error } = await supabase.functions.invoke('create-user', {
+        const { data: result, error } = await supabase.functions.invoke('create-user', {
           body: {
             nome: data.nome,
             email: data.email,
@@ -210,7 +212,15 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
           throw new Error(error.message || 'Erro ao criar usuário');
         }
 
-        toast.success('Usuário criado com sucesso! E-mail de boas-vindas enviado.');
+        // Usar a mensagem retornada pela API
+        const message = result?.message || 'Usuário criado com sucesso!';
+        const emailSent = result?.emailSent || false;
+        
+        if (emailSent) {
+          toast.success(message);
+        } else {
+          toast.warning(message + ' Você pode reenviar o e-mail de acesso manualmente.');
+        }
       } else {
         // Para edição de usuário (mantém a lógica existente)
         const { error } = await supabase
@@ -234,7 +244,7 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
       console.error('Erro ao salvar usuário:', error);
       toast.error(error.message || 'Erro ao salvar usuário');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -251,6 +261,7 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
 
   const toggleUserStatus = async (usuario: Usuario) => {
     try {
+      setActionLoading(prev => ({ ...prev, [`toggle-${usuario.id}`]: true }));
       const { error } = await supabase
         .from('profiles')
         .update({ ativo: !usuario.ativo })
@@ -258,10 +269,12 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
 
       if (error) throw error;
       toast.success(`Usuário ${!usuario.ativo ? 'ativado' : 'desativado'} com sucesso`);
-      fetchUsuarios();
+      await fetchUsuarios();
     } catch (error) {
       console.error('Erro ao alterar status do usuário:', error);
       toast.error('Erro ao alterar status do usuário');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`toggle-${usuario.id}`]: false }));
     }
   };
 
@@ -274,25 +287,32 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
     if (!usuarioToDelete) return;
     
     try {
+      setLoading(true);
       const { error } = await supabase
         .from('profiles')
         .delete()
         .eq('id', usuarioToDelete.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao excluir usuário:', error);
+        throw new Error(error.message || 'Erro ao excluir usuário');
+      }
+      
       toast.success('Usuário excluído com sucesso');
-      fetchUsuarios();
+      await fetchUsuarios(); // Aguardar recarregamento
       setDeleteDialogOpen(false);
       setUsuarioToDelete(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao excluir usuário:', error);
-      toast.error('Erro ao excluir usuário');
+      toast.error(error.message || 'Erro ao excluir usuário');
+    } finally {
+      setLoading(false);
     }
   };
 
   const resetPassword = async (usuario: Usuario) => {
     try {
-      setLoading(true);
+      setActionLoading(prev => ({ ...prev, [`reset-${usuario.id}`]: true }));
       
       const { error } = await supabase.functions.invoke('send-password-reset', {
         body: {
@@ -307,13 +327,13 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
       console.error('Erro ao resetar senha:', error);
       toast.error(error.message || 'Erro ao resetar senha');
     } finally {
-      setLoading(false);
+      setActionLoading(prev => ({ ...prev, [`reset-${usuario.id}`]: false }));
     }
   };
 
   const resendWelcomeEmail = async (usuario: Usuario) => {
     try {
-      setLoading(true);
+      setActionLoading(prev => ({ ...prev, [`resend-${usuario.id}`]: true }));
       
       const { error } = await supabase.functions.invoke('resend-welcome-email', {
         body: {
@@ -325,12 +345,12 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
 
       toast.success('E-mail de acesso reenviado com sucesso.');
       // Atualizar informações de acesso após reenviar
-      fetchUsersAccessInfo([usuario.user_id]);
+      await fetchUsersAccessInfo([usuario.user_id]);
     } catch (error: any) {
       console.error('Erro ao reenviar e-mail de acesso:', error);
       toast.error(error.message || 'Erro ao reenviar e-mail de acesso');
     } finally {
-      setLoading(false);
+      setActionLoading(prev => ({ ...prev, [`resend-${usuario.id}`]: false }));
     }
   };
 
@@ -594,8 +614,15 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit">
-                    {editingUsuario ? 'Atualizar' : 'Criar'}
+                  <Button type="submit" disabled={submitting}>
+                    {submitting ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        {editingUsuario ? 'Atualizando...' : 'Criando...'}
+                      </div>
+                    ) : (
+                      editingUsuario ? 'Atualizar' : 'Criar'
+                    )}
                   </Button>
                 </div>
               </form>
@@ -681,8 +708,11 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
                             variant="ghost"
                             size="sm"
                             onClick={() => toggleUserStatus(usuario)}
+                            disabled={actionLoading[`toggle-${usuario.id}`]}
                           >
-                            {usuario.ativo ? (
+                            {actionLoading[`toggle-${usuario.id}`] ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                            ) : usuario.ativo ? (
                               <UserX className="h-4 w-4" />
                             ) : (
                               <UserCheck className="h-4 w-4" />
@@ -702,8 +732,13 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
                             variant="ghost"
                             size="sm"
                             onClick={() => resetPassword(usuario)}
+                            disabled={actionLoading[`reset-${usuario.id}`]}
                           >
-                            <Key className="h-4 w-4" />
+                            {actionLoading[`reset-${usuario.id}`] ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                            ) : (
+                              <Key className="h-4 w-4" />
+                            )}
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -720,8 +755,13 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
                               variant="ghost"
                               size="sm"
                               onClick={() => resendWelcomeEmail(usuario)}
+                              disabled={actionLoading[`resend-${usuario.id}`]}
                             >
-                              <Send className="h-4 w-4" />
+                              {actionLoading[`resend-${usuario.id}`] ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                              ) : (
+                                <Send className="h-4 w-4" />
+                              )}
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
