@@ -11,6 +11,7 @@ import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import { useDebounce } from "@/hooks/useDebounce";
 import { supabase } from "@/integrations/supabase/client";
 import { RequirementsManagerDialog } from "./RequirementsManagerDialog";
+import { EvidenceUpload } from "./EvidenceUpload";
 import { toast } from "sonner";
 import { Requirement } from "./types";
 import { cn } from "@/lib/utils";
@@ -54,7 +55,7 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
       const { data, error } = await supabase
         .from('gap_analysis_evaluations')
         .select('*')
-        .eq('assessment_id', frameworkId);
+        .eq('framework_id', frameworkId);
 
       if (error) throw error;
       return { data: data || [], error: null };
@@ -77,14 +78,15 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
           responsible_area: evaluation.responsible_area || '',
           conformity_status: evaluation.conformity_status || 'nao_aplicavel',
           action_preview: evaluation.action_preview || '',
-          evidence_status: evaluation.evidence_status || 'pendente'
+          evidence_status: evaluation.evidence_status || 'pendente',
+          evidence_files: evaluation.evidence_files || []
         };
       });
       setEvaluations(evaluationsMap);
     }
   }, [existingEvaluations]);
 
-  const handleEvaluationChange = (requirementId: string, field: string, value: string) => {
+  const handleEvaluationChange = (requirementId: string, field: string, value: any) => {
     setEvaluations(prev => ({
       ...prev,
       [requirementId]: {
@@ -102,18 +104,20 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
     try {
       const evaluationsArray = Object.entries(evaluationsToSave).map(([requirementId, evaluation]) => ({
         requirement_id: requirementId,
-        assessment_id: frameworkId, // Usando framework_id como assessment_id por ora
+        framework_id: frameworkId,
+        assessment_id: frameworkId, // Mantendo para compatibilidade
         evidence_implemented: evaluation.evidence_implemented || '',
         responsible_area: evaluation.responsible_area || '',
         conformity_status: evaluation.conformity_status || 'nao_aplicavel',
         action_preview: evaluation.action_preview || '',
-        evidence_status: evaluation.evidence_status || 'pendente'
+        evidence_status: evaluation.evidence_status || 'pendente',
+        evidence_files: evaluation.evidence_files || []
       }));
 
       const { error } = await supabase
         .from('gap_analysis_evaluations')
         .upsert(evaluationsArray, {
-          onConflict: 'requirement_id,assessment_id'
+          onConflict: 'requirement_id,framework_id'
         });
 
       if (error) throw error;
@@ -165,9 +169,6 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
                   </div>
                 )}
               </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Responda às perguntas abaixo para realizar a avaliação de conformidade. As alterações são salvas automaticamente.
-              </p>
             </div>
             <div className="flex gap-2">
               <Button
@@ -208,6 +209,7 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
                     <TableHead className="w-[120px]">Conformidade</TableHead>
                     <TableHead className="w-[150px]">Prévia das Ações / Observações</TableHead>
                     <TableHead className="w-[120px]">Status da Evidência</TableHead>
+                    <TableHead className="w-[140px]">Evidências</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -300,6 +302,14 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
                             <SelectItem value="rejeitada" className="text-red-700">✗ Rejeitada</SelectItem>
                           </SelectContent>
                         </Select>
+                      </TableCell>
+                      <TableCell>
+                        <EvidenceUpload
+                          requirementId={requirement.id}
+                          frameworkId={frameworkId}
+                          evidenceFiles={evaluations[requirement.id]?.evidence_files || []}
+                          onFilesUpdate={(files) => handleEvaluationChange(requirement.id, 'evidence_files', files)}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}
