@@ -429,14 +429,14 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Empresa</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select onValueChange={(value) => field.onChange(value === 'none' ? '' : value)} value={field.value || 'none'}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Selecione a empresa" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">Nenhuma empresa</SelectItem>
+                              <SelectItem value="none">Nenhuma empresa</SelectItem>
                               {empresas.map((empresa) => (
                                 <SelectItem key={empresa.id} value={empresa.id}>
                                   {empresa.nome}

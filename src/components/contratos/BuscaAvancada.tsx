@@ -338,14 +338,14 @@ export default function BuscaAvancada({ filtros, onFiltrosChange, fornecedores }
                 <div>
                   <label className="text-sm font-medium mb-2 block">Vencimento</label>
                   <Select 
-                    value={filtros.vencendoEm?.toString() || ''} 
-                    onValueChange={(value) => handleFiltroChange('vencendoEm', value ? Number(value) : undefined)}
+                    value={filtros.vencendoEm?.toString() || 'all'} 
+                    onValueChange={(value) => handleFiltroChange('vencendoEm', value === 'all' ? undefined : Number(value))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Vencendo em..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos</SelectItem>
+                      <SelectItem value="all">Todos</SelectItem>
                       <SelectItem value="7">7 dias</SelectItem>
                       <SelectItem value="15">15 dias</SelectItem>
                       <SelectItem value="30">30 dias</SelectItem>

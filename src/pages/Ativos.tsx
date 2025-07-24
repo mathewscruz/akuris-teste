@@ -119,11 +119,11 @@ const Ativos = () => {
   
   // Estados para filtros
   const [filtros, setFiltros] = useState({
-    status: '',
-    criticidade: '',
-    tipo: '',
-    valor_negocio: '',
-    localizacao: ''
+    status: 'all',
+    criticidade: 'all',
+    tipo: 'all',
+    valor_negocio: 'all',
+    localizacao: 'all'
   });
   const [showFilters, setShowFilters] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -290,27 +290,27 @@ const Ativos = () => {
       ativo.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
 
     // Filtros específicos
-    const matchesStatus = !filtros.status || ativo.status === filtros.status;
-    const matchesCriticidade = !filtros.criticidade || ativo.criticidade === filtros.criticidade;
-    const matchesTipo = !filtros.tipo || ativo.tipo === filtros.tipo;
-    const matchesValorNegocio = !filtros.valor_negocio || ativo.valor_negocio === filtros.valor_negocio;
-    const matchesLocalizacao = !filtros.localizacao || ativo.localizacao === filtros.localizacao;
+    const matchesStatus = !filtros.status || filtros.status === 'all' || ativo.status === filtros.status;
+    const matchesCriticidade = !filtros.criticidade || filtros.criticidade === 'all' || ativo.criticidade === filtros.criticidade;
+    const matchesTipo = !filtros.tipo || filtros.tipo === 'all' || ativo.tipo === filtros.tipo;
+    const matchesValorNegocio = !filtros.valor_negocio || filtros.valor_negocio === 'all' || ativo.valor_negocio === filtros.valor_negocio;
+    const matchesLocalizacao = !filtros.localizacao || filtros.localizacao === 'all' || ativo.localizacao === filtros.localizacao;
 
     return matchesSearch && matchesStatus && matchesCriticidade && matchesTipo && matchesValorNegocio && matchesLocalizacao;
   });
 
   const clearFilters = () => {
     setFiltros({
-      status: '',
-      criticidade: '',
-      tipo: '',
-      valor_negocio: '',
-      localizacao: ''
+      status: 'all',
+      criticidade: 'all',
+      tipo: 'all',
+      valor_negocio: 'all',
+      localizacao: 'all'
     });
     setSearchTerm('');
   };
 
-  const hasActiveFilters = Object.values(filtros).some(f => f !== '') || searchTerm !== '';
+  const hasActiveFilters = Object.values(filtros).some(f => f !== '' && f !== 'all') || searchTerm !== '';
 
   const getTipoLabel = (value: string) => {
     const tipo = tiposAtivo.find(t => t.value === value);
@@ -665,7 +665,7 @@ const Ativos = () => {
                   onClick={() => setShowFilters(!showFilters)}
                 >
                   <Filter className="h-4 w-4 mr-2" />
-                  Filtros {hasActiveFilters && `(${Object.values(filtros).filter(f => f !== '').length + (searchTerm ? 1 : 0)})`}
+                  Filtros {hasActiveFilters && `(${Object.values(filtros).filter(f => f !== '' && f !== 'all').length + (searchTerm ? 1 : 0)})`}
                 </Button>
                 {hasActiveFilters && (
                   <Button variant="outline" size="sm" onClick={clearFilters}>
@@ -694,7 +694,7 @@ const Ativos = () => {
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos os status</SelectItem>
+                      <SelectItem value="all">Todos os status</SelectItem>
                       {statusOptions.map((status) => (
                         <SelectItem key={status.value} value={status.value}>
                           {status.label}
@@ -711,7 +711,7 @@ const Ativos = () => {
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas as criticidades</SelectItem>
+                      <SelectItem value="all">Todas as criticidades</SelectItem>
                       {criticidades.map((crit) => (
                         <SelectItem key={crit.value} value={crit.value}>
                           {crit.label}
@@ -728,7 +728,7 @@ const Ativos = () => {
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos os tipos</SelectItem>
+                      <SelectItem value="all">Todos os tipos</SelectItem>
                       {tiposAtivo.map((tipo) => (
                         <SelectItem key={tipo.value} value={tipo.value}>
                           {tipo.label}
@@ -745,7 +745,7 @@ const Ativos = () => {
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos os valores</SelectItem>
+                      <SelectItem value="all">Todos os valores</SelectItem>
                       {valoresNegocio.map((valor) => (
                         <SelectItem key={valor} value={valor}>
                           {valor.charAt(0).toUpperCase() + valor.slice(1)}
@@ -762,7 +762,7 @@ const Ativos = () => {
                       <SelectValue placeholder="Todas as localizações" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas as localizações</SelectItem>
+                      <SelectItem value="all">Todas as localizações</SelectItem>
                       {Array.from(new Set(ativos.map(a => a.localizacao).filter(Boolean))).map((loc) => (
                         <SelectItem key={loc} value={loc!}>
                           {loc}
