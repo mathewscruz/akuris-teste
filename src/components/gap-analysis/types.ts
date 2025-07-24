@@ -5,6 +5,7 @@ export interface Requirement {
   titulo: string;
   descricao?: string | null;
   categoria?: string | null;
+  area_responsavel?: string | null;
   peso?: number | null;
   obrigatorio?: boolean | null;
   ordem?: number | null;

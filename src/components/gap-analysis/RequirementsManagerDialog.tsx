@@ -55,8 +55,8 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
     [frameworkId],
     {
       cacheKey: `gap-requirements-manager-${frameworkId}`,
-      cacheDuration: 5,
-      staleTime: 2
+      cacheDuration: 0.5,
+      staleTime: 0.1
     }
   ) as { data: Requirement[], loading: boolean, refetch: () => void };
 
@@ -83,7 +83,6 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
 
       if (error) throw error;
 
-      toast.success("Requisito excluído com sucesso!");
       refetch();
     } catch (error: any) {
       toast.error("Erro ao excluir requisito: " + error.message);
@@ -116,7 +115,6 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
 
       if (error1 || error2) throw error1 || error2;
 
-      toast.success("Ordem alterada com sucesso!");
       refetch();
     } catch (error: any) {
       toast.error("Erro ao alterar ordem: " + error.message);
@@ -143,7 +141,6 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
 
       if (error1 || error2) throw error1 || error2;
 
-      toast.success("Ordem alterada com sucesso!");
       refetch();
     } catch (error: any) {
       toast.error("Erro ao alterar ordem: " + error.message);
@@ -169,13 +166,13 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Gerenciar Requisitos - {frameworkName}</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
+          <div className="flex flex-col h-full space-y-4">
+            <div className="flex justify-between items-center flex-shrink-0">
               <p className="text-sm text-muted-foreground">
                 Gerencie os requisitos deste framework. Estes requisitos serão utilizados para criar avaliações de conformidade.
               </p>
@@ -201,20 +198,22 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
                 </CardContent>
               </Card>
             ) : (
-              <Card>
-                <Table>
-                  <TableHeader>
+              <Card className="flex-1 overflow-hidden flex flex-col">
+                <div className="overflow-x-auto flex-1">
+                  <Table>
+                    <TableHeader>
                     <TableRow>
-                      <TableHead>Ordem</TableHead>
-                      <TableHead>Código</TableHead>
-                      <TableHead>Título</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Peso</TableHead>
-                      <TableHead>Obrigatório</TableHead>
-                      <TableHead>Ações</TableHead>
+                      <TableHead className="w-20">Ordem</TableHead>
+                      <TableHead className="w-24">Código</TableHead>
+                      <TableHead className="min-w-[200px]">Título</TableHead>
+                      <TableHead className="w-32">Categoria</TableHead>
+                      <TableHead className="w-32">Área Responsável</TableHead>
+                      <TableHead className="w-16">Peso</TableHead>
+                      <TableHead className="w-24">Obrigatório</TableHead>
+                      <TableHead className="w-20">Ações</TableHead>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                    </TableHeader>
+                    <TableBody>
                     {requirements.map((requirement, index) => (
                       <TableRow key={requirement.id}>
                         <TableCell>
@@ -263,6 +262,13 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
                           )}
                         </TableCell>
                         <TableCell>
+                          {requirement.area_responsavel && (
+                            <Badge variant="outline">
+                              {requirement.area_responsavel}
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
                           {requirement.peso && (
                             <Badge variant="outline">
                               {requirement.peso}
@@ -297,7 +303,8 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                  </Table>
+                </div>
               </Card>
             )}
           </div>

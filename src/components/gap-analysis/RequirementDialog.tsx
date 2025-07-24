@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { Requirement } from './types';
 import { logger } from '@/lib/logger';
+import { AreaResponsavelManager } from './AreaResponsavelManager';
 
 interface RequirementDialogProps {
   open: boolean;
@@ -32,6 +33,7 @@ export const RequirementDialog = ({
     titulo: '',
     descricao: '',
     categoria: '',
+    area_responsavel: '',
     peso: 1,
     obrigatorio: false,
     ordem: 1
@@ -45,6 +47,7 @@ export const RequirementDialog = ({
         titulo: requirement.titulo || '',
         descricao: requirement.descricao || '',
         categoria: requirement.categoria || '',
+        area_responsavel: requirement.area_responsavel || '',
         peso: requirement.peso || 1,
         obrigatorio: requirement.obrigatorio || false,
         ordem: requirement.ordem || 1
@@ -56,6 +59,7 @@ export const RequirementDialog = ({
         titulo: '',
         descricao: '',
         categoria: '',
+        area_responsavel: '',
         peso: 1,
         obrigatorio: false,
         ordem: 1
@@ -179,10 +183,7 @@ export const RequirementDialog = ({
           module: 'gap-analysis'
         });
         
-        toast({
-          title: "Requisito atualizado",
-          description: "O requisito foi atualizado com sucesso.",
-        });
+        // Toast silencioso para atualizações
       } else {
         const { data, error } = await supabase
           .from('gap_analysis_requirements')
@@ -203,10 +204,7 @@ export const RequirementDialog = ({
           module: 'gap-analysis'
         });
         
-        toast({
-          title: "Requisito criado",
-          description: "O requisito foi criado com sucesso.",
-        });
+        // Toast silencioso para criações
       }
 
       onSuccess();
@@ -322,6 +320,11 @@ export const RequirementDialog = ({
               className="min-h-[100px]"
             />
           </div>
+
+          <AreaResponsavelManager
+            selectedArea={formData.area_responsavel}
+            onAreaSelected={(area) => setFormData(prev => ({ ...prev, area_responsavel: area }))}
+          />
 
           <div className="grid grid-cols-3 gap-4">
             <div>
