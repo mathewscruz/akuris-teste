@@ -1768,6 +1768,42 @@ export type Database = {
         }
         Relationships: []
       }
+      docgen_feedback_implicit: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          documento_salvo: boolean | null
+          empresa_id: string
+          id: string
+          padroes_identificados: Json | null
+          qualidade_estimada: number | null
+          revisoes_necessarias: number | null
+          tempo_geracao: number | null
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          documento_salvo?: boolean | null
+          empresa_id: string
+          id?: string
+          padroes_identificados?: Json | null
+          qualidade_estimada?: number | null
+          revisoes_necessarias?: number | null
+          tempo_geracao?: number | null
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          documento_salvo?: boolean | null
+          empresa_id?: string
+          id?: string
+          padroes_identificados?: Json | null
+          qualidade_estimada?: number | null
+          revisoes_necessarias?: number | null
+          tempo_geracao?: number | null
+        }
+        Relationships: []
+      }
       docgen_generated_docs: {
         Row: {
           conteudo: Json
@@ -1876,39 +1912,87 @@ export type Database = {
         }
         Relationships: []
       }
+      docgen_learning_patterns: {
+        Row: {
+          contexto_aplicacao: Json | null
+          created_at: string
+          empresa_id: string
+          id: string
+          numero_usos: number | null
+          pergunta_padrao: string
+          taxa_sucesso: number | null
+          tipo_documento: string
+          updated_at: string
+        }
+        Insert: {
+          contexto_aplicacao?: Json | null
+          created_at?: string
+          empresa_id: string
+          id?: string
+          numero_usos?: number | null
+          pergunta_padrao: string
+          taxa_sucesso?: number | null
+          tipo_documento: string
+          updated_at?: string
+        }
+        Update: {
+          contexto_aplicacao?: Json | null
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          numero_usos?: number | null
+          pergunta_padrao?: string
+          taxa_sucesso?: number | null
+          tipo_documento?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       docgen_templates: {
         Row: {
           campos_obrigatorios: Json | null
+          conhecimento_especializado: Json | null
           created_at: string
           empresa_id: string
           estrutura: Json
+          frameworks_relacionados: string[] | null
           id: string
           is_system: boolean | null
           nome: string
+          perguntas_sequenciais: Json | null
+          secoes_obrigatorias: Json | null
           tipo_documento: string
           tooltips: Json | null
           updated_at: string
         }
         Insert: {
           campos_obrigatorios?: Json | null
+          conhecimento_especializado?: Json | null
           created_at?: string
           empresa_id: string
           estrutura: Json
+          frameworks_relacionados?: string[] | null
           id?: string
           is_system?: boolean | null
           nome: string
+          perguntas_sequenciais?: Json | null
+          secoes_obrigatorias?: Json | null
           tipo_documento: string
           tooltips?: Json | null
           updated_at?: string
         }
         Update: {
           campos_obrigatorios?: Json | null
+          conhecimento_especializado?: Json | null
           created_at?: string
           empresa_id?: string
           estrutura?: Json
+          frameworks_relacionados?: string[] | null
           id?: string
           is_system?: boolean | null
           nome?: string
+          perguntas_sequenciais?: Json | null
+          secoes_obrigatorias?: Json | null
           tipo_documento?: string
           tooltips?: Json | null
           updated_at?: string

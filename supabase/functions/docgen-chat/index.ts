@@ -98,41 +98,66 @@ serve(async (req) => {
       // Adicionar mensagem do usuário
       messages.push({ role: 'user', content: message });
 
-      // Buscar templates disponíveis
+      // Buscar templates disponíveis e padrões de aprendizado
       const { data: templates } = await supabase
         .from('docgen_templates')
         .select('*')
         .or(`empresa_id.eq.${empresa_id},is_system.eq.true`);
 
+      // Buscar padrões de aprendizado para este tipo de documento
+      const { data: learningPatterns } = await supabase
+        .from('docgen_learning_patterns')
+        .select('*')
+        .eq('empresa_id', empresa_id)
+        .eq('tipo_documento', context.tipo_documento_identificado || 'geral')
+        .order('taxa_sucesso', { ascending: false })
+        .limit(5);
+
       // Preparar prompt para a IA
-      const systemPrompt = `Você é o DocGen, um assistente especializado em criação de documentos corporativos.
+      const systemPrompt = `Você é o DocGen, um consultor especializado em criação de documentos corporativos com conhecimento especializado em normas e frameworks.
 
 INFORMAÇÕES DO USUÁRIO:
 - Nome: ${context.user_name}
 - Empresa: ${context.empresa_nome}
 
-INSTRUÇÕES PRINCIPAIS:
-1. Seja conversacional, profissional e amigável - cumprimente o usuário pelo nome
-2. Identifique automaticamente o tipo de documento através do diálogo natural
-3. Faça APENAS UMA pergunta por vez para manter o fluxo conversacional
-4. Use formatação clara com quebras de linha e listas numeradas quando apropriado
-5. Colete informações de forma gradual e intuitiva
-6. Seja mais humano e menos robótico nas respostas
+EXPERTISE E CONHECIMENTO:
+- Especialista em ISO 27001:2022, LGPD, COBIT, ITIL
+- Conhecimento profundo em estruturas documentais corporativas
+- Experiência em compliance e governança corporativa
 
 TIPOS DE DOCUMENTO DISPONÍVEIS:
-${templates?.map(t => `- ${t.tipo_documento}: ${t.nome}`).join('\n')}
+${templates?.map(t => {
+  const template = t;
+  const secoes = template.secoes_obrigatorias ? JSON.parse(template.secoes_obrigatorias) : [];
+  const perguntas = template.perguntas_sequenciais ? JSON.parse(template.perguntas_sequenciais) : [];
+  
+  return `- ${t.tipo_documento}: ${t.nome}
+  Seções obrigatórias: ${secoes.map((s: any) => s.nome).join(', ')}
+  Frameworks relacionados: ${template.frameworks_relacionados?.join(', ') || 'N/A'}`;
+}).join('\n')}
+
+PADRÕES DE SUCESSO APRENDIDOS:
+${learningPatterns?.map(p => `- ${p.pergunta_padrao} (Taxa sucesso: ${(p.taxa_sucesso * 100).toFixed(1)}%)`).join('\n') || 'Nenhum padrão disponível'}
 
 CONTEXTO ATUAL:
 - Etapa: ${context.etapa_atual}
 - Tipo identificado: ${context.tipo_documento_identificado || 'Não identificado'}
 - Informações coletadas: ${JSON.stringify(context.informacoes_coletadas || {})}
 
-DIRETRIZES DE CONVERSA:
-- Faça uma pergunta específica por vez
-- Use linguagem natural e acessível
-- Evite listas longas de perguntas
-- Mantenha o tom profissional mas descontraído
-- Use quebras de linha para melhor legibilidade
+INSTRUÇÕES DE ESPECIALIZAÇÃO:
+1. **IDENTIFICAÇÃO**: Identifique rapidamente o tipo de documento baseado nas primeiras palavras do usuário
+2. **ESPECIALIZAÇÃO**: Assim que identificar o tipo, apresente as seções obrigatórias e pergunte especificamente sobre cada uma
+3. **SEQUENCIAL**: Use as perguntas sequenciais do template para guiar a coleta
+4. **COMPLIANCE**: Mencione requisitos normativos específicos quando relevante
+5. **UMA PERGUNTA**: Faça apenas UMA pergunta específica por vez
+6. **PROGRESSIVO**: Mostre o progresso ("Agora vamos para a seção de Escopo...")
+
+EXEMPLO DE ESPECIALIZAÇÃO:
+Se o usuário mencionar "política de mesa limpa ISO 27001", você deve:
+1. Identificar: "política" + framework "ISO 27001"
+2. Apresentar: "Vou ajudá-lo a criar uma política de mesa e tela limpa conforme ISO 27001:2022"
+3. Explicar: "Esta política precisa ter: Objetivo, Escopo, Diretrizes, Responsabilidades e Revisão"
+4. Perguntar especificamente: "Vamos começar pelo OBJETIVO. Qual é o propósito principal desta política?"
 
 FORMATO DE RESPOSTA:
 Sempre responda em JSON com esta estrutura:
@@ -196,6 +221,27 @@ Sempre responda em JSON com esta estrutura:
           ...(parsedResponse.informacoes_coletadas || {})
         }
       };
+
+      // Coletar dados para aprendizado contínuo
+      if (parsedResponse.tipo_documento_identificado && parsedResponse.message) {
+        // Registrar padrão de pergunta bem-sucedida
+        await supabase
+          .from('docgen_learning_patterns')
+          .upsert({
+            empresa_id,
+            tipo_documento: parsedResponse.tipo_documento_identificado,
+            pergunta_padrao: parsedResponse.message.substring(0, 200),
+            contexto_aplicacao: {
+              etapa: parsedResponse.etapa_atual,
+              frameworks_mencionados: parsedResponse.frameworks_relacionados || [],
+              user_input_context: message.substring(0, 100)
+            },
+            numero_usos: 1
+          }, {
+            onConflict: 'empresa_id,tipo_documento,pergunta_padrao',
+            ignoreDuplicates: false
+          });
+      }
 
       // Salvar conversa atualizada
       await supabase
@@ -278,6 +324,21 @@ Responda APENAS com um JSON na seguinte estrutura:
 
       const docData = await docResponse.json();
       const documentContent = JSON.parse(docData.choices[0].message.content);
+
+      // Registrar feedback implícito de sucesso na geração
+      await supabase
+        .from('docgen_feedback_implicit')
+        .insert({
+          empresa_id,
+          conversation_id: conversation.id,
+          documento_salvo: true,
+          qualidade_estimada: 8, // Geração bem-sucedida
+          padroes_identificados: {
+            tipo_documento: context.tipo_documento_identificado,
+            secoes_geradas: documentContent.secoes?.length || 0,
+            frameworks_utilizados: context.informacoes_coletadas?.frameworks || []
+          }
+        });
 
       // Salvar documento gerado
       const { data: generatedDoc } = await supabase

@@ -321,11 +321,11 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 flex gap-4">
+        <div className="flex-1 flex gap-4 min-h-0">
           {/* Chat Area */}
-          <div className="flex-1 flex flex-col">
-            <ScrollArea className="flex-1 pr-4 max-h-[400px]">
-              <div className="space-y-4 p-1">
+          <div className="flex-1 flex flex-col min-h-0">
+            <ScrollArea className="flex-1 pr-4 min-h-0">
+              <div className="space-y-4 p-1 min-h-[300px]">
                 {messages.map((message, index) => (
                   <div
                     key={index}
