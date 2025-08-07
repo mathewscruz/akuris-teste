@@ -46,7 +46,7 @@ serve(async (req) => {
       action = 'chat'
     } = await req.json();
 
-    console.log('DocGen Chat request:', { message, conversation_id, action });
+    console.log('DocGen Chat request:', { message, conversation_id, action, user_id, empresa_id });
 
     // Buscar informações do usuário e empresa
     const { data: profile } = await supabase
@@ -135,12 +135,10 @@ TIPOS DE DOCUMENTO DISPONÍVEIS:
 ${templates?.map(t => {
   // Acessar campos de forma segura
   let secoes = [];
-  let perguntas = [];
   let frameworks = [];
   
   try {
     secoes = t.secoes_obrigatorias ? (typeof t.secoes_obrigatorias === 'string' ? JSON.parse(t.secoes_obrigatorias) : t.secoes_obrigatorias) : [];
-    perguntas = t.perguntas_sequenciais ? (typeof t.perguntas_sequenciais === 'string' ? JSON.parse(t.perguntas_sequenciais) : t.perguntas_sequenciais) : [];
     frameworks = Array.isArray(t.frameworks_relacionados) ? t.frameworks_relacionados : [];
   } catch (e) {
     console.log('Error parsing template data:', e);
@@ -159,30 +157,33 @@ CONTEXTO ATUAL:
 - Tipo identificado: ${context.tipo_documento_identificado || 'Não identificado'}
 - Informações coletadas: ${JSON.stringify(context.informacoes_coletadas || {})}
 
-INSTRUÇÕES DE ESPECIALIZAÇÃO:
-1. **IDENTIFICAÇÃO**: Identifique rapidamente o tipo de documento baseado nas primeiras palavras do usuário
-2. **ESPECIALIZAÇÃO**: Assim que identificar o tipo, apresente as seções obrigatórias e pergunte especificamente sobre cada uma
-3. **SEQUENCIAL**: Use as perguntas sequenciais do template para guiar a coleta
-4. **COMPLIANCE**: Mencione requisitos normativos específicos quando relevante
-5. **UMA PERGUNTA**: Faça apenas UMA pergunta específica por vez
-6. **PROGRESSIVO**: Mostre o progresso ("Agora vamos para a seção de Escopo...")
+INSTRUÇÕES CRÍTICAS - SEGUIR EXATAMENTE:
 
-EXEMPLO DE ESPECIALIZAÇÃO:
-Se o usuário mencionar "política de mesa limpa ISO 27001", você deve:
-1. Identificar: "política" + framework "ISO 27001"
-2. Apresentar: "Vou ajudá-lo a criar uma política de mesa e tela limpa conforme ISO 27001:2022"
-3. Explicar: "Esta política precisa ter: Objetivo, Escopo, Diretrizes, Responsabilidades e Revisão"
-4. Perguntar especificamente: "Vamos começar pelo OBJETIVO. Qual é o propósito principal desta política?"
+1. **PRIMEIRA IDENTIFICAÇÃO**: Quando identificar um tipo de documento, você DEVE IMEDIATAMENTE:
+   - Confirmar o tipo identificado
+   - Listar as seções obrigatórias 
+   - FAZER A PRIMEIRA PERGUNTA ESPECÍFICA (não pare apenas na identificação)
 
-FORMATO DE RESPOSTA:
-Sempre responda em JSON com esta estrutura:
+2. **FLUXO OBRIGATÓRIO PARA POLÍTICA**: Quando identificar "política", você DEVE:
+   - Dizer: "Vou ajudá-lo a criar uma [TIPO] de Política. Esta política precisa ter: Objetivo, Escopo, Diretrizes, Responsabilidades e Revisão."
+   - IMEDIATAMENTE fazer a primeira pergunta: "Vamos começar pelo **OBJETIVO**. Qual é o propósito principal desta política? Por que ela é necessária na sua empresa?"
+
+3. **NUNCA PARE SEM PERGUNTA**: Toda resposta DEVE terminar com uma pergunta específica
+4. **SEQUENCIAL**: Coletar informações na ordem: Objetivo → Escopo → Diretrizes → Responsabilidades → Revisão
+5. **UMA PERGUNTA POR VEZ**: Faça apenas uma pergunta específica por resposta
+
+EXEMPLO OBRIGATÓRIO:
+Usuário: "política de senhas"
+Você DEVE responder: 
+"Vou ajudá-lo a criar uma Política de Senhas. Esta política precisa ter: Objetivo, Escopo, Diretrizes, Responsabilidades e Revisão.
+
+Vamos começar pelo **OBJETIVO**. Qual é o propósito principal desta política de senhas? Por que ela é necessária na sua empresa?"
+
+FORMATO DE RESPOSTA JSON:
 {
-  "message": "sua resposta conversacional com formatação adequada",
-  "tipo_documento_identificado": "tipo identificado ou null",
-  "proxima_pergunta": "próxima pergunta específica ou null",
-  "informacoes_necessarias": ["lista", "de", "informações", "ainda", "necessárias"],
-  "termos_com_tooltip": ["BIA", "ROPA"],
-  "etapa_atual": "identificacao|coleta|validacao|finalizacao",
+  "message": "resposta + SEMPRE uma pergunta específica",
+  "tipo_documento_identificado": "politica",
+  "etapa_atual": "coleta",
   "documento_pronto": false
 }`;
 
