@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -52,6 +52,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   const [currentDocType, setCurrentDocType] = useState<string | null>(null);
   const [generatedDocument, setGeneratedDocument] = useState<any>(null);
   const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Buscar informações do usuário
   const [userInfo, setUserInfo] = useState<{ user_id: string; empresa_id: string; nome: string } | null>(null);
@@ -81,11 +82,16 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
       // Iniciar conversa com saudação
       setMessages([{
         role: 'assistant',
-        content: 'Olá! Sou o DocGen 🧠, seu assistente para criação de documentos inteligentes. Estou aqui para ajudá-lo a criar qualquer tipo de documento que você precisa. Pode me contar que tipo de documento você gostaria de criar?',
+        content: 'Olá! Sou o DocGen, seu assistente inteligente para criação de documentos. Estou aqui para ajudá-lo a criar qualquer tipo de documento que você precisa.\n\nPode me contar que tipo de documento você gostaria de criar?',
         timestamp: new Date()
       }]);
     }
   }, [open]);
+
+  // Auto scroll para última mensagem
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || !userInfo || isLoading) return;
@@ -238,6 +244,19 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
     });
   };
 
+  const formatMessage = (content: string) => {
+    // Processar markdown básico
+    let formatted = content
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // **texto** -> bold
+      .replace(/\*(.*?)\*/g, '<em>$1</em>') // *texto* -> italic
+      .replace(/\n/g, '<br />'); // quebras de linha
+
+    // Processar listas numeradas
+    formatted = formatted.replace(/(\d+\.\s.*?)(<br \/>|$)/g, '<div class="ml-4 mb-1">$1</div>');
+    
+    return { __html: formatted };
+  };
+
   const renderMessageWithTooltips = (content: string) => {
     const parts: React.ReactNode[] = [];
     let lastIndex = 0;
@@ -305,26 +324,30 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
         <div className="flex-1 flex gap-4">
           {/* Chat Area */}
           <div className="flex-1 flex flex-col">
-            <ScrollArea className="flex-1 pr-4">
-              <div className="space-y-4">
+            <ScrollArea className="flex-1 pr-4 max-h-[400px]">
+              <div className="space-y-4 p-1">
                 {messages.map((message, index) => (
                   <div
                     key={index}
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <Card className={`max-w-[80%] ${
+                    <Card className={`max-w-[85%] ${
                       message.role === 'user' 
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted'
                     }`}>
                       <CardContent className="p-3">
-                        <div className="text-sm">
-                          {message.role === 'assistant' 
-                            ? renderMessageWithTooltips(message.content)
-                            : message.content
-                          }
+                        <div className="text-sm leading-relaxed">
+                          {message.role === 'assistant' ? (
+                            <div 
+                              dangerouslySetInnerHTML={formatMessage(message.content)}
+                              className="prose prose-sm max-w-none [&>div]:leading-relaxed"
+                            />
+                          ) : (
+                            message.content
+                          )}
                         </div>
-                        <div className="text-xs opacity-70 mt-1">
+                        <div className="text-xs opacity-70 mt-2">
                           {message.timestamp.toLocaleTimeString()}
                         </div>
                       </CardContent>
@@ -343,6 +366,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                     </Card>
                   </div>
                 )}
+                <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
 

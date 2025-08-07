@@ -347,7 +347,7 @@ export function Documentos() {
           </Button>
           <Button onClick={() => setShowDocGenDialog(true)} className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
             <Brain className="h-4 w-4" />
-            DocGen 🧠
+            DocGen
           </Button>
           <Button onClick={() => setDocumentoDialog({ open: true })}>
             <Plus className="h-4 w-4 mr-2" />
