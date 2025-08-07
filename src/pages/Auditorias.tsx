@@ -1,11 +1,13 @@
 
 import { useState } from "react";
-import { Plus, FileText, AlertTriangle, CheckCircle, User } from "lucide-react";
+import { Plus, FileText, AlertTriangle, CheckCircle, User, Edit, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,133 +18,28 @@ import AchadosDialog from "@/components/auditorias/AchadosDialog";
 import RecomendacoesDialog from "@/components/auditorias/RecomendacoesDialog";
 import EvidenciasDialog from "@/components/auditorias/EvidenciasDialog";
 
-const AuditoriaCard = ({ auditoria, usuarios, onEdit, onDelete, onOpenTrabalhos, onOpenAchados, onOpenRecomendacoes, onOpenEvidencias }: any) => {
-  const { trabalhoCount, achadoCount, recomendacaoCount } = useAuditoriaData(auditoria.id);
+const getStatusBadge = (status: string) => {
+  const statusMap = {
+    planejamento: { label: "Planejamento", variant: "secondary" as const },
+    em_andamento: { label: "Em Andamento", variant: "default" as const },
+    concluida: { label: "Concluída", variant: "outline" as const },
+    cancelada: { label: "Cancelada", variant: "destructive" as const },
+  };
   
-  const auditorResponsavel = usuarios?.find((u: any) => u.user_id === auditoria.auditor_responsavel);
+  const statusInfo = statusMap[status as keyof typeof statusMap] || { label: status, variant: "secondary" as const };
+  return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
+};
 
-  const getStatusBadge = (status: string) => {
-    const statusMap = {
-      planejamento: { label: "Planejamento", variant: "secondary" as const },
-      em_andamento: { label: "Em Andamento", variant: "default" as const },
-      concluida: { label: "Concluída", variant: "outline" as const },
-      cancelada: { label: "Cancelada", variant: "destructive" as const },
-    };
-    
-    const statusInfo = statusMap[status as keyof typeof statusMap] || { label: status, variant: "secondary" as const };
-    return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
+const getPrioridadeBadge = (prioridade: string) => {
+  const prioridadeMap = {
+    baixa: { label: "Baixa", variant: "outline" as const },
+    media: { label: "Média", variant: "secondary" as const },
+    alta: { label: "Alta", variant: "default" as const },
+    critica: { label: "Crítica", variant: "destructive" as const },
   };
-
-  const getPrioridadeBadge = (prioridade: string) => {
-    const prioridadeMap = {
-      baixa: { label: "Baixa", variant: "outline" as const },
-      media: { label: "Média", variant: "secondary" as const },
-      alta: { label: "Alta", variant: "default" as const },
-      critica: { label: "Crítica", variant: "destructive" as const },
-    };
-    
-    const prioridadeInfo = prioridadeMap[prioridade as keyof typeof prioridadeMap] || { label: prioridade, variant: "secondary" as const };
-    return <Badge variant={prioridadeInfo.variant}>{prioridadeInfo.label}</Badge>;
-  };
-
-  return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg">{auditoria.nome}</CardTitle>
-            <CardDescription className="line-clamp-2">
-              {auditoria.descricao || 'Sem descrição'}
-            </CardDescription>
-          </div>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {getStatusBadge(auditoria.status)}
-          {getPrioridadeBadge(auditoria.prioridade)}
-          <Badge variant="outline">{auditoria.tipo}</Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          
-          {auditoria.data_inicio && (
-            <div className="text-sm text-muted-foreground">
-              <strong>Data de Início:</strong>{' '}
-              {new Date(auditoria.data_inicio).toLocaleDateString('pt-BR')}
-            </div>
-          )}
-
-          {auditoria.data_fim_prevista && (
-            <div className="text-sm text-muted-foreground">
-              <strong>Previsão de Conclusão:</strong>{' '}
-              {new Date(auditoria.data_fim_prevista).toLocaleDateString('pt-BR')}
-            </div>
-          )}
-
-          {/* Contadores */}
-          <div className="flex gap-4 pt-2 border-t">
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <FileText className="w-4 h-4" />
-              <span>{trabalhoCount} trabalhos</span>
-            </div>
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <AlertTriangle className="w-4 h-4" />
-              <span>{achadoCount} achados</span>
-            </div>
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <CheckCircle className="w-4 h-4" />
-              <span>{recomendacaoCount} recomendações</span>
-            </div>
-          </div>
-
-          <div className="flex gap-2 flex-wrap pt-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onEdit(auditoria)}
-            >
-              Editar
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onOpenTrabalhos(auditoria)}
-            >
-              Trabalhos ({trabalhoCount})
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onOpenAchados(auditoria)}
-            >
-              Achados ({achadoCount})
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onOpenRecomendacoes(auditoria)}
-            >
-              Recomendações ({recomendacaoCount})
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onOpenEvidencias(auditoria)}
-            >
-              Evidências
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => onDelete(auditoria.id)}
-            >
-              Excluir
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  
+  const prioridadeInfo = prioridadeMap[prioridade as keyof typeof prioridadeMap] || { label: prioridade, variant: "secondary" as const };
+  return <Badge variant={prioridadeInfo.variant}>{prioridadeInfo.label}</Badge>;
 };
 
 const Auditorias = () => {
@@ -289,38 +186,188 @@ const Auditorias = () => {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-4 bg-muted rounded w-3/4"></div>
-                <div className="h-3 bg-muted rounded w-1/2"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="h-3 bg-muted rounded w-full"></div>
-                  <div className="h-3 bg-muted rounded w-2/3"></div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex space-x-4 animate-pulse">
+                  <div className="h-4 bg-muted rounded w-1/4"></div>
+                  <div className="h-4 bg-muted rounded w-1/6"></div>
+                  <div className="h-4 bg-muted rounded w-1/6"></div>
+                  <div className="h-4 bg-muted rounded w-1/6"></div>
+                  <div className="h-4 bg-muted rounded w-1/6"></div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       ) : auditorias && auditorias.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {auditorias.map((auditoria) => (
-            <AuditoriaCard
-              key={auditoria.id}
-              auditoria={auditoria}
-              usuarios={usuarios}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onOpenTrabalhos={handleOpenTrabalhos}
-              onOpenAchados={handleOpenAchados}
-              onOpenRecomendacoes={handleOpenRecomendacoes}
-              onOpenEvidencias={handleOpenEvidencias}
-            />
-          ))}
-        </div>
+        <Card>
+          <CardContent className="p-0">
+            <div className="relative overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Prioridade</TableHead>
+                    <TableHead>Data Início</TableHead>
+                    <TableHead>Auditor</TableHead>
+                    <TableHead>Trabalhos</TableHead>
+                    <TableHead>Achados</TableHead>
+                    <TableHead>Recomendações</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TooltipProvider>
+                    {auditorias.map((auditoria) => {
+                      const { trabalhoCount, achadoCount, recomendacaoCount } = useAuditoriaData(auditoria.id);
+                      const auditorResponsavel = usuarios?.find((u: any) => u.user_id === auditoria.auditor_responsavel);
+                      
+                      return (
+                        <TableRow key={auditoria.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{auditoria.nome}</div>
+                              <div className="text-sm text-muted-foreground line-clamp-1">
+                                {auditoria.descricao || 'Sem descrição'}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{auditoria.tipo}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {getStatusBadge(auditoria.status)}
+                          </TableCell>
+                          <TableCell>
+                            {getPrioridadeBadge(auditoria.prioridade)}
+                          </TableCell>
+                          <TableCell>
+                            {auditoria.data_inicio 
+                              ? new Date(auditoria.data_inicio).toLocaleDateString('pt-BR')
+                              : '-'
+                            }
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4" />
+                              <span className="text-sm">
+                                {auditorResponsavel?.nome || 'Não definido'}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <FileText className="w-4 h-4" />
+                              <span>{trabalhoCount}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <AlertTriangle className="w-4 h-4" />
+                              <span>{achadoCount}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <CheckCircle className="w-4 h-4" />
+                              <span>{recomendacaoCount}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleEdit(auditoria)}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Editar auditoria</TooltipContent>
+                              </Tooltip>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleOpenTrabalhos(auditoria)}
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Trabalhos ({trabalhoCount})</TooltipContent>
+                              </Tooltip>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleOpenAchados(auditoria)}
+                                  >
+                                    <AlertTriangle className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Achados ({achadoCount})</TooltipContent>
+                              </Tooltip>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleOpenRecomendacoes(auditoria)}
+                                  >
+                                    <CheckCircle className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Recomendações ({recomendacaoCount})</TooltipContent>
+                              </Tooltip>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleOpenEvidencias(auditoria)}
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Evidências</TooltipContent>
+                              </Tooltip>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDelete(auditoria.id)}
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Excluir auditoria</TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TooltipProvider>
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
