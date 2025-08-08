@@ -52,9 +52,21 @@ interface DocumentoDialogProps {
   documento?: Documento;
   onSuccess: () => void;
   categorias: Categoria[];
+  // DocGen integration: optional prefill
+  initialFile?: File | null;
+  initialData?: Partial<{
+    nome: string;
+    descricao: string;
+    tipo: string;
+    categoria: string;
+    tags: string[];
+    status: string;
+    confidencial: boolean;
+    data_vencimento?: Date | undefined;
+  }>;
 }
 
-export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, categorias }: DocumentoDialogProps) {
+export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, categorias, initialFile, initialData }: DocumentoDialogProps) {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -73,32 +85,41 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, cate
   const { toast } = useToast();
 
   useEffect(() => {
-    if (documento) {
-      setFormData({
-        nome: documento.nome,
-        descricao: documento.descricao || '',
-        tipo: documento.tipo,
-        categoria: documento.categoria || '',
-        tags: documento.tags || [],
-        status: documento.status,
-        confidencial: documento.confidencial,
-        data_vencimento: documento.data_vencimento ? new Date(documento.data_vencimento) : undefined,
-      });
-    } else {
-      setFormData({
-        nome: '',
-        descricao: '',
-        tipo: 'documento',
-        categoria: '',
-        tags: [],
-        status: 'ativo',
-        confidencial: false,
-        data_vencimento: undefined,
-      });
+    let base = documento
+      ? {
+          nome: documento.nome,
+          descricao: documento.descricao || '',
+          tipo: documento.tipo,
+          categoria: documento.categoria || '',
+          tags: documento.tags || [],
+          status: documento.status,
+          confidencial: documento.confidencial,
+          data_vencimento: documento.data_vencimento ? new Date(documento.data_vencimento) : undefined,
+        }
+      : {
+          nome: '',
+          descricao: '',
+          tipo: 'documento',
+          categoria: '',
+          tags: [] as string[],
+          status: 'ativo',
+          confidencial: false,
+          data_vencimento: undefined as Date | undefined,
+        };
+
+    if (initialData) {
+      base = {
+        ...base,
+        ...initialData,
+        tags: initialData.tags ?? base.tags,
+        data_vencimento: initialData.data_vencimento ?? base.data_vencimento,
+      } as typeof base;
     }
-    setSelectedFile(null);
+
+    setFormData(base);
+    setSelectedFile(initialFile || null);
     setNewTag('');
-  }, [documento, open]);
+  }, [documento, open, initialFile, initialData]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

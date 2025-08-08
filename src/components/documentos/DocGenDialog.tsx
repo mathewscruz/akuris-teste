@@ -6,10 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Brain, Send, FileText, Download, Save, Loader2 } from 'lucide-react';
 import DocLayoutBuilder from './DocLayoutBuilder';
+import { DocumentoDialog } from '@/components/documentos/DocumentoDialog';
+import jsPDF from 'jspdf';
+import { Document as DocxDocument, Packer, Paragraph, HeadingLevel, TextRun } from 'docx';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -55,6 +59,11 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
   const [isEditingLayout, setIsEditingLayout] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Dialog de criação via DocGen
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [docCategorias, setDocCategorias] = useState<any[]>([]);
+  const [initialGeneratedFile, setInitialGeneratedFile] = useState<File | null>(null);
 
   // Buscar informações do usuário
   const [userInfo, setUserInfo] = useState<{ user_id: string; empresa_id: string; nome: string } | null>(null);
