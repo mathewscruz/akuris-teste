@@ -13,7 +13,7 @@ import { Brain, Send, FileText, Download, Save, Loader2 } from 'lucide-react';
 import DocLayoutBuilder from './DocLayoutBuilder';
 import { DocumentoDialog } from '@/components/documentos/DocumentoDialog';
 import jsPDF from 'jspdf';
-import { Document as DocxDocument, Packer, Paragraph, HeadingLevel, TextRun } from 'docx';
+import { Document as DocxDocument, Packer, Paragraph, HeadingLevel, TextRun, ImageRun } from 'docx';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -55,6 +55,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [documentReady, setDocumentReady] = useState(false);
   const [currentDocType, setCurrentDocType] = useState<string | null>(null);
+  const [currentDocName, setCurrentDocName] = useState<string | null>(null);
   const [generatedDocument, setGeneratedDocument] = useState<any>(null);
   const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
   const [isEditingLayout, setIsEditingLayout] = useState(false);
@@ -155,6 +156,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
       setMessages(prev => [...prev, assistantMessage]);
       setConversationId(data.conversation_id);
       setCurrentDocType(data.tipo_documento_identificado);
+      setCurrentDocName(data.documento_nome_identificado || null);
       setDocumentReady(data.documento_pronto);
 
     } catch (error) {
@@ -181,7 +183,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           user_id: userInfo.user_id,
           empresa_id: userInfo.empresa_id,
           action: 'generate_document',
-          doc_type_hint: currentDocType
+          doc_type_hint: currentDocName || currentDocType
         }
       });
 
@@ -247,6 +249,24 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   const generateDocxBlob = async () => {
     if (!generatedDocument) return null;
     const children: any[] = [];
+
+    // Logo no topo (se houver)
+    const logoUrl: string | undefined = generatedDocument.metadados?.logo_url;
+    const logoAltura: number = parseInt(generatedDocument.metadados?.logo_altura || '48', 10);
+    if (logoUrl) {
+      try {
+        const resp = await fetch(logoUrl);
+        const buf = await resp.arrayBuffer();
+        children.push(
+          new Paragraph({
+            children: [
+              new ImageRun({ data: buf, transformation: { width: Math.round(logoAltura * 2), height: logoAltura } })
+            ]
+          })
+        );
+      } catch (_) { /* ignora erro de logo */ }
+    }
+
     children.push(
       new Paragraph({
         text: generatedDocument.titulo || 'Documento',
@@ -274,11 +294,30 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
     return blob;
   };
 
-  const generatePdfBlob = () => {
+  const generatePdfBlob = async () => {
     if (!generatedDocument) return null;
     const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
     const marginX = 40;
     let y = 50;
+
+    // Tentar carregar logo
+    const logoUrl: string | undefined = generatedDocument.metadados?.logo_url;
+    const logoAltura: number = parseInt(generatedDocument.metadados?.logo_altura || '48', 10);
+    if (logoUrl) {
+      try {
+        const resp = await fetch(logoUrl);
+        const blob = await resp.blob();
+        const reader = new FileReader();
+        const dataUrl: string = await new Promise((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Falha ao carregar logo'));
+          reader.readAsDataURL(blob);
+        });
+        const logoWidth = Math.round(logoAltura * 2);
+        pdf.addImage(dataUrl, (blob.type.includes('png') ? 'PNG' : 'JPEG') as any, marginX, y, logoWidth, logoAltura);
+        y += logoAltura + 16;
+      } catch (_) { /* ignora erro de logo */ }
+    }
 
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(16);
@@ -328,7 +367,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   const handleExport = async (format: 'pdf' | 'docx') => {
     if (!generatedDocument) return;
     try {
-      const blob = format === 'pdf' ? generatePdfBlob() : await generateDocxBlob();
+      const blob = format === 'pdf' ? await generatePdfBlob() : await generateDocxBlob();
       if (!blob) return;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -564,6 +603,13 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                 <ScrollArea className="flex-1 pr-2">
                   <div className="space-y-5 text-sm leading-relaxed">
                     <div>
+                      {generatedDocument.metadados?.logo_url && (
+                        <img
+                          src={generatedDocument.metadados.logo_url}
+                          alt={`Logo da ${userInfo?.nome || 'empresa'}`}
+                          className="h-10 mb-3 object-contain"
+                        />
+                      )}
                       <h4 className="font-bold text-lg">{generatedDocument.titulo}</h4>
                       <p className="text-muted-foreground">
                         Versão: {generatedDocument.versao} | {generatedDocument.data_criacao}

@@ -96,6 +96,27 @@ export const DocLayoutBuilder: React.FC<DocLayoutBuilderProps> = ({ value, onCha
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-2 md:col-span-2">
+            <label className="text-sm font-medium">Logo da Empresa (URL)</label>
+            <Input value={value.metadados?.logo_url || ''} onChange={(e) => setMeta('logo_url', e.target.value)} placeholder="https://.../logo.png" />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Posição do Logo</label>
+            <Select value={value.metadados?.logo_posicao || 'esquerda'} onValueChange={(v) => setMeta('logo_posicao', v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Posição" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="esquerda">Esquerda</SelectItem>
+                <SelectItem value="centro">Centro</SelectItem>
+                <SelectItem value="direita">Direita</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Altura do Logo (px)</label>
+            <Input type="number" min={24} max={160} value={value.metadados?.logo_altura || 48} onChange={(e) => setMeta('logo_altura', e.target.value)} />
+          </div>
         </CardContent>
       </Card>
 

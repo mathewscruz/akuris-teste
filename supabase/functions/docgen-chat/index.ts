@@ -43,7 +43,8 @@ serve(async (req) => {
       conversation_id, 
       user_id, 
       empresa_id,
-      action = 'chat'
+      action = 'chat',
+      doc_type_hint
     } = await req.json();
 
     console.log('DocGen Chat request:', { message, conversation_id, action, user_id, empresa_id });
@@ -120,70 +121,50 @@ serve(async (req) => {
       }
 
       // Preparar prompt para a IA
-      const systemPrompt = `Você é o DocGen, um consultor especializado em criação de documentos corporativos com conhecimento especializado em normas e frameworks.
+      const systemPrompt = `Você é o DocGen, um consultor especializado em criação de documentos corporativos, compliance e frameworks.
 
 INFORMAÇÕES DO USUÁRIO:
 - Nome: ${context.user_name}
 - Empresa: ${context.empresa_nome}
 
 EXPERTISE E CONHECIMENTO:
-- Especialista em ISO 27001:2022, LGPD, COBIT, ITIL
-- Conhecimento profundo em estruturas documentais corporativas
-- Experiência em compliance e governança corporativa
+- ISO 27001:2022, LGPD, NIST, COBIT, ITIL
+- Modelos de políticas, normas, procedimentos e formulários corporativos
 
-TIPOS DE DOCUMENTO DISPONÍVEIS:
+TEMPLATES DISPONÍVEIS:
 ${templates?.map(t => {
-  // Acessar campos de forma segura
   let secoes = [];
   let frameworks = [];
-  
   try {
     secoes = t.secoes_obrigatorias ? (typeof t.secoes_obrigatorias === 'string' ? JSON.parse(t.secoes_obrigatorias) : t.secoes_obrigatorias) : [];
     frameworks = Array.isArray(t.frameworks_relacionados) ? t.frameworks_relacionados : [];
-  } catch (e) {
-    console.log('Error parsing template data:', e);
-  }
-  
-  return `- ${t.tipo_documento}: ${t.nome}
-  Seções obrigatórias: ${secoes.map((s: any) => s.nome).join(', ') || 'N/A'}
-  Frameworks relacionados: ${frameworks.join(', ') || 'N/A'}`;
+  } catch (_) {}
+  return `- Nome: ${t.nome} | Tipo: ${t.tipo_documento} | Seções: ${secoes.map((s: any) => s.nome).join(', ') || 'N/A'} | Frameworks: ${frameworks.join(', ') || 'N/A'}`;
 }).join('\n')}
 
-PADRÕES DE SUCESSO APRENDIDOS:
-${learningPatterns?.map((p: any) => `- ${p.pergunta_padrao} (Taxa sucesso: ${(p.taxa_sucesso * 100).toFixed(1)}%)`).join('\n') || 'Nenhum padrão disponível'}
+REGRAS CRÍTICAS (SIGA À RISCA):
+1) Identifique exatamente o documento solicitado pelo usuário (por exemplo: "Política de Senhas", "Política de Mesa e Tela Limpa"). NUNCA generalize para algo amplo como "Política de Segurança da Informação" quando o usuário pediu algo específico.
+2) Se o usuário citar framework (ex.: ISO 27001, LGPD, NIST) ou controles (ex.: A.5.17), registre em frameworks_relacionados e faça perguntas necessárias para cumprir o framework.
+3) Sempre responda com UMA pergunta objetiva por vez e avance no fluxo lógico (Objetivo → Escopo → Diretrizes → Responsabilidades → Revisão) para políticas.
+4) Termine SEMPRE com uma pergunta específica.
+5) Use linguagem clara e profissional.
 
-CONTEXTO ATUAL:
-- Etapa: ${context.etapa_atual}
-- Tipo identificado: ${context.tipo_documento_identificado || 'Não identificado'}
-- Informações coletadas: ${JSON.stringify(context.informacoes_coletadas || {})}
+EXEMPLOS:
+Usuário: "preciso de uma política de senhas conforme ISO 27001"
+Resposta: message explica estrutura + pergunta pelo Objetivo; tipo_documento_identificado="politica"; documento_nome_identificado="Política de Senhas"; frameworks_relacionados=["ISO 27001"]
 
-INSTRUÇÕES CRÍTICAS - SEGUIR EXATAMENTE:
+Usuário: "criar política de mesa e tela limpa (LGPD)"
+Resposta: message explica estrutura + pergunta pelo Objetivo; tipo_documento_identificado="politica"; documento_nome_identificado="Política de Mesa e Tela Limpa"; frameworks_relacionados=["LGPD"]
 
-1. **PRIMEIRA IDENTIFICAÇÃO**: Quando identificar um tipo de documento, você DEVE IMEDIATAMENTE:
-   - Confirmar o tipo identificado
-   - Listar as seções obrigatórias 
-   - FAZER A PRIMEIRA PERGUNTA ESPECÍFICA (não pare apenas na identificação)
-
-2. **FLUXO OBRIGATÓRIO PARA POLÍTICA**: Quando identificar "política", você DEVE:
-   - Dizer: "Vou ajudá-lo a criar uma [TIPO] de Política. Esta política precisa ter: Objetivo, Escopo, Diretrizes, Responsabilidades e Revisão."
-   - IMEDIATAMENTE fazer a primeira pergunta: "Vamos começar pelo **OBJETIVO**. Qual é o propósito principal desta política? Por que ela é necessária na sua empresa?"
-
-3. **NUNCA PARE SEM PERGUNTA**: Toda resposta DEVE terminar com uma pergunta específica
-4. **SEQUENCIAL**: Coletar informações na ordem: Objetivo → Escopo → Diretrizes → Responsabilidades → Revisão
-5. **UMA PERGUNTA POR VEZ**: Faça apenas uma pergunta específica por resposta
-
-EXEMPLO OBRIGATÓRIO:
-Usuário: "política de senhas"
-Você DEVE responder: 
-"Vou ajudá-lo a criar uma Política de Senhas. Esta política precisa ter: Objetivo, Escopo, Diretrizes, Responsabilidades e Revisão.
-
-Vamos começar pelo **OBJETIVO**. Qual é o propósito principal desta política de senhas? Por que ela é necessária na sua empresa?"
-
-FORMATO DE RESPOSTA JSON:
+FORMATO DE RESPOSTA (JSON SOMENTE):
 {
-  "message": "resposta + SEMPRE uma pergunta específica",
-  "tipo_documento_identificado": "politica",
-  "etapa_atual": "coleta",
+  "message": "texto da resposta que termina com uma pergunta específica",
+  "tipo_documento_identificado": "politica|procedimento|norma|formulario|outro",
+  "documento_nome_identificado": "ex.: Política de Senhas",
+  "frameworks_relacionados": ["ISO 27001", "LGPD"],
+  "informacoes_coletadas": {"chave": "valor"},
+  "informacoes_necessarias": ["objetivo", "escopo", "diretrizes", "responsabilidades", "revisao"],
+  "etapa_atual": "coleta|validacao|pronto",
   "documento_pronto": false
 }`;
 
@@ -231,6 +212,8 @@ FORMATO DE RESPOSTA JSON:
       const updatedContext = {
         ...context,
         tipo_documento_identificado: parsedResponse.tipo_documento_identificado || context.tipo_documento_identificado,
+        documento_nome_identificado: parsedResponse.documento_nome_identificado || (context as any).documento_nome_identificado,
+        frameworks_relacionados: parsedResponse.frameworks_relacionados || (context as any).frameworks_relacionados,
         etapa_atual: parsedResponse.etapa_atual,
         informacoes_coletadas: {
           ...context.informacoes_coletadas,
@@ -279,6 +262,7 @@ FORMATO DE RESPOSTA JSON:
         conversation_id: conversation.id,
         message: parsedResponse.message,
         tipo_documento_identificado: parsedResponse.tipo_documento_identificado,
+        documento_nome_identificado: (updatedContext as any).documento_nome_identificado || null,
         termos_com_tooltip: parsedResponse.termos_com_tooltip || [],
         etapa_atual: parsedResponse.etapa_atual,
         documento_pronto: parsedResponse.documento_pronto || false,
@@ -295,9 +279,13 @@ FORMATO DE RESPOSTA JSON:
         .select('*')
         .or(`empresa_id.eq.${empresa_id},is_system.eq.true`);
 
-      const template = templates?.find(t => t.tipo_documento === context.tipo_documento_identificado);
+      // Selecionar template: priorizar por nome identificado (doc_type_hint/documento_nome_identificado)
+      const hintName = (doc_type_hint || (context as any).documento_nome_identificado || '').toLowerCase();
+      let template = templates?.find(t => (t.nome || '').toLowerCase() === hintName)
+        || templates?.find(t => hintName && (t.nome || '').toLowerCase().includes(hintName))
+        || templates?.find(t => t.tipo_documento === context.tipo_documento_identificado);
       if (!template) {
-        throw new Error('Template não encontrado para o tipo de documento');
+        throw new Error('Template não encontrado para o tipo/nome de documento');
       }
 
       // Garantir que a estrutura do template está em JSON
@@ -310,29 +298,31 @@ FORMATO DE RESPOSTA JSON:
         // Continua com a estrutura original se não for JSON válido
       }
 
-      const documentPrompt = `Gere um documento ${context.tipo_documento_identificado} completo baseado nas informações coletadas.
+      const documentPrompt = `Gere um documento COMPLETO e ESPECÍFICO do tipo solicitado.
+
+DOCUMENTO_EXATO: ${(context as any).documento_nome_identificado || doc_type_hint || context.tipo_documento_identificado}
+FRAMEWORKS_REQUERIDOS: ${JSON.stringify((context as any).frameworks_relacionados || [])}
+EMPRESA: ${context.empresa_nome}
+
+Use a estrutura do template abaixo e cubra explicitamente os requisitos do(s) framework(s) citado(s) quando aplicável.
 
 TEMPLATE: ${JSON.stringify(templateEstrutura || template.estrutura)}
 INFORMAÇÕES COLETADAS: ${JSON.stringify(context.informacoes_coletadas)}
-EMPRESA: ${context.empresa_nome}
 
-Gere um documento profissional seguindo a estrutura do template, com:
-- Capa com título, versão 1.0, data atual
+Requisitos obrigatórios de formatação:
+- Capa com título igual a DOCUMENTO_EXATO, versão 1.0, data atual e nome da empresa
 - Sumário
 - Todas as seções definidas no template
-- Conteúdo detalhado e profissional
+- Conteúdo detalhado e profissional alinhado aos frameworks
 - Rodapé com informações da empresa
 
 Responda APENAS com um JSON na seguinte estrutura:
 {
-  "titulo": "título do documento",
+  "titulo": "título do documento (igual a DOCUMENTO_EXATO)",
   "versao": "1.0",
-  "data_criacao": "2025-01-07",
+  "data_criacao": "YYYY-MM-DD",
   "secoes": [
-    {
-      "nome": "Objetivo",
-      "conteudo": "conteúdo da seção..."
-    }
+    { "nome": "Objetivo", "conteudo": "..." }
   ],
   "metadados": {
     "classificacao": "Interno",
