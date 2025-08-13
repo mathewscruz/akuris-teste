@@ -450,46 +450,77 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
     return { __html: formatted };
   };
 
-  const renderMessageWithTooltips = (content: string) => {
+  const renderMessageContent = (content: string) => {
+    // Primeiro, processar as tags de código
+    const codeBlocks = content.split(/```([\s\S]*?)```/);
     const parts: React.ReactNode[] = [];
-    let lastIndex = 0;
     
-    Object.entries(TOOLTIPS).forEach(([term, definition]) => {
-      const regex = new RegExp(`\\b${term}\\b`, 'gi');
-      let match;
-      
-      while ((match = regex.exec(content)) !== null) {
-        // Add text before the match
-        if (match.index > lastIndex) {
-          parts.push(content.slice(lastIndex, match.index));
-        }
-        
-        // Add the tooltip term
+    codeBlocks.forEach((block, index) => {
+      if (index % 2 === 0) {
+        // Texto normal - processar tooltips e formatação
+        const textParts = renderTextWithFormatting(block);
+        parts.push(...textParts);
+      } else {
+        // Bloco de código
         parts.push(
-          <TooltipProvider key={`${term}-${match.index}`}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="underline decoration-dotted text-primary cursor-help">
-                  {match[0]}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p>{definition}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <pre key={`code-${index}`} className="bg-muted p-3 rounded-md text-sm font-mono overflow-x-auto my-2">
+            <code>{block.trim()}</code>
+          </pre>
         );
-        
-        lastIndex = match.index + match[0].length;
       }
     });
     
-    // Add remaining text
-    if (lastIndex < content.length) {
-      parts.push(content.slice(lastIndex));
-    }
+    return parts;
+  };
+
+  const renderTextWithFormatting = (text: string) => {
+    const parts: React.ReactNode[] = [];
+    let processedText = text;
     
-    return parts.length > 0 ? parts : [content];
+    // Processar listas numeradas
+    processedText = processedText.replace(/(\d+\.\s+[^\n]+)/g, '<li class="ml-4 mb-1">$1</li>');
+    
+    // Processar negrito
+    processedText = processedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Processar itálico
+    processedText = processedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // Dividir por quebras de linha para processar parágrafo por parágrafo
+    const paragraphs = processedText.split('\n\n');
+    
+    paragraphs.forEach((paragraph, pIndex) => {
+      if (paragraph.trim()) {
+        const lines = paragraph.split('\n');
+        lines.forEach((line, lIndex) => {
+          if (line.trim()) {
+            // Processar tooltips na linha
+            const lineWithTooltips = renderLineWithTooltips(line.trim());
+            parts.push(
+              <div key={`p-${pIndex}-l-${lIndex}`} className="mb-2" dangerouslySetInnerHTML={{ __html: lineWithTooltips }} />
+            );
+          }
+        });
+        if (pIndex < paragraphs.length - 1) {
+          parts.push(<br key={`br-${pIndex}`} />);
+        }
+      }
+    });
+    
+    return parts;
+  };
+
+  const renderLineWithTooltips = (line: string): string => {
+    let processedLine = line;
+    
+    Object.entries(TOOLTIPS).forEach(([term, definition]) => {
+      const regex = new RegExp(`\\b${term}\\b`, 'gi');
+      processedLine = processedLine.replace(regex, (match) => {
+        return `<span class="underline decoration-dotted text-primary cursor-help" title="${definition}">${match}</span>`;
+      });
+    });
+    
+    return processedLine;
   };
 
   // Estado para tracking de mudanças não salvas
@@ -601,14 +632,15 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                         : 'bg-muted'
                     }`}>
                       <CardContent className="p-3">
-                        <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                        <div className="text-sm leading-relaxed">
                           {message.role === 'assistant' ? (
-                            <div 
-                              dangerouslySetInnerHTML={formatMessage(message.content)}
-                              className="prose prose-sm max-w-none [&>div]:leading-relaxed"
-                            />
+                            <div className="space-y-2">
+                              {renderMessageContent(message.content)}
+                            </div>
                           ) : (
-                            message.content
+                            <div className="whitespace-pre-wrap break-words">
+                              {message.content}
+                            </div>
                           )}
                         </div>
                         <div className="text-xs opacity-70 mt-2">
