@@ -222,14 +222,40 @@ Responda sempre em português brasileiro.`;
       // Parse da resposta da IA
       let parsedResponse;
       try {
-        parsedResponse = JSON.parse(aiMessage);
+        // Tentar extrair JSON da resposta (pode estar misturado com texto)
+        const jsonMatch = aiMessage.match(/```json\s*(\{[\s\S]*?\})\s*```/);
+        if (jsonMatch) {
+          parsedResponse = JSON.parse(jsonMatch[1]);
+        } else {
+          // Tentar encontrar JSON no início da resposta
+          const jsonStart = aiMessage.indexOf('{');
+          const jsonEnd = aiMessage.indexOf('}') + 1;
+          if (jsonStart !== -1 && jsonEnd > jsonStart) {
+            const jsonString = aiMessage.substring(jsonStart, jsonEnd);
+            parsedResponse = JSON.parse(jsonString);
+          } else {
+            throw new Error('JSON não encontrado');
+          }
+        }
+        
+        // Se não tem message no JSON, usar o texto completo
+        if (!parsedResponse.message) {
+          parsedResponse.message = aiMessage;
+        }
       } catch (error) {
+        console.log('Erro ao fazer parse da resposta JSON:', error);
         // Fallback se não conseguir fazer parse
+        // Verificar se a resposta indica documento pronto
+        const isDocumentReady = aiMessage.toLowerCase().includes('documento foi gerado') || 
+                               aiMessage.toLowerCase().includes('documento está pronto') ||
+                               aiMessage.toLowerCase().includes('política de senhas foi gerada') ||
+                               aiMessage.toLowerCase().includes('pronto para ser implementado');
+        
         parsedResponse = {
           message: aiMessage,
           tipo_documento_identificado: context.tipo_documento_identificado,
-          etapa_atual: context.etapa_atual || 'coleta',
-          documento_pronto: false
+          etapa_atual: isDocumentReady ? 'pronto' : (context.etapa_atual || 'coleta'),
+          documento_pronto: isDocumentReady
         };
       }
 
