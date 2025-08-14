@@ -20,12 +20,12 @@ export function AgentInstallDialog({ open, onOpenChange }: AgentInstallDialogPro
   const platforms = [
     {
       name: "Windows",
-      description: "Arquivo executável .bat para instalação transparente",
+      description: "Script PowerShell para compilação e instalação automática",
       icon: <Monitor className="w-8 h-8" />,
-      extension: ".bat",
-      requirements: "Windows 10+, Permissões de Admin",
-      status: "Executável Direto",
-      features: ["Duplo-clique para instalar", "Ícone System Tray", "Auto-start com Windows", "Menu de contexto completo"]
+      extension: ".ps1",
+      requirements: "Windows 10+, .NET 6.0+, PowerShell",
+      status: "Script PowerShell",
+      features: ["Compilação automática C#", "Ícone System Tray", "Auto-start com Windows", "Menu de contexto completo"]
     },
     {
       name: "Linux",
@@ -85,7 +85,7 @@ export function AgentInstallDialog({ open, onOpenChange }: AgentInstallDialogPro
   const getFilename = (platform: string) => {
     const timestamp = Date.now();
     switch (platform) {
-      case 'windows': return `GovernAII-Agent-Setup-${timestamp}.bat`;
+      case 'windows': return `GovernAII-Agent-Setup-${timestamp}.ps1`;
       case 'linux': return `governaii-agent_1.0.0_amd64-${timestamp}.deb`;
       case 'macos': return `GovernAII-Agent-1.0.0-${timestamp}.pkg`;
       default: return `governaii-agent-${timestamp}.bin`;
