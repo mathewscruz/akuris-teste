@@ -14,31 +14,31 @@ export function AgentInstallInstructions({ platform }: AgentInstallInstructionsP
     switch (platform) {
       case 'windows':
         return {
-          title: "Instalação Windows - Arquivo Executável (.bat)",
-          subtitle: "Instalação transparente com execução automática",
+          title: "Instalação Windows - Arquivo Híbrido (.bat)",
+          subtitle: "Duplo-clique para instalar - Execução garantida",
           steps: [
             {
               icon: <Download className="w-5 h-5" />,
               title: "1. Download do Instalador",
-              description: "Baixe o arquivo .bat executável",
-              details: "O instalador é um arquivo .bat que executa automaticamente quando clicado duas vezes."
+              description: "Baixe o arquivo .bat híbrido",
+              details: "Arquivo .bat que executa PowerShell inline com bypass automático de políticas."
             },
             {
               icon: <Terminal className="w-5 h-5" />,
-              title: "2. Execução Automática",
-              description: "Duplo-clique no arquivo .bat para instalar",
-              details: "O Windows pode solicitar permissões de administrador - aceite para permitir a instalação."
+              title: "2. Execução Direta",
+              description: "Duplo-clique no arquivo .bat baixado",
+              details: "O arquivo executa automaticamente sem problemas de política de execução."
             },
             {
               icon: <Settings className="w-5 h-5" />,
-              title: "3. Instalação Transparente",
-              description: "Instalação ocorre de forma completamente silenciosa",
-              details: "O agente é instalado e configurado automaticamente, sem janelas ou prompts desnecessários."
+              title: "3. Compilação Automática",
+              description: "Script compila e instala o agente C# em tempo real",
+              details: "Processo totalmente automatizado com verificações de .NET e dependências."
             },
             {
               icon: <CheckCircle className="w-5 h-5" />,
-              title: "4. Ícone na Barra de Tarefas",
-              description: "Ícone aparece imediatamente após a instalação",
+              title: "4. Ícone System Tray",
+              description: "Agente aparece na barra de tarefas após instalação",
               details: "Menu completo disponível: status, logs, sincronização manual e configurações."
             }
           ]

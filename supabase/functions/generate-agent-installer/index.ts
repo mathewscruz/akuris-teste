@@ -101,7 +101,7 @@ serve(async (req) => {
 
     switch (platform) {
       case 'windows':
-        filename = `GovernAII-Agent-${agentConfig.empresa_name.replace(/[^a-zA-Z0-9]/g, '')}.ps1`;
+        filename = `GovernAII-Agent-${agentConfig.empresa_name.replace(/[^a-zA-Z0-9]/g, '')}.bat`;
         contentType = 'application/octet-stream';
         installerContent = generateWindowsPowerShell(agentConfig);
         break;
@@ -135,15 +135,19 @@ serve(async (req) => {
 });
 
 function generateWindowsPowerShell(config: any): string {
-  return `# GovernAII Agent PowerShell Installer
-# Executa com bypass de politica e compila agente C# em tempo real
+  return `@echo off
+REM GovernAII Agent Batch Installer Híbrido
+REM Este arquivo executa PowerShell com bypass automático de políticas
 
-Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+echo ===============================================
+echo    GovernAII Agent Installer v1.0.0
+echo ===============================================
+echo.
 
-Write-Host "===============================================" -ForegroundColor Green
-Write-Host "   GovernAII Agent Installer v1.0.0" -ForegroundColor Green  
-Write-Host "===============================================" -ForegroundColor Green
-Write-Host ""
+REM Executar PowerShell com bypass completo de políticas de execução
+powershell.exe -ExecutionPolicy Bypass -NoProfile -WindowStyle Normal -Command "& {
+
+Write-Host 'Iniciando instalação do GovernAII Agent...' -ForegroundColor Green;
 
 # Verificar se .NET está instalado
 try {
@@ -623,7 +627,11 @@ namespace GovernAIIAgent
 
 Write-Host ""
 Write-Host "Pressione Enter para finalizar..." -ForegroundColor Yellow
-Read-Host`;
+Read-Host
+}"
+
+pause
+exit /b 0`;
 }
 
 // Função removida - usando generateWindowsPowerShell agora
