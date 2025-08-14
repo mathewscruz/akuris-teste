@@ -1,11 +1,12 @@
-import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Monitor, Smartphone, Laptop, Download, AlertCircle } from "lucide-react";
+import { Monitor, Smartphone, Laptop, Download, Shield, CheckCircle, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { useState } from "react";
+import { AgentInstallInstructions } from "./AgentInstallInstructions";
 
 interface AgentInstallDialogProps {
   open: boolean;
@@ -13,180 +14,196 @@ interface AgentInstallDialogProps {
 }
 
 export function AgentInstallDialog({ open, onOpenChange }: AgentInstallDialogProps) {
-  const [downloading, setDownloading] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
 
   const platforms = [
     {
-      id: 'windows',
-      name: 'Windows',
-      description: 'Windows 10/11',
-      icon: Monitor,
-      fileExtension: '.exe',
-      requirements: 'Windows 10 ou superior'
+      name: "Windows",
+      description: "Instalador NSIS profissional com interface gráfica",
+      icon: <Monitor className="w-8 h-8" />,
+      extension: ".nsi → .exe",
+      requirements: "NSIS Compiler, Administrador",
+      status: "Instalador Profissional",
+      features: ["Interface Next/Next/Install", "Serviço Windows", "Logs detalhados", "Desinstalação automática"]
     },
     {
-      id: 'linux',
-      name: 'Linux',
-      description: 'Ubuntu, Debian, CentOS, RHEL',
-      icon: Laptop,
-      fileExtension: '.deb',
-      requirements: 'Sistema baseado em Debian/Ubuntu'
+      name: "Linux",
+      description: "Pacote DEB nativo para distribuições Debian/Ubuntu",
+      icon: <Laptop className="w-8 h-8" />,
+      extension: ".deb",
+      requirements: "dpkg, systemd, sudo",
+      status: "Pacote Nativo",
+      features: ["Instalação via dpkg", "Serviço systemd", "Integração completa", "Remoção limpa"]
     },
     {
-      id: 'macos',
-      name: 'macOS',
-      description: 'macOS 10.14 ou superior',
-      icon: Smartphone,
-      fileExtension: '.dmg',
-      requirements: 'macOS 10.14+ (Mojave ou superior)'
+      name: "macOS",
+      description: "Pacote PKG nativo do macOS com assistente visual",
+      icon: <Smartphone className="w-8 h-8" />,
+      extension: ".pkg",
+      requirements: "macOS 10.15+, pkgbuild",
+      status: "Pacote Nativo",
+      features: ["Instalador visual", "LaunchAgent", "Integração nativa", "Desinstalação completa"]
     }
   ];
 
   const downloadAgent = async (platform: string) => {
     try {
-      setDownloading(platform);
+      setIsDownloading(true);
 
       const { data, error } = await supabase.functions.invoke('generate-agent-installer', {
-        body: { platform },
+        body: { platform }
       });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      // Criar blob e fazer download
-      const blob = new Blob([data], { type: 'application/octet-stream' });
+      // Criar blob e baixar arquivo
+      const blob = new Blob([data], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      
-      const platformConfig = platforms.find(p => p.id === platform);
-      let filename = '';
-      switch (platform) {
-        case 'windows':
-          filename = `GovernAII-Agent-Setup${platformConfig?.fileExtension}`;
-          break;
-        case 'linux':
-          filename = `governaii-agent${platformConfig?.fileExtension}`;
-          break;
-        case 'macos':
-          filename = `GovernAII Agent${platformConfig?.fileExtension}`;
-          break;
-        default:
-          filename = `governaii-agent-${platform}${platformConfig?.fileExtension}`;
-      }
-      a.download = filename;
-      
+      a.download = getFilename(platform);
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
-      toast({
-        title: "Download Iniciado",
-        description: `O instalador do agente para ${platformConfig?.name} foi baixado com sucesso.`,
+      setSelectedPlatform(platform);
+      toast.success(`Instalador ${platform} gerado com sucesso!`, {
+        description: "Verifique as instruções de instalação abaixo."
       });
-
     } catch (error) {
-      console.error('Error downloading agent:', error);
-      toast({
-        title: "Erro no Download",
-        description: "Não foi possível baixar o instalador do agente. Tente novamente.",
-        variant: "destructive",
-      });
+      console.error('Erro ao baixar agente:', error);
+      toast.error('Erro ao gerar instalador. Tente novamente.');
     } finally {
-      setDownloading(null);
+      setIsDownloading(false);
+    }
+  };
+
+  const getFilename = (platform: string) => {
+    const timestamp = Date.now();
+    switch (platform) {
+      case 'windows': return `GovernAII-Agent-Setup-${timestamp}.nsi`;
+      case 'linux': return `governaii-agent_1.0.0_amd64-${timestamp}.deb`;
+      case 'macos': return `GovernAII-Agent-1.0.0-${timestamp}.pkg`;
+      default: return `governaii-agent-${timestamp}.bin`;
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Instalar Agente de Descoberta de Ativos</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Shield className="w-5 h-5" />
+            Instaladores Profissionais do Agente GovernAII
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div className="flex items-start space-x-3">
-              <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+          {/* Informações sobre o agente */}
+          <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-6 rounded-lg border border-primary/20">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
               <div>
-                <h4 className="font-medium text-blue-900 dark:text-blue-100">Como funciona o Agente</h4>
-                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  O agente é um programa leve que roda em segundo plano e automaticamente descobre e reporta 
-                  informações sobre hardware e software instalados na máquina para o GovernAII.
+                <h3 className="font-semibold text-foreground mb-2 text-lg">
+                  Agente de Descoberta de Ativos GovernAII
+                </h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Solução profissional para descoberta automática de ativos de TI. O agente executa como serviço 
+                  do sistema, coletando informações de hardware, software e configurações de rede de forma segura 
+                  e criptografada. Ideal para compliance, gestão de ativos e auditoria contínua.
                 </p>
-                <ul className="text-sm text-blue-700 dark:text-blue-300 mt-2 space-y-1">
-                  <li>• Descobre automaticamente ativos de hardware e software</li>
-                  <li>• Monitora status online/offline em tempo real</li>
-                  <li>• Atualiza informações diariamente</li>
-                  <li>• Comunicação segura e criptografada</li>
-                </ul>
+                <div className="flex items-center gap-4 mt-3">
+                  <Badge variant="secondary" className="text-xs">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Criptografia TLS
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Conformidade LGPD
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Instalação Automática
+                  </Badge>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {platforms.map((platform) => {
-              const Icon = platform.icon;
-              const isDownloading = downloading === platform.id;
-
-              return (
-                <Card key={platform.id} className="relative">
-                  <CardHeader className="text-center">
-                    <div className="mx-auto mb-2">
-                      <Icon className="h-12 w-12 text-primary" />
+          {/* Cards das plataformas aprimorados */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {platforms.map((platform) => (
+              <Card key={platform.name} className="relative hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/30">
+                <CardHeader className="text-center pb-4">
+                  <div className="flex justify-center mb-3">
+                    <div className="p-3 bg-primary/10 rounded-xl">
+                      {platform.icon}
                     </div>
-                    <CardTitle className="text-lg">{platform.name}</CardTitle>
-                    <CardDescription>{platform.description}</CardDescription>
-                  </CardHeader>
+                  </div>
+                  <CardTitle className="text-xl">{platform.name}</CardTitle>
+                  <CardDescription className="text-sm leading-relaxed">
+                    {platform.description}
+                  </CardDescription>
+                  <Badge variant="outline" className="text-xs mt-2 bg-green-50 text-green-700 border-green-200">
+                    {platform.status}
+                  </Badge>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-center">
+                    <Badge variant="secondary" className="text-xs font-mono">
+                      {platform.extension}
+                    </Badge>
+                  </div>
                   
-                  <CardContent className="text-center space-y-4">
-                    <div>
-                      <Badge variant="secondary" className="text-xs">
-                        {platform.fileExtension}
-                      </Badge>
+                  <div className="space-y-2">
+                    <div className="text-xs text-muted-foreground">
+                      <strong>Requisitos:</strong> {platform.requirements}
                     </div>
                     
-                    <div className="text-xs text-muted-foreground">
-                      <strong>Requisitos:</strong><br />
-                      {platform.requirements}
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">Funcionalidades:</p>
+                      <ul className="text-xs text-muted-foreground space-y-0.5">
+                        {platform.features.map((feature, idx) => (
+                          <li key={idx} className="flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3 text-green-500" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-
-                    <Button
-                      onClick={() => downloadAgent(platform.id)}
-                      disabled={isDownloading}
-                      className="w-full"
-                    >
-                      {isDownloading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                          Baixando...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="h-4 w-4 mr-2" />
-                          Baixar Agente
-                        </>
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                  </div>
+                  
+                  <Button 
+                    className="w-full" 
+                    onClick={() => downloadAgent(platform.name.toLowerCase())}
+                    disabled={isDownloading}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    {isDownloading ? 'Gerando...' : 'Gerar Instalador'}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
-          <div className="bg-amber-50 dark:bg-amber-950 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
-            <h4 className="font-medium text-amber-900 dark:text-amber-100 mb-2">
-              Instruções de Instalação
-            </h4>
-            <div className="text-sm text-amber-700 dark:text-amber-300 space-y-2">
-              <p><strong>Windows:</strong> Execute o arquivo .exe como Administrador (clique duplo → "Executar como administrador")</p>
-              <p><strong>Linux:</strong> Instale o pacote .deb (sudo dpkg -i governaii-agent.deb)</p>
-              <p><strong>macOS:</strong> Abra o arquivo .dmg e arraste o GovernAII Agent para a pasta Aplicativos</p>
+          {/* Instruções detalhadas */}
+          {selectedPlatform && (
+            <div className="mt-8">
+              <div className="flex items-center gap-2 mb-4">
+                <FileText className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-lg">Instruções de Instalação - {selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1)}</h3>
+              </div>
+              <AgentInstallInstructions platform={selectedPlatform} />
             </div>
-          </div>
+          )}
 
-          <div className="flex justify-end">
+          <div className="flex justify-end pt-4 border-t">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Fechar
             </Button>
