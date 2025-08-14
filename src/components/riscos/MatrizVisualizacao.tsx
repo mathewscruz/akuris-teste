@@ -150,62 +150,60 @@ export function MatrizVisualizacao() {
       <CardHeader>
         <CardTitle>Matriz de Risco - {matriz.nome}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <div className="min-w-96">
-            {/* Cabeçalho da matriz */}
-            <div className="grid gap-1 mb-2" style={{ gridTemplateColumns: `120px repeat(${escalaImpacto.length}, 1fr)` }}>
-              <div className="p-2 font-semibold text-sm">Probabilidade</div>
-              {escalaImpacto.map((impacto) => (
-                <div key={impacto.valor} className="p-2 text-center font-semibold text-sm bg-muted rounded">
-                  {impacto.valor}
-                </div>
-              ))}
-            </div>
-
-            {/* Linhas da matriz */}
-            {escalaProbabilidadeReversed.map((probabilidade) => (
-              <div key={probabilidade.valor} className="grid gap-1 mb-1" style={{ gridTemplateColumns: `120px repeat(${escalaImpacto.length}, 1fr)` }}>
-                <div className="p-2 font-semibold text-sm bg-muted rounded flex items-center justify-center">
-                  {probabilidade.valor}
-                </div>
-                {escalaImpacto.map((impacto) => {
-                  const riscosNaCelula = getRiscosPorCelula(probabilidade.valor, impacto.valor);
-                  const nivelRisco = getNivelRisco(probabilidade.valor, impacto.valor);
-                  const cor = nivelRisco ? getCorNivel(nivelRisco.nivel) : '#f3f4f6';
-                  
-                  return (
-                    <div 
-                      key={`${probabilidade.valor}-${impacto.valor}`}
-                      className="p-2 border-2 border-border rounded min-h-16 flex flex-col items-center justify-center relative"
-                      style={{ backgroundColor: cor + '20' }}
-                    >
-                      {nivelRisco && (
-                        <Badge 
-                          className="text-xs mb-1" 
-                          style={{ backgroundColor: cor, color: 'white', borderColor: cor }}
-                        >
-                          {nivelRisco.nivel}
-                        </Badge>
-                      )}
-                      {riscosNaCelula.length > 0 && (
-                        <div 
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                          style={{ backgroundColor: cor }}
-                        >
-                          {riscosNaCelula.length}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+      <CardContent className="p-3">
+        <div className="w-full">
+          {/* Cabeçalho da matriz */}
+          <div className="grid gap-0.5 mb-2" style={{ gridTemplateColumns: `minmax(60px, 1fr) repeat(${escalaImpacto.length}, minmax(0, 1fr))` }}>
+            <div className="p-1.5 font-medium text-xs text-center">Prob.</div>
+            {escalaImpacto.map((impacto) => (
+              <div key={impacto.valor} className="p-1.5 text-center font-medium text-xs bg-muted rounded text-nowrap">
+                {impacto.valor}
               </div>
             ))}
+          </div>
 
-            {/* Legenda do eixo Y */}
-            <div className="text-center mt-4">
-              <span className="text-sm font-semibold">Impacto →</span>
+          {/* Linhas da matriz */}
+          {escalaProbabilidadeReversed.map((probabilidade) => (
+            <div key={probabilidade.valor} className="grid gap-0.5 mb-0.5" style={{ gridTemplateColumns: `minmax(60px, 1fr) repeat(${escalaImpacto.length}, minmax(0, 1fr))` }}>
+              <div className="p-1.5 font-medium text-xs bg-muted rounded flex items-center justify-center">
+                {probabilidade.valor}
+              </div>
+              {escalaImpacto.map((impacto) => {
+                const riscosNaCelula = getRiscosPorCelula(probabilidade.valor, impacto.valor);
+                const nivelRisco = getNivelRisco(probabilidade.valor, impacto.valor);
+                const cor = nivelRisco ? getCorNivel(nivelRisco.nivel) : '#f3f4f6';
+                
+                return (
+                  <div 
+                    key={`${probabilidade.valor}-${impacto.valor}`}
+                    className="p-1 border border-border rounded min-h-12 flex flex-col items-center justify-center relative aspect-square"
+                    style={{ backgroundColor: cor + '20' }}
+                  >
+                    {nivelRisco && (
+                      <Badge 
+                        className="text-xs mb-0.5 px-1 py-0 h-auto leading-tight" 
+                        style={{ backgroundColor: cor, color: 'white', borderColor: cor, fontSize: '0.625rem' }}
+                      >
+                        {nivelRisco.nivel.charAt(0)}
+                      </Badge>
+                    )}
+                    {riscosNaCelula.length > 0 && (
+                      <div 
+                        className="w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                        style={{ backgroundColor: cor, fontSize: '0.625rem' }}
+                      >
+                        {riscosNaCelula.length}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
+          ))}
+
+          {/* Legenda do eixo Y */}
+          <div className="text-center mt-2">
+            <span className="text-xs font-medium">Impacto →</span>
           </div>
         </div>
       </CardContent>
