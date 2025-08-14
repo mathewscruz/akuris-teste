@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Filter, Server, Activity, AlertTriangle, TrendingUp, Wrench, History, Upload, ArrowUpDown, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, Server, Activity, AlertTriangle, TrendingUp, Wrench, History, Upload, ArrowUpDown, Download, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -634,6 +634,19 @@ const Ativos = () => {
             <div className="text-2xl font-bold">{stats?.altoValorNegocio || 0}</div>
             <div className="text-xs text-muted-foreground mt-1">
               {stats?.percentualAltoValor || 0}% do total
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Criticidade Alta</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{(stats?.criticos || 0) + (stats?.altos || 0)}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Requerem atenção especial
             </div>
           </CardContent>
         </Card>
