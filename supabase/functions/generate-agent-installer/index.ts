@@ -347,10 +347,10 @@ function Create-SystemTrayApp {
     
     $menuConfig = $script:contextMenu.Items.Add("Sobre")
     $menuConfig.Add_Click({
-        $aboutText = "GovernAII Asset Discovery Agent`n`n"
-        $aboutText += "Empresa: ${config.empresa_name}`n"
-        $aboutText += "Versão: 1.0`n"
-        $aboutText += "Status: " + $(if ($script:isOnline) { "Online" } else { "Offline" }) + "`n"
+        $aboutText = "GovernAII Asset Discovery Agent\\r\\n\\r\\n"
+        $aboutText += "Empresa: ${config.empresa_name}\\r\\n"
+        $aboutText += "Versão: 1.0\\r\\n"
+        $aboutText += "Status: " + $(if ($script:isOnline) { "Online" } else { "Offline" }) + "\\r\\n"
         $aboutText += "Última Sincronização: " + $script:lastSync.ToString("dd/MM/yyyy HH:mm:ss")
         [System.Windows.Forms.MessageBox]::Show($aboutText, "Sobre - GovernAII Agent")
     })
