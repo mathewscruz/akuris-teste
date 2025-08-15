@@ -8,10 +8,14 @@ import { ModuleIntegrations } from '@/components/due-diligence/ModuleIntegration
 import { FornecedoresManager } from '@/components/due-diligence/FornecedoresManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/ui/page-header';
+import { StatCard } from '@/components/ui/stat-card';
+import { useDueDiligenceStats } from '@/hooks/useDueDiligenceStats';
+import { ClipboardList, Users, CheckCircle, TrendingUp } from 'lucide-react';
 
 export default function DueDiligence() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { data: stats, isLoading } = useDueDiligenceStats();
 
   return (
     <div className="space-y-6">
@@ -19,6 +23,40 @@ export default function DueDiligence() {
         title="Due Diligence"
         description="Gerencie avaliações digitais de fornecedores com questionários personalizados e scoring automático"
       />
+
+      {/* StatCards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Templates Ativos"
+          value={stats?.totalTemplates || 0}
+          description="Questionários disponíveis"
+          icon={<ClipboardList className="h-4 w-4" />}
+          loading={isLoading}
+        />
+        <StatCard
+          title="Total de Avaliações"
+          value={stats?.totalAssessments || 0}
+          description="Avaliações criadas"
+          icon={<Users className="h-4 w-4" />}
+          loading={isLoading}
+        />
+        <StatCard
+          title="Concluídas"
+          value={stats?.completedAssessments || 0}
+          description={`${stats?.pendingAssessments || 0} pendentes`}
+          icon={<CheckCircle className="h-4 w-4" />}
+          loading={isLoading}
+          variant="success"
+        />
+        <StatCard
+          title="Score Médio"
+          value={`${(stats?.averageScore || 0).toFixed(1)}%`}
+          description="Média das avaliações concluídas"
+          icon={<TrendingUp className="h-4 w-4" />}
+          loading={isLoading}
+          variant={stats?.averageScore >= 80 ? 'success' : stats?.averageScore >= 60 ? 'warning' : 'destructive'}
+        />
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-6">

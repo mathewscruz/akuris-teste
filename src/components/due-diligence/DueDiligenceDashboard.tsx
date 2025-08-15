@@ -127,63 +127,6 @@ export function DueDiligenceDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Cards de Estatísticas */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Templates Ativos</CardTitle>
-            <ClipboardList className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalTemplates}</div>
-            <p className="text-xs text-muted-foreground">
-              Questionários disponíveis
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Avaliações</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalAssessments}</div>
-            <p className="text-xs text-muted-foreground">
-              Avaliações criadas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completedAssessments}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.pendingAssessments} pendentes
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Score Médio</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${getScoreColor(stats.averageScore)}`}>
-              {stats.averageScore.toFixed(1)}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Média das avaliações concluídas
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Progresso das Avaliações */}
       <Card>
         <CardHeader>
