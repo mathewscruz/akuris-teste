@@ -482,7 +482,7 @@ export default function Contratos() {
 
       {/* Tabs */}
       <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="contratos" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Contratos</span>
@@ -490,14 +490,6 @@ export default function Contratos() {
           <TabsTrigger value="fornecedores" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
             <span className="hidden sm:inline">Fornecedores</span>
-          </TabsTrigger>
-          <TabsTrigger value="relatorios" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            <span className="hidden sm:inline">Relatórios</span>
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="flex items-center gap-2">
-            <FileImage className="h-4 w-4" />
-            <span className="hidden sm:inline">Templates</span>
           </TabsTrigger>
         </TabsList>
 
@@ -579,15 +571,6 @@ export default function Contratos() {
           </Card>
         </TabsContent>
 
-        {/* Relatórios Tab */}
-        <TabsContent value="relatorios" className="space-y-4">
-          <RelatoriosContratos />
-        </TabsContent>
-
-        {/* Templates Tab */}
-        <TabsContent value="templates" className="space-y-4">
-          <TemplatesContratos />
-        </TabsContent>
       </Tabs>
 
       {/* Dialogs */}
