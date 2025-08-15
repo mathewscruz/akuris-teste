@@ -139,8 +139,31 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
+function detectToastVariant(title?: React.ReactNode, variant?: string): "default" | "info" | "success" | "warning" | "error" | "destructive" {
+  if (variant === "destructive") return "destructive"
+  
+  const titleText = typeof title === 'string' ? title.toLowerCase() : ''
+  
+  if (titleText.includes('sucesso') || titleText.includes('criado') || titleText.includes('atualizado') || titleText.includes('excluído') || titleText.includes('salvo')) {
+    return "success"
+  }
+  
+  if (titleText.includes('erro') || titleText.includes('falha') || titleText.includes('falhou')) {
+    return "error"
+  }
+  
+  if (titleText.includes('atenção') || titleText.includes('aviso') || titleText.includes('cuidado')) {
+    return "warning"
+  }
+  
+  return (variant as any) || "info"
+}
+
 function toast({ ...props }: Toast) {
   const id = genId()
+  
+  // Auto-detect variant based on title content
+  const detectedVariant = detectToastVariant(props.title, props.variant as string)
 
   const update = (props: ToasterToast) =>
     dispatch({
@@ -153,6 +176,7 @@ function toast({ ...props }: Toast) {
     type: "ADD_TOAST",
     toast: {
       ...props,
+      variant: detectedVariant,
       id,
       open: true,
       onOpenChange: (open) => {
