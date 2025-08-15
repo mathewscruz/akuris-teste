@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Settings, Trash2, Eye, EyeOff } from "lucide-react";
+import { Plus, Settings, Trash2, Eye, EyeOff, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
@@ -24,6 +25,8 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
   const [isVisibilityDialogOpen, setIsVisibilityDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("new");
   const [visibleFrameworks, setVisibleFrameworks] = useState<Set<string>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   const { data: frameworks = [], loading: isLoading, refetch, error } = useOptimizedQuery(
     async () => {
@@ -132,96 +135,129 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsVisibilityDialogOpen(true)}
-          className="flex items-center gap-2"
-        >
-          <Settings className="h-4 w-4" />
-          Selecionar Visibilidade
-        </Button>
-      </div>
-
-      {visibleFrameworksList.length > 0 && (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0">
-            <TabsTrigger
-              value="new"
-              className="flex items-center gap-2 h-10 px-4 rounded-t-md border-b-2 border-transparent data-[state=active]:border-primary"
-            >
-              <Plus className="h-4 w-4" />
-              Novo Framework
-            </TabsTrigger>
+      <Card className="rounded-lg border overflow-hidden">
+        <CardContent className="p-0">
+          <div className="p-6 pb-4">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div className="relative flex-1 max-w-sm">
+                <Input
+                  placeholder="Buscar frameworks..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtros
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsVisibilityDialogOpen(true)}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Visibilidade
+                </Button>
+              </div>
+            </div>
             
-            {visibleFrameworksList.map((framework: Framework) => (
-              <TabsTrigger
-                key={framework.id}
-                value={framework.id}
-                className="flex items-center gap-2 h-10 px-4 rounded-t-md border-b-2 border-transparent data-[state=active]:border-primary group"
-              >
-                <span>{framework.nome}</span>
-                <Badge variant="secondary" className="text-xs">
-                  {framework.versao}
-                </Badge>
+            {showFilters && (
+              <div className="bg-muted/50 rounded-lg p-4 mb-4">
+                <p className="text-sm text-muted-foreground">Filtros serão implementados em breve</p>
+              </div>
+            )}
+          </div>
+
+          {visibleFrameworksList.length > 0 && (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0">
+                <TabsTrigger
+                  value="new"
+                  className="flex items-center gap-2 h-10 px-4 rounded-t-md border-b-2 border-transparent data-[state=active]:border-primary"
+                >
+                  <Plus className="h-4 w-4" />
+                  Novo Framework
+                </TabsTrigger>
                 
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditFramework(framework);
-                    }}
+                {visibleFrameworksList
+                  .filter(framework => 
+                    searchTerm === '' || 
+                    framework.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    framework.tipo_framework.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((framework: Framework) => (
+                  <TabsTrigger
+                    key={framework.id}
+                    value={framework.id}
+                    className="flex items-center gap-2 h-10 px-4 rounded-t-md border-b-2 border-transparent data-[state=active]:border-primary group"
                   >
-                    <Settings className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteFramework(framework);
-                    }}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+                    <span>{framework.nome}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {framework.versao}
+                    </Badge>
+                    
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditFramework(framework);
+                        }}
+                      >
+                        <Settings className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteFramework(framework);
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
 
-        <TabsContent value="new" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Criar Novo Framework</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center py-12">
-              <p className="text-muted-foreground mb-6">
-                Clique no botão abaixo para criar um novo framework de conformidade.
-              </p>
-              <Button onClick={handleCreateNew} size="lg">
-                <Plus className="h-5 w-5 mr-2" />
-                Criar Framework
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-          {visibleFrameworksList.map((framework: Framework) => (
-            <TabsContent key={framework.id} value={framework.id} className="mt-6">
-              <AssessmentView
-                frameworkId={framework.id}
-                frameworkName={framework.nome}
-              />
+            <TabsContent value="new" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Criar Novo Framework</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center py-12">
+                  <p className="text-muted-foreground mb-6">
+                    Clique no botão abaixo para criar um novo framework de conformidade.
+                  </p>
+                  <Button onClick={handleCreateNew} size="lg">
+                    <Plus className="h-5 w-5 mr-2" />
+                    Criar Framework
+                  </Button>
+                </CardContent>
+              </Card>
             </TabsContent>
-          ))}
-        </Tabs>
-      )}
+
+              {visibleFrameworksList.map((framework: Framework) => (
+                <TabsContent key={framework.id} value={framework.id} className="mt-6">
+                  <AssessmentView
+                    frameworkId={framework.id}
+                    frameworkName={framework.nome}
+                  />
+                </TabsContent>
+              ))}
+            </Tabs>
+          )}
+        </CardContent>
+      </Card>
 
       {visibleFrameworksList.length === 0 && frameworks.length > 0 && (
         <Card>

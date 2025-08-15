@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Plus, Users, Shield, AlertTriangle, CheckCircle, Clock, Edit, BarChart3, TrendingUp } from 'lucide-react';
+import { Plus, Users, Shield, AlertTriangle, CheckCircle, Clock, Edit, BarChart3, TrendingUp, Search, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -9,7 +11,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import ContaDialog from '@/components/contas-privilegiadas/ContaDialog';
 import SistemaDialog from '@/components/contas-privilegiadas/SistemaDialog';
-import { DataTable } from '@/components/ui/data-table';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
 
@@ -48,6 +49,8 @@ export default function ContasPrivilegiadas() {
   const [showSistemaDialog, setShowSistemaDialog] = useState(false);
   const [selectedConta, setSelectedConta] = useState<ContaPrivilegiada | null>(null);
   const [selectedSistema, setSelectedSistema] = useState<SistemaPrivilegiado | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const { toast } = useToast();
 
   // Buscar contas privilegiadas
@@ -161,146 +164,255 @@ export default function ContasPrivilegiadas() {
     );
   };
 
-  const contasColumns = [
-    {
-      key: 'usuario_beneficiario' as keyof ContaPrivilegiada,
-      label: 'Usuário',
-      sortable: true,
-      render: (conta: ContaPrivilegiada) => (
-        <div>
-          <div className="font-medium">{conta.usuario_beneficiario}</div>
-          {conta.email_beneficiario && (
-            <div className="text-sm text-muted-foreground">{conta.email_beneficiario}</div>
+  // Filtrar contas e sistemas baseado na busca
+  const filteredContas = contas.filter(conta => 
+    searchTerm === '' || 
+    conta.usuario_beneficiario.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conta.email_beneficiario?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conta.sistemas_privilegiados?.nome_sistema.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredSistemas = sistemas.filter(sistema => 
+    searchTerm === '' || 
+    sistema.nome_sistema.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sistema.tipo_sistema.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sistema.responsavel_sistema?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Componente para tabela de contas
+  const ContasTable = () => (
+    <Card className="rounded-lg border overflow-hidden">
+      <CardContent className="p-0">
+        <div className="p-6 pb-4">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar contas..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleRelatorios}
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Relatórios
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filtros
+              </Button>
+              <Button 
+                size="sm"
+                onClick={() => setShowContaDialog(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Conta
+              </Button>
+            </div>
+          </div>
+          
+          {showFilters && (
+            <div className="bg-muted/50 rounded-lg p-4 mb-4">
+              <p className="text-sm text-muted-foreground">Filtros serão implementados em breve</p>
+            </div>
           )}
         </div>
-      )
-    },
-    {
-      key: 'sistemas_privilegiados' as keyof ContaPrivilegiada,
-      label: 'Sistema',
-      render: (conta: ContaPrivilegiada) => (
-        <div>
-          <div className="font-medium">{conta.sistemas_privilegiados?.nome_sistema}</div>
-          <div className="text-sm text-muted-foreground">
-            {conta.sistemas_privilegiados?.tipo_sistema}
-          </div>
-        </div>
-      )
-    },
-    {
-      key: 'tipo_acesso' as keyof ContaPrivilegiada,
-      label: 'Tipo de Acesso',
-      render: (conta: ContaPrivilegiada) => (
-        <Badge variant="secondary">{conta.tipo_acesso}</Badge>
-      )
-    },
-    {
-      key: 'nivel_privilegio' as keyof ContaPrivilegiada,
-      label: 'Nível',
-      render: (conta: ContaPrivilegiada) => (
-        <Badge variant={conta.nivel_privilegio === 'alto' ? 'destructive' : 'secondary'}>
-          {conta.nivel_privilegio}
-        </Badge>
-      )
-    },
-    {
-      key: 'data_expiracao' as keyof ContaPrivilegiada,
-      label: 'Data Expiração',
-      render: (conta: ContaPrivilegiada) => 
-        new Date(conta.data_expiracao).toLocaleDateString('pt-BR')
-    },
-    {
-      key: 'status' as keyof ContaPrivilegiada,
-      label: 'Status',
-      render: (conta: ContaPrivilegiada) => getStatusBadge(conta.status)
-    },
-    {
-      key: 'actions' as keyof ContaPrivilegiada,
-      label: 'Ações',
-      render: (conta: ContaPrivilegiada) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleEditConta(conta)}
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
-      )
-    }
-  ];
+        
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Usuário</TableHead>
+              <TableHead>Sistema</TableHead>
+              <TableHead>Tipo de Acesso</TableHead>
+              <TableHead>Nível</TableHead>
+              <TableHead>Data Expiração</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredContas.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8">
+                  <div className="flex flex-col items-center gap-2">
+                    <Users className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-muted-foreground">Nenhuma conta encontrada</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredContas.map((conta) => (
+                <TableRow key={conta.id}>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{conta.usuario_beneficiario}</div>
+                      {conta.email_beneficiario && (
+                        <div className="text-sm text-muted-foreground">{conta.email_beneficiario}</div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{conta.sistemas_privilegiados?.nome_sistema}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {conta.sistemas_privilegiados?.tipo_sistema}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{conta.tipo_acesso}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={conta.nivel_privilegio === 'alto' ? 'destructive' : 'secondary'}>
+                      {conta.nivel_privilegio}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(conta.data_expiracao).toLocaleDateString('pt-BR')}
+                  </TableCell>
+                  <TableCell>
+                    {getStatusBadge(conta.status)}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditConta(conta)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
 
-  const sistemasColumns = [
-    {
-      key: 'nome_sistema' as keyof SistemaPrivilegiado,
-      label: 'Nome do Sistema',
-      sortable: true,
-      render: (sistema: SistemaPrivilegiado) => (
-        <div className="font-medium">{sistema.nome_sistema}</div>
-      )
-    },
-    {
-      key: 'tipo_sistema' as keyof SistemaPrivilegiado,
-      label: 'Tipo',
-      render: (sistema: SistemaPrivilegiado) => (
-        <Badge variant="outline">{sistema.tipo_sistema}</Badge>
-      )
-    },
-    {
-      key: 'criticidade' as keyof SistemaPrivilegiado,
-      label: 'Criticidade',
-      render: (sistema: SistemaPrivilegiado) => getCriticidadeBadge(sistema.criticidade)
-    },
-    {
-      key: 'responsavel_sistema' as keyof SistemaPrivilegiado,
-      label: 'Responsável',
-      render: (sistema: SistemaPrivilegiado) => sistema.responsavel_sistema || '-'
-    },
-    {
-      key: 'url_sistema' as keyof SistemaPrivilegiado,
-      label: 'URL',
-      render: (sistema: SistemaPrivilegiado) => sistema.url_sistema ? (
-        <a 
-          href={sistema.url_sistema} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="text-primary hover:underline"
-        >
-          Acessar
-        </a>
-      ) : '-'
-    },
-    {
-      key: 'actions' as keyof SistemaPrivilegiado,
-      label: 'Ações',
-      render: (sistema: SistemaPrivilegiado) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleEditSistema(sistema)}
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
-      )
-    }
-  ];
+  // Componente para tabela de sistemas
+  const SistemasTable = () => (
+    <Card className="rounded-lg border overflow-hidden">
+      <CardContent className="p-0">
+        <div className="p-6 pb-4">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar sistemas..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filtros
+              </Button>
+              <Button 
+                size="sm"
+                onClick={() => setShowSistemaDialog(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Sistema
+              </Button>
+            </div>
+          </div>
+          
+          {showFilters && (
+            <div className="bg-muted/50 rounded-lg p-4 mb-4">
+              <p className="text-sm text-muted-foreground">Filtros serão implementados em breve</p>
+            </div>
+          )}
+        </div>
+        
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome do Sistema</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Criticidade</TableHead>
+              <TableHead>Responsável</TableHead>
+              <TableHead>URL</TableHead>
+              <TableHead>Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredSistemas.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8">
+                  <div className="flex flex-col items-center gap-2">
+                    <Shield className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-muted-foreground">Nenhum sistema encontrado</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredSistemas.map((sistema) => (
+                <TableRow key={sistema.id}>
+                  <TableCell>
+                    <div className="font-medium">{sistema.nome_sistema}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{sistema.tipo_sistema}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {getCriticidadeBadge(sistema.criticidade)}
+                  </TableCell>
+                  <TableCell>
+                    {sistema.responsavel_sistema || '-'}
+                  </TableCell>
+                  <TableCell>
+                    {sistema.url_sistema ? (
+                      <a 
+                        href={sistema.url_sistema} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        Acessar
+                      </a>
+                    ) : '-'}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditSistema(sistema)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
-      <PageHeader
+        <PageHeader
         title="Contas Privilegiadas"
         description="Gerencie e monitore acessos privilegiados aos sistemas críticos"
-        actions={
-          <div className="flex gap-2">
-            <Button onClick={() => setShowSistemaDialog(true)} variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Sistema
-            </Button>
-            <Button onClick={() => setShowContaDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Conta
-            </Button>
-          </div>
-        }
       />
 
       {/* StatCards */}
@@ -350,51 +462,11 @@ export default function ContasPrivilegiadas() {
         </TabsList>
 
         <TabsContent value="contas" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Contas Privilegiadas
-                </CardTitle>
-                <Button onClick={handleRelatorios} variant="outline">
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Relatórios
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <DataTable
-                data={contas}
-                columns={contasColumns}
-                emptyState={{
-                  icon: <Users className="h-12 w-12" />,
-                  title: "Nenhuma conta privilegiada",
-                  description: "Comece criando sua primeira conta privilegiada",
-                  action: {
-                    label: "Nova Conta",
-                    onClick: () => setShowContaDialog(true)
-                  }
-                }}
-              />
-            </CardContent>
-          </Card>
+          <ContasTable />
         </TabsContent>
 
         <TabsContent value="sistemas" className="space-y-6">
-          <DataTable
-            data={sistemas}
-            columns={sistemasColumns}
-            emptyState={{
-              icon: <Shield className="h-12 w-12" />,
-              title: "Nenhum sistema cadastrado",
-              description: "Comece criando seu primeiro sistema privilegiado",
-              action: {
-                label: "Novo Sistema",
-                onClick: () => setShowSistemaDialog(true)
-              }
-            }}
-          />
+          <SistemasTable />
         </TabsContent>
       </Tabs>
 

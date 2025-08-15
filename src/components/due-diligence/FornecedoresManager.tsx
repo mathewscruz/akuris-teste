@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit2, Trash2, Building, Mail, Phone } from 'lucide-react';
+import { Plus, Edit2, Trash2, Building, Mail, Phone, Filter } from 'lucide-react';
 
 interface Fornecedor {
   id: string;
@@ -38,6 +38,8 @@ interface FornecedorFormData {
 export function FornecedoresManager() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFornecedor, setEditingFornecedor] = useState<Fornecedor | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const [formData, setFormData] = useState<FornecedorFormData>({
     nome: '',
     email: '',
@@ -212,21 +214,46 @@ export function FornecedoresManager() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Fornecedores</h2>
-          <p className="text-muted-foreground">
-            Gerencie os fornecedores para questionários de due diligence
-          </p>
+    <Card className="rounded-lg border overflow-hidden">
+      <CardContent className="p-0">
+        <div className="p-6 pb-4">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="relative flex-1 max-w-sm">
+              <Input
+                placeholder="Buscar fornecedores..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filtros
+              </Button>
+              <Button 
+                size="sm"
+                onClick={() => setDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Fornecedor
+              </Button>
+            </div>
+          </div>
+          
+          {showFilters && (
+            <div className="bg-muted/50 rounded-lg p-4 mb-4">
+              <p className="text-sm text-muted-foreground">Filtros serão implementados em breve</p>
+            </div>
+          )}
         </div>
         
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Fornecedor
-            </Button>
+            <div />
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -326,7 +353,15 @@ export function FornecedoresManager() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {fornecedores.filter(f => f.status === 'ativo').map((fornecedor) => (
+          {fornecedores
+            .filter(f => f.status === 'ativo')
+            .filter(f => 
+              searchTerm === '' || 
+              f.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              f.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              f.cnpj?.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+            .map((fornecedor) => (
             <Card key={fornecedor.id}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -375,10 +410,14 @@ export function FornecedoresManager() {
               </CardContent>
             </Card>
           ))}
+          </div>
+          )}
         </div>
       )}
+      </CardContent>
+    </Card>
       
-      {fornecedores.filter(f => f.status === 'ativo').length === 0 && !isLoading && (
+    {fornecedores.filter(f => f.status === 'ativo').length === 0 && !isLoading && (
         <Card>
           <CardContent className="text-center py-12">
             <Building className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -391,8 +430,7 @@ export function FornecedoresManager() {
               Criar Primeiro Fornecedor
             </Button>
           </CardContent>
-        </Card>
-      )}
-    </div>
+      </Card>
+    )}
   );
 }

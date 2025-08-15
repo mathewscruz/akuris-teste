@@ -446,35 +446,9 @@ export function Documentos() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
+        <PageHeader
         title="Documentos"
         description="Gerencie documentos, políticas e procedimentos da empresa de forma centralizada"
-        actions={
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setUploadMultiplos(true)}
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Múltiplo
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setCategoriasDialog(true)}
-            >
-              <FolderOpen className="h-4 w-4 mr-2" />
-              Categorias
-            </Button>
-            <Button onClick={() => setShowDocGenDialog(true)} className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-              <Brain className="h-4 w-4" />
-              DocGen
-            </Button>
-            <Button onClick={() => setDocumentoDialog({ open: true })}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Documento
-            </Button>
-          </div>
-        }
       />
 
       {/* KPI Cards */}
@@ -483,7 +457,7 @@ export function Documentos() {
           title="Total de Documentos"
           value={statsDocumentos?.total || 0}
           description={`${statsDocumentos?.ativos || 0} ativos`}
-          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          icon={<FileText className="h-4 w-4" />}
           loading={!statsDocumentos}
         />
 
@@ -491,7 +465,7 @@ export function Documentos() {
           title="Aprovados"
           value={statsDocumentos?.aprovados || 0}
           description={`${statsDocumentos?.pendentesAprovacao || 0} pendentes`}
-          icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
+          icon={<CheckCircle className="h-4 w-4" />}
           variant="success"
           loading={!statsDocumentos}
         />
@@ -515,217 +489,261 @@ export function Documentos() {
         />
       </div>
 
-      {/* Filtros */}
-      <div className="flex gap-4 items-center flex-wrap">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Buscar documentos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Categoria" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as categorias</SelectItem>
-            {categorias.map((categoria) => (
-              <SelectItem key={categoria.id} value={categoria.nome}>
-                {categoria.nome}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-          <SelectTrigger className="w-32">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="ativo">Ativo</SelectItem>
-            <SelectItem value="inativo">Inativo</SelectItem>
-            <SelectItem value="arquivado">Arquivado</SelectItem>
-            <SelectItem value="vencido">Vencido</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <Select value={selectedTipo} onValueChange={setSelectedTipo}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os tipos</SelectItem>
-            <SelectItem value="politica">Política</SelectItem>
-            <SelectItem value="procedimento">Procedimento</SelectItem>
-            <SelectItem value="instrucao">Instrução</SelectItem>
-            <SelectItem value="formulario">Formulário</SelectItem>
-            <SelectItem value="certificado">Certificado</SelectItem>
-            <SelectItem value="contrato">Contrato</SelectItem>
-            <SelectItem value="relatorio">Relatório</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <Button
-          variant="outline"
-          onClick={() => setBuscaAvancada(true)}
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          Busca Avançada
-        </Button>
-        
-        <Button
-          variant="outline"
-          onClick={() => setRelatoriosDialog(true)}
-        >
-          <TrendingUp className="h-4 w-4 mr-2" />
-          Relatórios
-        </Button>
-        
-        {(filtrosAvancados || searchTerm || selectedCategoria !== 'all' || selectedStatus !== 'all' || selectedTipo !== 'all') && (
-          <Button
-            variant="ghost"
-            onClick={limparFiltros}
-            className="text-muted-foreground"
-          >
-            Limpar Filtros
-          </Button>
-        )}
-      </div>
+      {/* Tabela de documentos com estrutura integrada */}
+      <Card className="rounded-lg border overflow-hidden">
+        <CardContent className="p-0">
+          <div className="p-6 pb-4">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar documentos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setUploadMultiplos(true)}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setCategoriasDialog(true)}
+                >
+                  <FolderOpen className="h-4 w-4 mr-2" />
+                  Categorias
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setBuscaAvancada(true)}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtros
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setRelatoriosDialog(true)}
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Relatórios
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={() => setShowDocGenDialog(true)} 
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                >
+                  <Brain className="h-4 w-4 mr-2" />
+                  DocGen
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={() => setDocumentoDialog({ open: true })}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo
+                </Button>
+              </div>
+            </div>
+            
+            {/* Filtros básicos */}
+            <div className="flex gap-4 items-center flex-wrap mb-4">
+              <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as categorias</SelectItem>
+                  {categorias.map((categoria) => (
+                    <SelectItem key={categoria.id} value={categoria.nome}>
+                      {categoria.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="ativo">Ativo</SelectItem>
+                  <SelectItem value="inativo">Inativo</SelectItem>
+                  <SelectItem value="arquivado">Arquivado</SelectItem>
+                  <SelectItem value="vencido">Vencido</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedTipo} onValueChange={setSelectedTipo}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  <SelectItem value="politica">Política</SelectItem>
+                  <SelectItem value="procedimento">Procedimento</SelectItem>
+                  <SelectItem value="instrucao">Instrução</SelectItem>
+                  <SelectItem value="formulario">Formulário</SelectItem>
+                  <SelectItem value="certificado">Certificado</SelectItem>
+                  <SelectItem value="contrato">Contrato</SelectItem>
+                  <SelectItem value="relatorio">Relatório</SelectItem>
+                </SelectContent>
+              </Select>
 
-      {/* Indicador de filtros aplicados */}
-      {filtrosAvancados && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Filter className="h-4 w-4" />
-          Filtros avançados aplicados
-          <Badge variant="secondary">
-            {Object.keys(filtrosAvancados).length} filtro(s)
-          </Badge>
-        </div>
-      )}
+              {(filtrosAvancados || searchTerm || selectedCategoria !== 'all' || selectedStatus !== 'all' || selectedTipo !== 'all') && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={limparFiltros}
+                  className="text-muted-foreground"
+                >
+                  Limpar Filtros
+                </Button>
+              )}
+            </div>
 
-      {/* Tabela de documentos */}
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Classificação</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Versão</TableHead>
-              {/* Coluna Tamanho removida conforme solicitado */}
-              <TableHead>Data de Criação</TableHead>
-              <TableHead>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {documentosFiltrados.map((documento) => (
-              <TableRow key={documento.id}>
-                <TableCell>
-                  <div className="space-y-1">
-                    <div className="font-medium">{documento.nome}</div>
-                    {documento.descricao && (
-                      <div className="text-sm text-muted-foreground">
-                        {documento.descricao}
-                      </div>
-                    )}
-                    {documento.classificacao === 'confidencial' && (
-                      <Badge variant="destructive" className="text-xs">
-                        <Shield className="h-3 w-3 mr-1" />
-                        Confidencial
-                      </Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>{getTipoBadge(documento.tipo)}</TableCell>
-                <TableCell>
-                  <Badge 
-                    variant="secondary" 
-                    className={`border ${getClassificacaoColor(documento.classificacao || 'interna')}`}
-                  >
-                    {capitalizeText(documento.classificacao || 'interna')}
-                  </Badge>
-                </TableCell>
-                <TableCell>{getStatusBadge(documento.status)}</TableCell>
-                <TableCell>v{documento.versao}</TableCell>
-                {/* Coluna Tamanho removida */}
-                <TableCell>
-                  {format(new Date(documento.created_at), 'dd/MM/yyyy', { locale: ptBR })}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Abrir menu</span>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => setPreviewDialog({ open: true, documento })}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        Preview
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setDocumentoDialog({ open: true, documento })}
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setVinculacoesDialog({ open: true, documento })}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        Vinculações
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setComentariosDialog({ open: true, documento })}
-                      >
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Comentários
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setAprovacaoDialog({ open: true, documento })}
-                      >
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Aprovação
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setAuditoriaDialog({ open: true, documento })}
-                      >
-                        <History className="mr-2 h-4 w-4" />
-                        Auditoria
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleDeleteDocumento(documento.id)}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        {documentosFiltrados.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            {filtrosAvancados || searchTerm || selectedCategoria !== 'all' || selectedStatus !== 'all' || selectedTipo !== 'all' 
-              ? 'Nenhum documento encontrado com os filtros aplicados.'
-              : 'Nenhum documento cadastrado.'
-            }
+            {/* Indicador de filtros aplicados */}
+            {filtrosAvancados && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                <Filter className="h-4 w-4" />
+                Filtros avançados aplicados
+                <Badge variant="secondary">
+                  {Object.keys(filtrosAvancados).length} filtro(s)
+                </Badge>
+              </div>
+            )}
           </div>
-        )}
+          
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Classificação</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Versão</TableHead>
+                <TableHead>Data de Criação</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {documentosFiltrados.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    <div className="flex flex-col items-center gap-2">
+                      <FileText className="h-8 w-8 text-muted-foreground" />
+                      <span className="text-muted-foreground">
+                        {filtrosAvancados || searchTerm || selectedCategoria !== 'all' || selectedStatus !== 'all' || selectedTipo !== 'all' 
+                          ? 'Nenhum documento encontrado com os filtros aplicados.'
+                          : 'Nenhum documento cadastrado.'
+                        }
+                      </span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                documentosFiltrados.map((documento) => (
+                  <TableRow key={documento.id}>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="font-medium">{documento.nome}</div>
+                        {documento.descricao && (
+                          <div className="text-sm text-muted-foreground">
+                            {documento.descricao}
+                          </div>
+                        )}
+                        {documento.classificacao === 'confidencial' && (
+                          <Badge variant="destructive" className="text-xs">
+                            <Shield className="h-3 w-3 mr-1" />
+                            Confidencial
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{getTipoBadge(documento.tipo)}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant="secondary" 
+                        className={`border ${getClassificacaoColor(documento.classificacao || 'interna')}`}
+                      >
+                        {capitalizeText(documento.classificacao || 'interna')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(documento.status)}</TableCell>
+                    <TableCell>v{documento.versao}</TableCell>
+                    <TableCell>
+                      {format(new Date(documento.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Abrir menu</span>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => setPreviewDialog({ open: true, documento })}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            Preview
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setDocumentoDialog({ open: true, documento })}
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setVinculacoesDialog({ open: true, documento })}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            Vinculações
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setComentariosDialog({ open: true, documento })}
+                          >
+                            <MessageSquare className="mr-2 h-4 w-4" />
+                            Comentários
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setAprovacaoDialog({ open: true, documento })}
+                          >
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Aprovação
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setAuditoriaDialog({ open: true, documento })}
+                          >
+                            <History className="mr-2 h-4 w-4" />
+                            Auditoria
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteDocumento(documento.id)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
       </Card>
 
       {/* Dialogs */}

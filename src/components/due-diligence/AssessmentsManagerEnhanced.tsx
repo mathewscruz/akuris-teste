@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Send, Clock, AlertTriangle, FileText, Eye, User, Edit2, Trash2, RefreshCw, Award, TrendingUp } from 'lucide-react';
+import { Plus, Send, Clock, AlertTriangle, FileText, Eye, User, Edit2, Trash2, RefreshCw, Award, TrendingUp, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AssessmentDialog } from './AssessmentDialog';
@@ -150,6 +150,7 @@ export function AssessmentsManagerEnhanced() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
   const [reminderDialog, setReminderDialog] = useState<{ open: boolean; assessment: Assessment | null }>({
     open: false,
     assessment: null
@@ -394,54 +395,66 @@ export function AssessmentsManagerEnhanced() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Gestão de Assessments</h2>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            onClick={fetchAssessments}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Atualizar
-          </Button>
-          <Button 
-            onClick={() => setAssessmentDialog({ open: true, assessment: null, mode: 'create' })}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Nova Avaliação
-          </Button>
+    <Card className="rounded-lg border overflow-hidden">
+      <CardContent className="p-0">
+        <div className="p-6 pb-4">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="relative flex-1 max-w-sm">
+              <Input
+                placeholder="Buscar por fornecedor ou template..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={fetchAssessments}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Atualizar
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filtros
+              </Button>
+              <Button 
+                size="sm"
+                onClick={() => setAssessmentDialog({ open: true, assessment: null, mode: 'create' })}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Avaliação
+              </Button>
+            </div>
+          </div>
+          
+          {showFilters && (
+            <div className="bg-muted/50 rounded-lg p-4 mb-4">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="pendente">Pendente</SelectItem>
+                  <SelectItem value="ativo">Ativo</SelectItem>
+                  <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                  <SelectItem value="concluido">Concluído</SelectItem>
+                  <SelectItem value="expirado">Expirado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* Filtros */}
-      <div className="flex gap-4">
-        <Input
-          placeholder="Buscar por fornecedor ou template..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-        />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filtrar por status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os status</SelectItem>
-            <SelectItem value="pendente">Pendente</SelectItem>
-            <SelectItem value="ativo">Ativo</SelectItem>
-            <SelectItem value="em_andamento">Em Andamento</SelectItem>
-            <SelectItem value="concluido">Concluído</SelectItem>
-            <SelectItem value="expirado">Expirado</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Lista de assessments */}
-      <div className="grid gap-4">
-        {filteredAssessments.map((assessment) => (
+        {/* Lista de assessments */}
+        <div className="grid gap-4">
+          {filteredAssessments.map((assessment) => (
           <Card key={assessment.id}>
             <CardHeader>
               <div className="flex justify-between items-start">
@@ -582,10 +595,12 @@ export function AssessmentsManagerEnhanced() {
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
 
-      {filteredAssessments.length === 0 && !loading && (
+    {filteredAssessments.length === 0 && !loading && (
         <Card>
           <CardContent className="text-center py-8">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

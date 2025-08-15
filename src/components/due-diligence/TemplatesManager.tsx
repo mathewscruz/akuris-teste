@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Copy, Trash2, FileText, Settings, Star, RefreshCw } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Plus, Edit, Copy, Trash2, FileText, Settings, Star, RefreshCw, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -103,6 +104,8 @@ export function TemplatesManager() {
     open: boolean;
     template?: Template;
   }>({ open: false });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -253,38 +256,60 @@ export function TemplatesManager() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Templates de Questionários</h2>
-          <p className="text-muted-foreground">
-            Crie e gerencie templates reutilizáveis para avaliações de fornecedores
-          </p>
+    <Card className="rounded-lg border overflow-hidden">
+      <CardContent className="p-0">
+        <div className="p-6 pb-4">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="relative flex-1 max-w-sm">
+              <Input
+                placeholder="Buscar templates..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''} mr-2`} />
+                Atualizar
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filtros
+              </Button>
+              <Button 
+                size="sm"
+                onClick={() => setTemplateDialog({ open: true, mode: 'create' })}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Template
+              </Button>
+            </div>
+          </div>
+          
+          {showFilters && (
+            <div className="bg-muted/50 rounded-lg p-4 mb-4">
+              <p className="text-sm text-muted-foreground">Filtros serão implementados em breve</p>
+            </div>
+          )}
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            onClick={() => refetch()}
-            disabled={isLoading}
-            className="flex items-center gap-2"
-            title="Forçar atualização"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Atualizar
-          </Button>
-          <Button 
-            onClick={() => setTemplateDialog({ open: true, mode: 'create' })}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Novo Template
-          </Button>
-        </div>
-      </div>
 
-      {templates.length > 0 ? (
-        <div className="space-y-3">
-          {templates.map((template) => (
+        {templates.length > 0 ? (
+          <div className="space-y-3">
+            {templates.filter(template => 
+              searchTerm === '' || 
+              template.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              template.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              template.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
+            ).map((template) => (
             <Card key={template.id} className={`${!template.ativo ? 'opacity-60' : ''} ${template.padrao ? 'border-amber-200 bg-amber-50/50' : ''}`}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -388,8 +413,8 @@ export function TemplatesManager() {
               </CardContent>
             </Card>
           ))}
-        </div>
-      ) : (
+          </div>
+        ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="h-12 w-12 text-muted-foreground mb-4" />
@@ -405,9 +430,12 @@ export function TemplatesManager() {
               Criar Primeiro Template
             </Button>
           </CardContent>
-        </Card>
-      )}
+          </Card>
+        )}
+      </CardContent>
+    </Card>
 
+    <div>
       <TemplateDialog
         open={templateDialog.open}
         onOpenChange={(open) => setTemplateDialog({ open })}
@@ -429,5 +457,6 @@ export function TemplatesManager() {
         onConfirm={() => deleteDialog.template && handleDeleteTemplate(deleteDialog.template)}
       />
     </div>
+  );
   );
 }
