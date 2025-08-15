@@ -122,81 +122,7 @@ export function DataTable<T extends Record<string, any>>({
     )
   }
 
-  if (!loading && data.length === 0) {
-    return (
-      <div className={cn("space-y-4", className)}>
-        {/* Header with search and filters */}
-        <div className="flex items-center justify-between gap-4">
-          {searchable && (
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder={searchPlaceholder}
-                value={searchValue}
-                onChange={(e) => onSearchChange?.(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          )}
-          
-          <div className="flex gap-2">
-            {filters.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
-              </Button>
-            )}
-            {onRefresh && (
-              <Button variant="outline" size="sm" onClick={onRefresh}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Atualizar
-              </Button>
-            )}
-            {onExport && (
-              <Button variant="outline" size="sm" onClick={onExport}>
-                <Download className="h-4 w-4 mr-2" />
-                Exportar
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Filters row */}
-        {showFilters && filters.length > 0 && (
-          <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg">
-            {filters.map((filter) => (
-              <Select key={filter.key} value={filter.value} onValueChange={filter.onChange}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder={filter.label} />
-                </SelectTrigger>
-                <SelectContent>
-                  {filter.options.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ))}
-          </div>
-        )}
-
-        {emptyState && (
-          <EmptyState
-            icon={emptyState.icon}
-            title={emptyState.title}
-            description={emptyState.description}
-            action={emptyState.action}
-          />
-        )}
-      </div>
-    )
-  }
-
+  // Always render the table structure to show headers
   return (
     <div className={cn("space-y-4", className)}>
       {/* Header with search and filters */}
@@ -241,7 +167,7 @@ export function DataTable<T extends Record<string, any>>({
 
       {/* Filters row */}
       {showFilters && filters.length > 0 && (
-        <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg animate-fade-in">
+        <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg">
           {filters.map((filter) => (
             <Select key={filter.key} value={filter.value} onValueChange={filter.onChange}>
               <SelectTrigger className="w-40">
@@ -259,7 +185,7 @@ export function DataTable<T extends Record<string, any>>({
         </div>
       )}
 
-      {/* Table */}
+      {/* Table - Always show headers */}
       <div className="rounded-lg border overflow-hidden">
         <Table>
           <TableHeader>
@@ -282,24 +208,41 @@ export function DataTable<T extends Record<string, any>>({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((item, index) => (
-              <TableRow key={item.id || index} className="hover:bg-muted/50 transition-colors">
-                {columns.map((column) => (
-                  <TableCell
-                    key={String(column.key)}
-                    className={column.className}
-                  >
-                    {column.render
-                      ? column.render(item[column.key as keyof T], item)
-                      : String(item[column.key as keyof T] || '-')
-                    }
-                  </TableCell>
-                ))}
+            {!loading && data.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="p-0">
+                  {emptyState && (
+                    <EmptyState
+                      icon={emptyState.icon}
+                      title={emptyState.title}
+                      description={emptyState.description}
+                      action={emptyState.action}
+                    />
+                  )}
+                </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              data.map((item, index) => (
+                <TableRow key={item.id || index} className="hover:bg-muted/50 transition-colors">
+                  {columns.map((column) => (
+                    <TableCell
+                      key={String(column.key)}
+                      className={column.className}
+                    >
+                      {column.render
+                        ? column.render(item[column.key as keyof T], item)
+                        : String(item[column.key as keyof T] || '-')
+                      }
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
     </div>
   )
+
+  // This code path is now removed as we always show the table structure above
 }

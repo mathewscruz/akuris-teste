@@ -205,35 +205,35 @@ export default function Dados() {
               Novo Dado
             </Button>
           </div>
-          {dadosPessoais.length === 0 ? (
-            <Card>
-              <CardContent>
-                <EmptyState
-                  icon={<Database className="h-8 w-8" />}
-                  title="Nenhum dado catalogado"
-                  description="Ainda não há dados pessoais catalogados. Comece criando o primeiro registro."
-                  action={{
-                    label: "Novo Dado",
-                    onClick: () => setShowDadosDialog(true)
-                  }}
-                />
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent>
-                <Table>
-                  <TableHeader>
+          <Card>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Categoria</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Sensibilidade</TableHead>
+                    <TableHead>Base Legal</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dadosPessoais.length === 0 ? (
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Sensibilidade</TableHead>
-                      <TableHead>Base Legal</TableHead>
+                      <TableCell colSpan={5} className="p-0">
+                        <EmptyState
+                          icon={<Database className="h-8 w-8" />}
+                          title="Nenhum dado catalogado"
+                          description="Ainda não há dados pessoais catalogados. Comece criando o primeiro registro."
+                          action={{
+                            label: "Novo Dado",
+                            onClick: () => setShowDadosDialog(true)
+                          }}
+                        />
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {dadosPessoais.map((dado) => (
+                  ) : (
+                    dadosPessoais.map((dado) => (
                       <TableRow key={dado.id}>
                         <TableCell className="font-medium">{dado.nome}</TableCell>
                         <TableCell>{dado.categoria_dados}</TableCell>
@@ -241,12 +241,12 @@ export default function Dados() {
                         <TableCell>{getSensibilidadeBadge(dado.tipo_dados, dado.sensibilidade)}</TableCell>
                         <TableCell>{dado.base_legal}</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="mapeamento" className="space-y-4">
@@ -257,46 +257,46 @@ export default function Dados() {
               Novo Mapeamento
             </Button>
           </div>
-          {mapeamentos.length === 0 ? (
-            <Card>
-              <CardContent>
-                <EmptyState
-                  icon={<ArrowRightLeft className="h-8 w-8" />}
-                  title="Nenhum mapeamento criado"
-                  description="Ainda não há mapeamentos entre dados pessoais e ativos. Comece criando o primeiro registro."
-                  action={{
-                    label: "Novo Mapeamento",
-                    onClick: () => setShowMapeamentoDialog(true)
-                  }}
-                />
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent>
-                <Table>
-                  <TableHeader>
+          <Card>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Dados Pessoais</TableHead>
+                    <TableHead>Ativo</TableHead>
+                    <TableHead>Tipo Armazenamento</TableHead>
+                    <TableHead>Criptografia</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {mapeamentos.length === 0 ? (
                     <TableRow>
-                      <TableHead>Dados Pessoais</TableHead>
-                      <TableHead>Ativo</TableHead>
-                      <TableHead>Tipo Armazenamento</TableHead>
-                      <TableHead>Criptografia</TableHead>
+                      <TableCell colSpan={4} className="p-0">
+                        <EmptyState
+                          icon={<ArrowRightLeft className="h-8 w-8" />}
+                          title="Nenhum mapeamento criado"
+                          description="Ainda não há mapeamentos entre dados pessoais e ativos. Comece criando o primeiro registro."
+                          action={{
+                            label: "Novo Mapeamento",
+                            onClick: () => setShowMapeamentoDialog(true)
+                          }}
+                        />
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {mapeamentos.map((mapeamento) => (
+                  ) : (
+                    mapeamentos.map((mapeamento) => (
                       <TableRow key={mapeamento.id}>
                         <TableCell>{mapeamento.dados_pessoais?.nome}</TableCell>
                         <TableCell>{mapeamento.ativos?.nome}</TableCell>
                         <TableCell>{mapeamento.tipo_armazenamento}</TableCell>
                         <TableCell>{mapeamento.criptografia_aplicada ? "Sim" : "Não"}</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="ropa" className="space-y-4">
@@ -307,46 +307,46 @@ export default function Dados() {
               Novo ROPA
             </Button>
           </div>
-          {ropaRegistros.length === 0 ? (
-            <Card>
-              <CardContent>
-                <EmptyState
-                  icon={<FileText className="h-8 w-8" />}
-                  title="Nenhum registro ROPA criado"
-                  description="Ainda não há registros ROPA cadastrados. Comece criando o primeiro registro."
-                  action={{
-                    label: "Novo ROPA",
-                    onClick: () => setShowRopaDialog(true)
-                  }}
-                />
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent>
-                <Table>
-                  <TableHeader>
+          <Card>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome do Tratamento</TableHead>
+                    <TableHead>Base Legal</TableHead>
+                    <TableHead>Categoria Titulares</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ropaRegistros.length === 0 ? (
                     <TableRow>
-                      <TableHead>Nome do Tratamento</TableHead>
-                      <TableHead>Base Legal</TableHead>
-                      <TableHead>Categoria Titulares</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableCell colSpan={4} className="p-0">
+                        <EmptyState
+                          icon={<FileText className="h-8 w-8" />}
+                          title="Nenhum registro ROPA criado"
+                          description="Ainda não há registros ROPA cadastrados. Comece criando o primeiro registro."
+                          action={{
+                            label: "Novo ROPA",
+                            onClick: () => setShowRopaDialog(true)
+                          }}
+                        />
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {ropaRegistros.map((ropa) => (
+                  ) : (
+                    ropaRegistros.map((ropa) => (
                       <TableRow key={ropa.id}>
                         <TableCell className="font-medium">{ropa.nome_tratamento}</TableCell>
                         <TableCell>{ropa.base_legal}</TableCell>
                         <TableCell>{ropa.categoria_titulares}</TableCell>
                         <TableCell>{getStatusBadge(ropa.status)}</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="fluxos" className="space-y-4">
@@ -357,34 +357,34 @@ export default function Dados() {
               Novo Fluxo
             </Button>
           </div>
-          {fluxos.length === 0 ? (
-            <Card>
-              <CardContent>
-                <EmptyState
-                  icon={<ArrowRightLeft className="h-8 w-8" />}
-                  title="Nenhum fluxo de dados criado"
-                  description="Ainda não há fluxos de dados cadastrados. Comece criando o primeiro registro."
-                  action={{
-                    label: "Novo Fluxo",
-                    onClick: () => setShowFluxoDialog(true)
-                  }}
-                />
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent>
-                <Table>
-                  <TableHeader>
+          <Card>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome do Fluxo</TableHead>
+                    <TableHead>Dados</TableHead>
+                    <TableHead>Origem → Destino</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {fluxos.length === 0 ? (
                     <TableRow>
-                      <TableHead>Nome do Fluxo</TableHead>
-                      <TableHead>Dados</TableHead>
-                      <TableHead>Origem → Destino</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableCell colSpan={4} className="p-0">
+                        <EmptyState
+                          icon={<ArrowRightLeft className="h-8 w-8" />}
+                          title="Nenhum fluxo de dados criado"
+                          description="Ainda não há fluxos de dados cadastrados. Comece criando o primeiro registro."
+                          action={{
+                            label: "Novo Fluxo",
+                            onClick: () => setShowFluxoDialog(true)
+                          }}
+                        />
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {fluxos.map((fluxo) => (
+                  ) : (
+                    fluxos.map((fluxo) => (
                       <TableRow key={fluxo.id}>
                         <TableCell className="font-medium">{fluxo.nome_fluxo}</TableCell>
                         <TableCell>{fluxo.dados_pessoais?.nome}</TableCell>
@@ -393,12 +393,12 @@ export default function Dados() {
                         </TableCell>
                         <TableCell>{getStatusBadge(fluxo.status)}</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="solicitacoes" className="space-y-4">
@@ -409,35 +409,35 @@ export default function Dados() {
               Nova Solicitação
             </Button>
           </div>
-          {solicitacoes.length === 0 ? (
-            <Card>
-              <CardContent>
-                <EmptyState
-                  icon={<Users className="h-8 w-8" />}
-                  title="Nenhuma solicitação registrada"
-                  description="Ainda não há solicitações de titulares. Comece criando o primeiro registro."
-                  action={{
-                    label: "Nova Solicitação",
-                    onClick: () => setShowSolicitacaoDialog(true)
-                  }}
-                />
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent>
-                <Table>
-                  <TableHeader>
+          <Card>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Titular</TableHead>
+                    <TableHead>Canal</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Prazo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {solicitacoes.length === 0 ? (
                     <TableRow>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Titular</TableHead>
-                      <TableHead>Canal</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Prazo</TableHead>
+                      <TableCell colSpan={5} className="p-0">
+                        <EmptyState
+                          icon={<Users className="h-8 w-8" />}
+                          title="Nenhuma solicitação registrada"
+                          description="Ainda não há solicitações de titulares. Comece criando o primeiro registro."
+                          action={{
+                            label: "Nova Solicitação",
+                            onClick: () => setShowSolicitacaoDialog(true)
+                          }}
+                        />
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {solicitacoes.map((solicitacao) => (
+                  ) : (
+                    solicitacoes.map((solicitacao) => (
                       <TableRow key={solicitacao.id}>
                         <TableCell>{solicitacao.tipo_solicitacao}</TableCell>
                         <TableCell>{JSON.parse(solicitacao.dados_titular).nome}</TableCell>
@@ -445,12 +445,12 @@ export default function Dados() {
                         <TableCell>{getStatusBadge(solicitacao.status)}</TableCell>
                         <TableCell>{new Date(solicitacao.prazo_resposta).toLocaleDateString('pt-BR')}</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
