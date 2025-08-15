@@ -12,7 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Search, Edit, Trash2, UserCheck, UserX, Key, User, Send, Clock, MoreHorizontal, Shield } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, UserCheck, UserX, Key, User, Send, Clock, MoreHorizontal, Shield, Mail } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -79,6 +79,7 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
   const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<string | undefined>();
   const [restoringPermissions, setRestoringPermissions] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
 
   const form = useForm<UsuarioForm>({
     resolver: zodResolver(usuarioSchema),
@@ -418,6 +419,37 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     }
   };
 
+  const shouldShowResendButton = (usuario: Usuario) => {
+    const accessInfo = usersAccessInfo.get(usuario.user_id);
+    return accessInfo?.first_access_pending || false;
+  };
+
+  const resendWelcomeEmail = async (usuario: Usuario) => {
+    try {
+      setActionLoading(prev => ({ ...prev, [`resend-${usuario.id}`]: true }));
+      
+      const { error } = await supabase.functions.invoke('resend-welcome-email', {
+        body: { userId: usuario.user_id }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success(`Convite reenviado para ${usuario.nome}`);
+      
+      // Atualizar informações de acesso
+      const userIds = usuarios.map(u => u.user_id);
+      await fetchUsersAccessInfo(userIds);
+      
+    } catch (error: any) {
+      console.error('Erro ao reenviar convite:', error);
+      toast.error(error.message || 'Erro ao reenviar convite');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`resend-${usuario.id}`]: false }));
+    }
+  };
+
   const getRoleBadge = (role: string) => {
     const variants = {
       super_admin: 'default',
@@ -514,11 +546,12 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
           </Select>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button 
             variant="outline" 
             onClick={handleRestoreAllPermissions}
             disabled={restoringPermissions}
+            className="whitespace-nowrap"
           >
             {restoringPermissions ? (
               <>
@@ -532,13 +565,13 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
               </>
             )}
           </Button>
-          <Button variant="outline" onClick={() => handleManagePermissions()}>
+          <Button variant="outline" onClick={() => handleManagePermissions()} className="whitespace-nowrap">
             <Shield className="h-4 w-4 mr-2" />
             Gerenciar Permissões
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="whitespace-nowrap">
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Usuário
               </Button>
@@ -736,6 +769,28 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
                           <Shield className="h-4 w-4 mr-2" />
                           Gerenciar Permissões
                         </DropdownMenuItem>
+                        {shouldShowResendButton(usuario) && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DropdownMenuItem 
+                                  onClick={() => resendWelcomeEmail(usuario)}
+                                  disabled={actionLoading[`resend-${usuario.id}`]}
+                                >
+                                  {actionLoading[`resend-${usuario.id}`] ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                                  ) : (
+                                    <Mail className="h-4 w-4 mr-2" />
+                                  )}
+                                  Reenviar Convite
+                                </DropdownMenuItem>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Reenviar email de boas-vindas com nova senha temporária</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                         <DropdownMenuSeparator />
                          <DropdownMenuItem 
                            className="text-destructive"
