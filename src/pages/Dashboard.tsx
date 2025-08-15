@@ -23,7 +23,7 @@ export default function Dashboard() {
 
   if (ativosStats.isLoading || controlesStats.isLoading || incidentesStats.isLoading || dashboardStats.isLoading) {
     return (
-      <div className="container mx-auto py-6 px-4 max-w-7xl space-y-6">
+      <div className="space-y-6">
         {/* Header Skeleton */}
         <div className="mb-8">
           <Skeleton className="h-8 w-64 mb-2" />
@@ -57,7 +57,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="container mx-auto py-6 px-4 max-w-7xl space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       {/* Saudação personalizada */}
       <div className="mb-8 p-6 bg-gradient-subtle rounded-xl border">
         <h1 className="text-3xl font-bold text-foreground mb-2">
