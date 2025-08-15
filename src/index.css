@@ -61,7 +61,54 @@
     --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.3);
 
     /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Toast animations */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Custom toast styling */
+.toaster {
+  --width: 356px;
+  --front-toast-height: 64px;
+  
+  &[data-position="top-right"] {
+    top: 1rem;
+    right: 1rem;
+  }
+  
+  &[data-theme="light"] {
+    --normal-bg: var(--card);
+    --normal-border: var(--border);
+    --normal-text: var(--card-foreground);
+  }
+  
+  &[data-theme="dark"] {
+    --normal-bg: var(--card);
+    --normal-border: var(--border);
+    --normal-text: var(--card-foreground);
+  }
+}
 
     /* Sidebar - Darker corporate theme */
     --sidebar-background: 215 35% 12%;
