@@ -2130,27 +2130,39 @@ export type Database = {
           comentarios: string | null
           created_at: string
           data_aprovacao: string | null
+          data_solicitacao: string | null
           documento_id: string
           id: string
+          notificacao_enviada: boolean | null
+          solicitado_por: string | null
           status: string
+          tipo_acao: string | null
         }
         Insert: {
           aprovador_id: string
           comentarios?: string | null
           created_at?: string
           data_aprovacao?: string | null
+          data_solicitacao?: string | null
           documento_id: string
           id?: string
+          notificacao_enviada?: boolean | null
+          solicitado_por?: string | null
           status?: string
+          tipo_acao?: string | null
         }
         Update: {
           aprovador_id?: string
           comentarios?: string | null
           created_at?: string
           data_aprovacao?: string | null
+          data_solicitacao?: string | null
           documento_id?: string
           id?: string
+          notificacao_enviada?: boolean | null
+          solicitado_por?: string | null
           status?: string
+          tipo_acao?: string | null
         }
         Relationships: []
       }

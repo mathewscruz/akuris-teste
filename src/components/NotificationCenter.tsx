@@ -81,18 +81,26 @@ const NotificationCenter: React.FC = () => {
         .in('status', ['aberto', 'investigacao'])
         .eq('criticidade', 'critica');
 
-      // Buscar ativos críticos e manutenções pendentes
-      const { data: ativos } = await supabase
-        .from('ativos')
-        .select('id, nome, criticidade, status')
-        .eq('criticidade', 'critico')
-        .eq('status', 'ativo');
+       // Buscar ativos críticos e manutenções pendentes
+       const { data: ativos } = await supabase
+         .from('ativos')
+         .select('id, nome, criticidade, status')
+         .eq('criticidade', 'critico')
+         .eq('status', 'ativo');
 
-      const { data: manutencoesPendentes } = await supabase
-        .from('ativos_manutencoes')
-        .select('id, ativo_id, data_manutencao, tipo_manutencao, ativos(nome)')
-        .in('status', ['agendada', 'em_andamento'])
-        .not('data_manutencao', 'is', null);
+       const { data: manutencoesPendentes } = await supabase
+         .from('ativos_manutencoes')
+         .select('id, ativo_id, data_manutencao, tipo_manutencao, ativos(nome)')
+         .in('status', ['agendada', 'em_andamento'])
+         .not('data_manutencao', 'is', null);
+
+       // Buscar solicitações de aprovação de documentos pendentes
+       const { data: aprovacoesDocumentos } = await supabase
+         .from('documentos_aprovacoes')
+         .select('id, documento_id, status, tipo_acao, solicitado_por, created_at, documentos(nome), profiles(nome)')
+         .eq('aprovador_id', user?.id || '')
+         .eq('status', 'pendente')
+         .eq('tipo_acao', 'solicitacao');
 
       const hoje = new Date();
 
@@ -227,10 +235,27 @@ const NotificationCenter: React.FC = () => {
             created_at: new Date().toISOString(),
             isAutomatic: true
           });
-        }
-      });
+         }
+       });
 
-      return notificacoes;
+       // Processar solicitações de aprovação de documentos
+       (aprovacoesDocumentos || []).forEach(aprovacao => {
+         const solicitanteNome = (aprovacao as any).profiles?.nome || 'Usuário';
+         const documentoNome = (aprovacao as any).documentos?.nome || 'Documento';
+         
+         notificacoes.push({
+           id: `aprovacao-doc-${aprovacao.id}`,
+           title: 'Solicitação de Aprovação',
+           message: `${solicitanteNome} solicitou sua aprovação para o documento "${documentoNome}"`,
+           type: 'info',
+           read: false,
+           link_to: '/documentos',
+           created_at: aprovacao.created_at,
+           isAutomatic: true
+         });
+       });
+
+       return notificacoes;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // 5 minutos

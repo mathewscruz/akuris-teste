@@ -50,6 +50,7 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [tipoFormulario, setTipoFormulario] = useState<'solicitacao' | 'aprovacao'>('solicitacao');
   const [formData, setFormData] = useState({
     aprovador_id: '',
     status: 'pendente',
@@ -138,26 +139,33 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
       return;
     }
 
-    // Verificar se o usuário atual é o criador do documento
-    const { data: userData } = await supabase.auth.getUser();
-    if (userData.user && documento.created_by === userData.user.id) {
-      toast({
-        title: "Ação não permitida",
-        description: "Você não pode aprovar um documento que você mesmo criou.",
-        variant: "destructive",
-      });
-      return;
+    // Para solicitações, verificar se o usuário atual é o criador do documento
+    if (tipoFormulario === 'aprovacao') {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user && documento.created_by === userData.user.id) {
+        toast({
+          title: "Ação não permitida",
+          description: "Você não pode aprovar um documento que você mesmo criou. Use 'Solicitar Aprovação' em vez disso.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setLoading(true);
 
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      
       const aprovacaoData = {
         documento_id: documento.id,
         aprovador_id: formData.aprovador_id,
-        status: formData.status,
+        status: tipoFormulario === 'solicitacao' ? 'pendente' : formData.status,
         comentarios: formData.comentarios.trim() || null,
-        data_aprovacao: formData.status !== 'pendente' ? new Date().toISOString() : null,
+        data_aprovacao: tipoFormulario === 'aprovacao' && formData.status !== 'pendente' ? new Date().toISOString() : null,
+        tipo_acao: tipoFormulario,
+        solicitado_por: userData.user?.id || null,
+        data_solicitacao: new Date().toISOString()
       };
 
       const { error } = await supabase
@@ -166,8 +174,8 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
 
       if (error) throw error;
 
-      // Se aprovado, atualizar o documento
-      if (formData.status === 'aprovado') {
+      // Se for aprovação direta, atualizar o documento
+      if (tipoFormulario === 'aprovacao' && formData.status === 'aprovado') {
         const { error: updateError } = await supabase
           .from('documentos')
           .update({
@@ -180,17 +188,19 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
       }
 
       toast({
-        title: "Aprovação registrada",
-        description: "A aprovação foi registrada com sucesso.",
+        title: tipoFormulario === 'solicitacao' ? "Solicitação enviada" : "Aprovação registrada",
+        description: tipoFormulario === 'solicitacao' 
+          ? "A solicitação de aprovação foi enviada com sucesso. O aprovador receberá uma notificação."
+          : "A aprovação foi registrada com sucesso.",
       });
 
       resetForm();
       fetchAprovacoes();
       onSuccess();
     } catch (error) {
-      console.error('Erro ao registrar aprovação:', error);
+      console.error('Erro ao processar:', error);
       toast({
-        title: "Erro ao registrar aprovação",
+        title: tipoFormulario === 'solicitacao' ? "Erro ao solicitar aprovação" : "Erro ao registrar aprovação",
         description: error instanceof Error ? error.message : "Tente novamente em alguns instantes.",
         variant: "destructive",
       });
@@ -252,6 +262,7 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
       comentarios: ''
     });
     setShowForm(false);
+    setTipoFormulario('solicitacao');
   };
 
   const getStatusBadge = (status: string) => {
@@ -320,13 +331,33 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
           </Card>
 
           {!showForm ? (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium">Histórico de Aprovações</h3>
-                <Button onClick={() => setShowForm(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nova Aprovação
-                </Button>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium">Histórico de Aprovações</h3>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setTipoFormulario('solicitacao');
+                        setShowForm(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Solicitar Aprovação
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setTipoFormulario('aprovacao');
+                        setShowForm(true);
+                      }}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Registrar Aprovação
+                    </Button>
+                  </div>
               </div>
 
               {loading ? (
@@ -338,7 +369,7 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
                   <CardContent className="flex flex-col items-center justify-center h-32">
                     <CheckCircle className="h-12 w-12 text-muted-foreground mb-2" />
                     <p className="text-muted-foreground">Nenhuma aprovação registrada ainda</p>
-                    <p className="text-sm text-muted-foreground">Clique em "Nova Aprovação" para começar</p>
+                    <p className="text-sm text-muted-foreground">Use "Solicitar Aprovação" para enviar uma solicitação</p>
                   </CardContent>
                 </Card>
               ) : (
@@ -346,6 +377,7 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
                   <TableHeader>
                     <TableRow>
                       <TableHead>Aprovador</TableHead>
+                      <TableHead>Tipo</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Comentários</TableHead>
                       <TableHead>Data</TableHead>
@@ -361,6 +393,11 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
                             <span className="font-medium">{aprovacao.aprovador_nome}</span>
                           </div>
                         </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {(aprovacao as any).tipo_acao === 'solicitacao' ? 'Solicitação' : 'Aprovação'}
+                          </Badge>
+                        </TableCell>
                         <TableCell>{getStatusBadge(aprovacao.status)}</TableCell>
                         <TableCell>{aprovacao.comentarios || '-'}</TableCell>
                         <TableCell>
@@ -370,7 +407,29 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
                           }
                         </TableCell>
                         <TableCell>
-                          {aprovacao.status === 'pendente' && (
+                          {aprovacao.status === 'pendente' && (aprovacao as any).tipo_acao === 'solicitacao' && (
+                            <div className="flex gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleStatusChange(aprovacao.id, 'aprovado')}
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Aprovar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleStatusChange(aprovacao.id, 'rejeitado')}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Rejeitar
+                              </Button>
+                            </div>
+                          )}
+                          {aprovacao.status === 'pendente' && (aprovacao as any).tipo_acao === 'aprovacao' && (
                             <div className="flex gap-1">
                               <Button
                                 variant="outline"
@@ -400,7 +459,9 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium">Nova Aprovação</h3>
+                <h3 className="text-lg font-medium">
+                  {tipoFormulario === 'solicitacao' ? 'Solicitar Aprovação' : 'Registrar Aprovação'}
+                </h3>
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Voltar
                 </Button>
@@ -426,28 +487,35 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status Inicial</Label>
-                  <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pendente">Pendente</SelectItem>
-                      <SelectItem value="aprovado">Aprovado</SelectItem>
-                      <SelectItem value="rejeitado">Rejeitado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {tipoFormulario === 'aprovacao' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Status da Aprovação</Label>
+                    <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pendente">Pendente</SelectItem>
+                        <SelectItem value="aprovado">Aprovado</SelectItem>
+                        <SelectItem value="rejeitado">Rejeitado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="comentarios">Comentários</Label>
+                <Label htmlFor="comentarios">
+                  {tipoFormulario === 'solicitacao' ? 'Observações da Solicitação' : 'Comentários'}
+                </Label>
                 <Textarea
                   id="comentarios"
                   value={formData.comentarios}
                   onChange={(e) => setFormData(prev => ({ ...prev, comentarios: e.target.value }))}
-                  placeholder="Comentários sobre a aprovação"
+                  placeholder={tipoFormulario === 'solicitacao' 
+                    ? "Descreva o motivo da solicitação ou observações importantes"
+                    : "Comentários sobre a aprovação"
+                  }
                   rows={3}
                 />
               </div>
@@ -460,10 +528,10 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
                   {loading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Registrando...
+                      {tipoFormulario === 'solicitacao' ? 'Enviando...' : 'Registrando...'}
                     </>
                   ) : (
-                    'Registrar Aprovação'
+                    tipoFormulario === 'solicitacao' ? 'Enviar Solicitação' : 'Registrar Aprovação'
                   )}
                 </Button>
               </div>
