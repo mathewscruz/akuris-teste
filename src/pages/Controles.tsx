@@ -3,6 +3,9 @@ import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activ
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +15,6 @@ import TestesList from "@/components/controles/TestesList";
 import ControlesVinculacaoDialog from "@/components/controles/ControlesVinculacaoDialog";
 import { RelatoriosDialog } from "@/components/controles/RelatoriosDialog";
 import { useControlesStats } from "@/hooks/useControlesStats";
-import { DataTable } from "@/components/ui/data-table";
 import { StatCard } from "@/components/ui/stat-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -285,27 +287,7 @@ export default function Controles() {
       <PageHeader
         title="Controles"
         description="Gerencie e monitore seus controles de segurança"
-        actions={
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setCategoriasDialogOpen(true)}
-            >
-              Categorias
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setRelatoriosDialogOpen(true)}
-            >
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Relatórios
-            </Button>
-            <Button onClick={() => setControleDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Controle
-            </Button>
-          </div>
-        }
+        actions={undefined}
       />
 
       {/* Cards de KPI */}
@@ -354,20 +336,168 @@ export default function Controles() {
         </TabsList>
 
         <TabsContent value="controles" className="space-y-6">
-          <DataTable
-            data={controles}
-            columns={controlesColumns}
-            loading={isLoading}
-            emptyState={{
-              icon: <Shield className="h-12 w-12" />,
-              title: "Nenhum controle cadastrado",
-              description: "Comece criando seu primeiro controle interno",
-              action: {
-                label: "Criar Primeiro Controle",
-                onClick: () => setControleDialogOpen(true)
-              }
-            }}
-          />
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <div className="p-6 pb-4">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <Input
+                    placeholder="Buscar controles..."
+                    className="max-w-sm"
+                  />
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setCategoriasDialogOpen(true)}
+                    >
+                      Categorias
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setRelatoriosDialogOpen(true)}
+                    >
+                      <BarChart3 className="mr-2 h-4 w-4" />
+                      Relatórios
+                    </Button>
+                    <Button 
+                      size="sm"
+                      onClick={() => setControleDialogOpen(true)}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Novo Controle
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Categoria</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Criticidade</TableHead>
+                    <TableHead>Responsável</TableHead>
+                    <TableHead>Próxima Avaliação</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    [...Array(5)].map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      </TableRow>
+                    ))
+                  ) : controles.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="p-0">
+                        <EmptyState
+                          icon={<Shield className="h-12 w-12" />}
+                          title="Nenhum controle cadastrado"
+                          description="Comece criando seu primeiro controle interno"
+                          action={{
+                            label: "Criar Primeiro Controle",
+                            onClick: () => setControleDialogOpen(true)
+                          }}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    controles.map((controle) => (
+                      <TableRow key={controle.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getTipoIcon(controle.tipo)}
+                            <div>
+                              <div className="font-medium">{controle.nome}</div>
+                              <div className="text-sm text-muted-foreground">{controle.descricao || "Sem descrição"}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {controle.categoria ? (
+                            <Badge 
+                              variant="outline" 
+                              style={{ borderColor: controle.categoria.cor, color: controle.categoria.cor }}
+                            >
+                              {controle.categoria.nome}
+                            </Badge>
+                          ) : <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{controle.tipo}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(controle.status)}
+                        </TableCell>
+                        <TableCell>
+                          {getCriticidadeBadge(controle.criticidade)}
+                        </TableCell>
+                        <TableCell>
+                          {controle.responsavel || <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell>
+                          {controle.proxima_avaliacao ? 
+                            new Date(controle.proxima_avaliacao).toLocaleDateString() : 
+                            <span className="text-muted-foreground">-</span>
+                          }
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(controle)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedControleForTests(controle);
+                                const tabsTrigger = document.querySelector('[value="testes"]') as HTMLElement;
+                                if (tabsTrigger) tabsTrigger.click();
+                              }}
+                            >
+                              Testes
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedControleForVinculacao(controle);
+                                setVinculacaoDialogOpen(true);
+                              }}
+                            >
+                              <Link className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(controle.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="testes">

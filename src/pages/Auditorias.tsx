@@ -176,12 +176,7 @@ const Auditorias = () => {
       <PageHeader
         title="Auditorias"
         description="Gerencie e monitore auditorias internas e externas"
-        actions={
-          <Button onClick={() => setShowAuditoriaDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Auditoria
-          </Button>
-        }
+        actions={undefined}
       />
 
       {/* StatCards */}
@@ -198,46 +193,59 @@ const Auditorias = () => {
         ))}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <Input
-            placeholder="Buscar auditorias..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os Status</SelectItem>
-            <SelectItem value="planejamento">Planejamento</SelectItem>
-            <SelectItem value="em_andamento">Em Andamento</SelectItem>
-            <SelectItem value="concluida">Concluída</SelectItem>
-            <SelectItem value="cancelada">Cancelada</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={tipoFilter} onValueChange={setTipoFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os Tipos</SelectItem>
-            <SelectItem value="interna">Interna</SelectItem>
-            <SelectItem value="externa">Externa</SelectItem>
-            <SelectItem value="compliance">Compliance</SelectItem>
-            <SelectItem value="operacional">Operacional</SelectItem>
-            <SelectItem value="ti">TI</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
-      <Card>
+      <Card className="rounded-lg border overflow-hidden">
         <CardContent className="p-0">
-          <div className="relative overflow-auto">
-            <Table>
+          <div className="p-6 pb-4">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <Input
+                placeholder="Buscar auditorias..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setStatusFilter("todos")}>
+                  Status
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setTipoFilter("todos")}>
+                  Tipo
+                </Button>
+                <Button size="sm" onClick={() => setShowAuditoriaDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Auditoria
+                </Button>
+              </div>
+            </div>
+            <div className="flex gap-4 mb-4">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Status</SelectItem>
+                  <SelectItem value="planejamento">Planejamento</SelectItem>
+                  <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                  <SelectItem value="concluida">Concluída</SelectItem>
+                  <SelectItem value="cancelada">Cancelada</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={tipoFilter} onValueChange={setTipoFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Tipos</SelectItem>
+                  <SelectItem value="interna">Interna</SelectItem>
+                  <SelectItem value="externa">Externa</SelectItem>
+                  <SelectItem value="compliance">Compliance</SelectItem>
+                  <SelectItem value="operacional">Operacional</SelectItem>
+                  <SelectItem value="ti">TI</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
@@ -431,7 +439,6 @@ const Auditorias = () => {
                 )}
               </TableBody>
             </Table>
-          </div>
         </CardContent>
       </Card>
       <AuditoriaDialog

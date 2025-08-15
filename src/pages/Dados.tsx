@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Database, Users, FileText, ArrowRightLeft, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -198,15 +199,22 @@ export default function Dados() {
         </TabsList>
 
         <TabsContent value="catalogo" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Catálogo de Dados Pessoais</h2>
-            <Button onClick={() => setShowDadosDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Dado
-            </Button>
-          </div>
-          <Card>
-            <CardContent>
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <div className="p-6 pb-4">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <Input
+                    placeholder="Buscar dados..."
+                    className="max-w-sm"
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => setShowDadosDialog(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Novo Dado
+                    </Button>
+                  </div>
+                </div>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -250,15 +258,22 @@ export default function Dados() {
         </TabsContent>
 
         <TabsContent value="mapeamento" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Mapeamento Dados x Ativos</h2>
-            <Button onClick={() => setShowMapeamentoDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Mapeamento
-            </Button>
-          </div>
-          <Card>
-            <CardContent>
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <div className="p-6 pb-4">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <Input
+                    placeholder="Buscar mapeamentos..."
+                    className="max-w-sm"
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => setShowMapeamentoDialog(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Novo Mapeamento
+                    </Button>
+                  </div>
+                </div>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -300,15 +315,22 @@ export default function Dados() {
         </TabsContent>
 
         <TabsContent value="ropa" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Registros ROPA</h2>
-            <Button onClick={() => setShowRopaDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo ROPA
-            </Button>
-          </div>
-          <Card>
-            <CardContent>
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <div className="p-6 pb-4">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <Input
+                    placeholder="Buscar ROPA..."
+                    className="max-w-sm"
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => setShowRopaDialog(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Novo ROPA
+                    </Button>
+                  </div>
+                </div>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -350,15 +372,22 @@ export default function Dados() {
         </TabsContent>
 
         <TabsContent value="fluxos" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Fluxos de Dados</h2>
-            <Button onClick={() => setShowFluxoDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Fluxo
-            </Button>
-          </div>
-          <Card>
-            <CardContent>
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <div className="p-6 pb-4">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <Input
+                    placeholder="Buscar fluxos..."
+                    className="max-w-sm"
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => setShowFluxoDialog(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Novo Fluxo
+                    </Button>
+                  </div>
+                </div>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -402,15 +431,22 @@ export default function Dados() {
         </TabsContent>
 
         <TabsContent value="solicitacoes" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Solicitações de Titulares</h2>
-            <Button onClick={() => setShowSolicitacaoDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Solicitação
-            </Button>
-          </div>
-          <Card>
-            <CardContent>
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <div className="p-6 pb-4">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <Input
+                    placeholder="Buscar solicitações..."
+                    className="max-w-sm"
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => setShowSolicitacaoDialog(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Nova Solicitação
+                    </Button>
+                  </div>
+                </div>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>

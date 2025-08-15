@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DataTable } from '@/components/ui/data-table';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
@@ -505,79 +506,238 @@ export default function Contratos() {
         </TabsList>
 
         <TabsContent value="contratos" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Contratos
-                </CardTitle>
-                <div className="flex gap-2">
-                  <RelatoriosContratos />
-                  <TemplatesContratos />
-                  <Button onClick={() => { setSelectedContrato(null); setDialogOpen(true); }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Contrato
-                  </Button>
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <div className="p-6 pb-4">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <Input
+                    placeholder="Buscar contratos..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-sm"
+                  />
+                  <div className="flex gap-2">
+                    <RelatoriosContratos />
+                    <TemplatesContratos />
+                    <Button size="sm" onClick={() => { setSelectedContrato(null); setDialogOpen(true); }}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Novo Contrato
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="ativo">Ativo</SelectItem>
+                      <SelectItem value="rascunho">Rascunho</SelectItem>
+                      <SelectItem value="negociacao">Negociação</SelectItem>
+                      <SelectItem value="aprovacao">Aprovação</SelectItem>
+                      <SelectItem value="suspenso">Suspenso</SelectItem>
+                      <SelectItem value="encerrado">Encerrado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={tipoFilter} onValueChange={setTipoFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="servicos">Serviços</SelectItem>
+                      <SelectItem value="licenciamento">Licenciamento</SelectItem>
+                      <SelectItem value="manutencao">Manutenção</SelectItem>
+                      <SelectItem value="consultoria">Consultoria</SelectItem>
+                      <SelectItem value="produto">Produto</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <DataTable
-                data={filteredContratos}
-                columns={contratoColumns}
-                loading={loading}
-                searchValue={searchTerm}
-                onSearchChange={setSearchTerm}
-                searchPlaceholder="Buscar contratos..."
-                filters={contratoFilters}
-                emptyState={{
-                  icon: <FileText className="h-8 w-8" />,
-                  title: 'Nenhum contrato encontrado',
-                  description: 'Comece criando contratos para gerenciar suas parcerias.',
-                  action: {
-                    label: 'Novo Contrato',
-                    onClick: () => { setSelectedContrato(null); setDialogOpen(true); }
-                  }
-                }}
-              />
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Fornecedor</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Vencimento</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    [...Array(5)].map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      </TableRow>
+                    ))
+                  ) : filteredContratos.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="p-0">
+                        <EmptyState
+                          icon={<FileText className="h-8 w-8" />}
+                          title='Nenhum contrato encontrado'
+                          description='Comece criando contratos para gerenciar suas parcerias.'
+                          action={{
+                            label: 'Novo Contrato',
+                            onClick: () => { setSelectedContrato(null); setDialogOpen(true); }
+                          }}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredContratos.map((contrato) => (
+                      <TableRow key={contrato.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{contrato.nome}</div>
+                            <div className="text-sm text-muted-foreground">{contrato.numero_contrato}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{contrato.fornecedores?.nome || '-'}</TableCell>
+                        <TableCell>{getStatusBadge(contrato.status)}</TableCell>
+                        <TableCell><Badge variant="outline" className="capitalize">{contrato.tipo}</Badge></TableCell>
+                        <TableCell>
+                          {contrato.valor 
+                            ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(contrato.valor))
+                            : 'N/A'
+                          }
+                        </TableCell>
+                        <TableCell>
+                          {contrato.data_fim 
+                            ? format(new Date(contrato.data_fim), 'dd/MM/yyyy', { locale: ptBR })
+                            : '-'
+                          }
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(contrato, 'contrato')}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(contrato.id, 'contrato')}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Fornecedores Tab */}
         <TabsContent value="fornecedores" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Fornecedores
-                </CardTitle>
-                <Button onClick={() => { setSelectedFornecedor(null); setFornecedorDialogOpen(true); }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Fornecedor
-                </Button>
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <div className="p-6 pb-4">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <Input
+                    placeholder="Buscar fornecedores..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-sm"
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => { setSelectedFornecedor(null); setFornecedorDialogOpen(true); }}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Novo Fornecedor
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <DataTable
-                data={filteredFornecedores}
-                columns={fornecedorColumns}
-                loading={loading}
-                searchValue={searchTerm}
-                onSearchChange={setSearchTerm}
-                searchPlaceholder="Buscar fornecedores..."
-                emptyState={{
-                  icon: <Users className="h-8 w-8" />,
-                  title: 'Nenhum fornecedor encontrado',
-                  description: 'Cadastre fornecedores para associar aos contratos.',
-                  action: {
-                    label: 'Novo Fornecedor',
-                    onClick: () => { setSelectedFornecedor(null); setFornecedorDialogOpen(true); }
-                  }
-                }}
-              />
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Categoria</TableHead>
+                    <TableHead>Risco</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    [...Array(5)].map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      </TableRow>
+                    ))
+                  ) : filteredFornecedores.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="p-0">
+                        <EmptyState
+                          icon={<Users className="h-8 w-8" />}
+                          title='Nenhum fornecedor encontrado'
+                          description='Cadastre fornecedores para associar aos contratos.'
+                          action={{
+                            label: 'Novo Fornecedor',
+                            onClick: () => { setSelectedFornecedor(null); setFornecedorDialogOpen(true); }
+                          }}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredFornecedores.map((fornecedor) => (
+                      <TableRow key={fornecedor.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{fornecedor.nome}</div>
+                            <div className="text-sm text-muted-foreground">{fornecedor.cnpj}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell><Badge variant="outline" className="capitalize">{fornecedor.tipo}</Badge></TableCell>
+                        <TableCell><Badge variant="secondary" className="capitalize">{fornecedor.categoria}</Badge></TableCell>
+                        <TableCell>{getRiskBadge(fornecedor.avaliacao_risco)}</TableCell>
+                        <TableCell>{getStatusBadge(fornecedor.status)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(fornecedor, 'fornecedor')}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(fornecedor.id, 'fornecedor')}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>

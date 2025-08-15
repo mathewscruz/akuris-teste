@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DataTable } from '@/components/ui/data-table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -509,31 +509,10 @@ const Ativos = () => {
       <PageHeader
         title="Gestão de Ativos"
         description="Gerencie todos os ativos da organização de forma centralizada"
-        actions={
-          <div className="flex gap-2">
-            <Button onClick={exportData} variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar
-            </Button>
-            <Button onClick={() => setImportDialog(true)} variant="outline">
-              <Upload className="h-4 w-4 mr-2" />
-              Importar
-            </Button>
-            <Button onClick={() => setAuditDialog({open: true})} variant="outline">
-              <History className="h-4 w-4 mr-2" />
-              Auditoria
-            </Button>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => {
-                  setEditingAtivo(null);
-                  resetForm();
-                }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Ativo
-                </Button>
-              </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+      />
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>
                   {editingAtivo ? 'Editar Ativo' : 'Novo Ativo'}
@@ -724,11 +703,8 @@ const Ativos = () => {
                   </Button>
                 </div>
               </form>
-            </DialogContent>
-          </Dialog>
-          </div>
-        }
-      />
+        </DialogContent>
+      </Dialog>
 
       {/* Cards de Indicadores */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -769,41 +745,185 @@ const Ativos = () => {
         />
       </div>
 
-      {/* Tabela de Ativos com DataTable */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Server className="h-5 w-5" />
-            Ativos Registrados
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            data={filteredAtivos}
-            columns={ativoColumns}
-            loading={loading}
-            searchValue={searchTerm}
-            onSearchChange={setSearchTerm}
-            searchPlaceholder="Buscar ativos..."
-            filters={filters}
-            onExport={exportData}
-            emptyState={{
-              icon: <Server className="h-8 w-8" />,
-              title: searchTerm || hasActiveFilters
-                ? 'Nenhum ativo encontrado'
-                : 'Nenhum ativo cadastrado',
-              description: searchTerm || hasActiveFilters
-                ? 'Tente ajustar os filtros para encontrar o que procura.'
-                : 'Comece cadastrando os ativos da sua organização.',
-              action: !searchTerm && !hasActiveFilters ? {
-                label: 'Cadastrar Primeiro Ativo',
-                onClick: () => setIsDialogOpen(true)
-              } : undefined
-            }}
-            sortField={sortField}
-            sortDirection={sortDirection}
-            onSort={handleSort}
-          />
+      {/* Tabela de Ativos */}
+      <Card className="rounded-lg border overflow-hidden">
+        <CardContent className="p-0">
+          <div className="p-6 pb-4">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <Input
+                placeholder="Buscar ativos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+              <div className="flex gap-2">
+                <Button onClick={exportData} variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar
+                </Button>
+                <Button onClick={() => setImportDialog(true)} variant="outline" size="sm">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Importar
+                </Button>
+                <Button onClick={() => setAuditDialog({open: true})} variant="outline" size="sm">
+                  <History className="h-4 w-4 mr-2" />
+                  Auditoria
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtros
+                </Button>
+                <Button size="sm" onClick={() => {
+                  setEditingAtivo(null);
+                  resetForm();
+                  setIsDialogOpen(true);
+                }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Ativo
+                </Button>
+              </div>
+            </div>
+            {showFilters && (
+              <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg">
+                <Select value={filtros.status} onValueChange={(value) => setFiltros(prev => ({ ...prev, status: value }))}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {statusOptions.map(status => (
+                      <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={filtros.criticidade} onValueChange={(value) => setFiltros(prev => ({ ...prev, criticidade: value }))}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Criticidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {criticidades.map(crit => (
+                      <SelectItem key={crit.value} value={crit.value}>{crit.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={filtros.tipo} onValueChange={(value) => setFiltros(prev => ({ ...prev, tipo: value }))}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {tiposAtivo.map(tipo => (
+                      <SelectItem key={tipo.value} value={tipo.value}>{tipo.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {hasActiveFilters && (
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    Limpar Filtros
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Criticidade</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Proprietário</TableHead>
+                <TableHead>Localização</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                [...Array(5)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                  </TableRow>
+                ))
+              ) : filteredAtivos.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="p-0">
+                    <EmptyState
+                      icon={<Server className="h-8 w-8" />}
+                      title={searchTerm || hasActiveFilters
+                        ? 'Nenhum ativo encontrado'
+                        : 'Nenhum ativo cadastrado'}
+                      description={searchTerm || hasActiveFilters
+                        ? 'Tente ajustar os filtros para encontrar o que procura.'
+                        : 'Comece cadastrando os ativos da sua organização.'}
+                      action={!searchTerm && !hasActiveFilters ? {
+                        label: 'Cadastrar Primeiro Ativo',
+                        onClick: () => setIsDialogOpen(true)
+                      } : undefined}
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredAtivos.map((ativo) => (
+                  <TableRow key={ativo.id}>
+                    <TableCell>
+                      <span className="font-medium">{ativo.nome}</span>
+                    </TableCell>
+                    <TableCell>
+                      {getTipoLabel(ativo.tipo)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getCriticidadeColor(ativo.criticidade) as any}>
+                        {criticidades.find(c => c.value === ativo.criticidade)?.label || ativo.criticidade}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusColor(ativo.status) as any}>
+                        {statusOptions.find(s => s.value === ativo.status)?.label || ativo.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {ativo.proprietario || '-'}
+                    </TableCell>
+                    <TableCell>
+                      {ativo.localizacao || '-'}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(ativo)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setManutencaoDialog({open: true, ativoId: ativo.id, ativoNome: ativo.nome})}
+                        >
+                          <Wrench className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(ativo.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 

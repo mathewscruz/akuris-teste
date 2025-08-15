@@ -368,7 +368,7 @@ export default function Incidentes() {
       <PageHeader
         title="Incidentes"
         description="Gerencie incidentes de segurança e acompanhe tratamentos"
-        actions={<IncidenteDialog onSuccess={loadIncidentes} />}
+        actions={undefined}
       />
 
       {/* StatCards */}
@@ -386,31 +386,114 @@ export default function Incidentes() {
       </div>
 
       {/* Lista de Incidentes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Lista de Incidentes
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            data={filteredIncidentes}
-            columns={incidentesColumns}
-            loading={loading}
-            searchValue={searchTerm}
-            onSearchChange={setSearchTerm}
-            searchPlaceholder="Buscar incidentes..."
-            emptyState={{
-              icon: <AlertTriangle className="h-8 w-8" />,
-              title: 'Nenhum incidente encontrado',
-              description: 'Registre o primeiro incidente para começar o monitoramento.',
-              action: {
-                label: 'Novo Incidente',
-                onClick: () => {} // O IncidenteDialog já está no header
-              }
-            }}
-          />
+      <Card className="rounded-lg border overflow-hidden">
+        <CardContent className="p-0">
+          <div className="p-6 pb-4">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <Input
+                placeholder="Buscar incidentes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+              <div className="flex gap-2">
+                <IncidenteDialog onSuccess={loadIncidentes} />
+              </div>
+            </div>
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Título</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Criticidade</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Data Detecção</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                [...Array(5)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                  </TableRow>
+                ))
+              ) : filteredIncidentes.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="p-0">
+                    <EmptyState
+                      icon={<AlertTriangle className="h-8 w-8" />}
+                      title='Nenhum incidente encontrado'
+                      description='Registre o primeiro incidente para começar o monitoramento.'
+                      action={{
+                        label: 'Novo Incidente',
+                        onClick: () => {} // O IncidenteDialog já está no header
+                      }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredIncidentes.map((incidente) => (
+                  <TableRow key={incidente.id}>
+                    <TableCell>
+                      <div className="font-medium">{incidente.titulo}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{incidente.tipo_incidente}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {getCriticidadeBadge(incidente.criticidade)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const StatusIcon = getStatusIcon(incidente.status);
+                          return <StatusIcon className="h-4 w-4" />;
+                        })()}
+                        {getStatusBadge(incidente.status)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(incidente.data_deteccao), 'dd/MM/yyyy', { locale: ptBR })}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => {}}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {}}>
+                            <MessageSquare className="mr-2 h-4 w-4" />
+                            Comunicação
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {}}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Evidências
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDelete(incidente.id)}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
