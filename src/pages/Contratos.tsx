@@ -18,7 +18,6 @@ import { MarcosDialog } from '@/components/contratos/MarcosDialog';
 import { DocumentosDialog } from '@/components/contratos/DocumentosDialog';
 import { AditivosDialog } from '@/components/contratos/AditivosDialog';
 import RelatoriosContratos from '@/components/contratos/RelatoriosContratos';
-import IntegracaoModulos from '@/components/contratos/IntegracaoModulos';
 import TemplatesContratos from '@/components/contratos/TemplatesContratos';
 import { useContratosStats } from '@/hooks/useContratosStats';
 import { format } from 'date-fns';
@@ -483,7 +482,7 @@ export default function Contratos() {
 
       {/* Tabs */}
       <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="contratos" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Contratos</span>
@@ -499,10 +498,6 @@ export default function Contratos() {
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <FileImage className="h-4 w-4" />
             <span className="hidden sm:inline">Templates</span>
-          </TabsTrigger>
-          <TabsTrigger value="integracoes" className="flex items-center gap-2">
-            <Link className="h-4 w-4" />
-            <span className="hidden sm:inline">Integrações</span>
           </TabsTrigger>
         </TabsList>
 
@@ -586,74 +581,12 @@ export default function Contratos() {
 
         {/* Relatórios Tab */}
         <TabsContent value="relatorios" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Relatórios de Contratos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">Relatórios em Desenvolvimento</h3>
-                <p className="text-muted-foreground mb-4">
-                  Os relatórios de contratos ainda não foram implementados.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Em breve você poderá gerar relatórios detalhados sobre seus contratos.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <RelatoriosContratos />
         </TabsContent>
 
         {/* Templates Tab */}
         <TabsContent value="templates" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileImage className="h-5 w-5" />
-                Templates de Contratos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <FileImage className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">Templates em Desenvolvimento</h3>
-                <p className="text-muted-foreground mb-4">
-                  Os templates de contratos ainda não foram implementados.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Em breve você poderá criar e usar templates personalizados para agilizar a criação de contratos.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Integrações Tab */}
-        <TabsContent value="integracoes" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Link className="h-5 w-5" />
-                Integrações de Contratos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Link className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">Integrações em Desenvolvimento</h3>
-                <p className="text-muted-foreground mb-4">
-                  As integrações com outros sistemas ainda não foram implementadas.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Em breve você poderá integrar o módulo de contratos com sistemas externos e APIs.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <TemplatesContratos />
         </TabsContent>
       </Tabs>
 
