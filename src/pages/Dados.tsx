@@ -152,15 +152,19 @@ export default function Dados() {
             </Button>
           </div>
           {dadosPessoais.length === 0 ? (
-            <EmptyState
-              icon={<Database className="h-8 w-8" />}
-              title="Nenhum dado catalogado"
-              description="Ainda não há dados pessoais catalogados. Comece criando o primeiro registro."
-              action={{
-                label: "Novo Dado",
-                onClick: () => setShowDadosDialog(true)
-              }}
-            />
+            <Card>
+              <CardContent>
+                <EmptyState
+                  icon={<Database className="h-8 w-8" />}
+                  title="Nenhum dado catalogado"
+                  description="Ainda não há dados pessoais catalogados. Comece criando o primeiro registro."
+                  action={{
+                    label: "Novo Dado",
+                    onClick: () => setShowDadosDialog(true)
+                  }}
+                />
+              </CardContent>
+            </Card>
           ) : (
             <Card>
               <CardContent>
@@ -200,15 +204,19 @@ export default function Dados() {
             </Button>
           </div>
           {mapeamentos.length === 0 ? (
-            <EmptyState
-              icon={<ArrowRightLeft className="h-8 w-8" />}
-              title="Nenhum mapeamento criado"
-              description="Ainda não há mapeamentos entre dados pessoais e ativos. Comece criando o primeiro registro."
-              action={{
-                label: "Novo Mapeamento",
-                onClick: () => setShowMapeamentoDialog(true)
-              }}
-            />
+            <Card>
+              <CardContent>
+                <EmptyState
+                  icon={<ArrowRightLeft className="h-8 w-8" />}
+                  title="Nenhum mapeamento criado"
+                  description="Ainda não há mapeamentos entre dados pessoais e ativos. Comece criando o primeiro registro."
+                  action={{
+                    label: "Novo Mapeamento",
+                    onClick: () => setShowMapeamentoDialog(true)
+                  }}
+                />
+              </CardContent>
+            </Card>
           ) : (
             <Card>
               <CardContent>
@@ -246,15 +254,19 @@ export default function Dados() {
             </Button>
           </div>
           {ropaRegistros.length === 0 ? (
-            <EmptyState
-              icon={<FileText className="h-8 w-8" />}
-              title="Nenhum registro ROPA criado"
-              description="Ainda não há registros ROPA cadastrados. Comece criando o primeiro registro."
-              action={{
-                label: "Novo ROPA",
-                onClick: () => setShowRopaDialog(true)
-              }}
-            />
+            <Card>
+              <CardContent>
+                <EmptyState
+                  icon={<FileText className="h-8 w-8" />}
+                  title="Nenhum registro ROPA criado"
+                  description="Ainda não há registros ROPA cadastrados. Comece criando o primeiro registro."
+                  action={{
+                    label: "Novo ROPA",
+                    onClick: () => setShowRopaDialog(true)
+                  }}
+                />
+              </CardContent>
+            </Card>
           ) : (
             <Card>
               <CardContent>
@@ -292,15 +304,19 @@ export default function Dados() {
             </Button>
           </div>
           {fluxos.length === 0 ? (
-            <EmptyState
-              icon={<ArrowRightLeft className="h-8 w-8" />}
-              title="Nenhum fluxo de dados criado"
-              description="Ainda não há fluxos de dados cadastrados. Comece criando o primeiro registro."
-              action={{
-                label: "Novo Fluxo",
-                onClick: () => setShowFluxoDialog(true)
-              }}
-            />
+            <Card>
+              <CardContent>
+                <EmptyState
+                  icon={<ArrowRightLeft className="h-8 w-8" />}
+                  title="Nenhum fluxo de dados criado"
+                  description="Ainda não há fluxos de dados cadastrados. Comece criando o primeiro registro."
+                  action={{
+                    label: "Novo Fluxo",
+                    onClick: () => setShowFluxoDialog(true)
+                  }}
+                />
+              </CardContent>
+            </Card>
           ) : (
             <Card>
               <CardContent>
@@ -340,15 +356,19 @@ export default function Dados() {
             </Button>
           </div>
           {solicitacoes.length === 0 ? (
-            <EmptyState
-              icon={<Users className="h-8 w-8" />}
-              title="Nenhuma solicitação registrada"
-              description="Ainda não há solicitações de titulares. Comece criando o primeiro registro."
-              action={{
-                label: "Nova Solicitação",
-                onClick: () => setShowSolicitacaoDialog(true)
-              }}
-            />
+            <Card>
+              <CardContent>
+                <EmptyState
+                  icon={<Users className="h-8 w-8" />}
+                  title="Nenhuma solicitação registrada"
+                  description="Ainda não há solicitações de titulares. Comece criando o primeiro registro."
+                  action={{
+                    label: "Nova Solicitação",
+                    onClick: () => setShowSolicitacaoDialog(true)
+                  }}
+                />
+              </CardContent>
+            </Card>
           ) : (
             <Card>
               <CardContent>
