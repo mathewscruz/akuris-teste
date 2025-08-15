@@ -163,28 +163,30 @@ export default function Dados() {
             />
           ) : (
             <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Sensibilidade</TableHead>
-                    <TableHead>Base Legal</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {dadosPessoais.map((dado) => (
-                    <TableRow key={dado.id}>
-                      <TableCell className="font-medium">{dado.nome}</TableCell>
-                      <TableCell>{dado.categoria_dados}</TableCell>
-                      <TableCell>{dado.tipo_dados}</TableCell>
-                      <TableCell>{getSensibilidadeBadge(dado.tipo_dados, dado.sensibilidade)}</TableCell>
-                      <TableCell>{dado.base_legal}</TableCell>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Sensibilidade</TableHead>
+                      <TableHead>Base Legal</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {dadosPessoais.map((dado) => (
+                      <TableRow key={dado.id}>
+                        <TableCell className="font-medium">{dado.nome}</TableCell>
+                        <TableCell>{dado.categoria_dados}</TableCell>
+                        <TableCell>{dado.tipo_dados}</TableCell>
+                        <TableCell>{getSensibilidadeBadge(dado.tipo_dados, dado.sensibilidade)}</TableCell>
+                        <TableCell>{dado.base_legal}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
             </Card>
           )}
         </TabsContent>
@@ -209,26 +211,28 @@ export default function Dados() {
             />
           ) : (
             <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Dados Pessoais</TableHead>
-                    <TableHead>Ativo</TableHead>
-                    <TableHead>Tipo Armazenamento</TableHead>
-                    <TableHead>Criptografia</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mapeamentos.map((mapeamento) => (
-                    <TableRow key={mapeamento.id}>
-                      <TableCell>{mapeamento.dados_pessoais?.nome}</TableCell>
-                      <TableCell>{mapeamento.ativos?.nome}</TableCell>
-                      <TableCell>{mapeamento.tipo_armazenamento}</TableCell>
-                      <TableCell>{mapeamento.criptografia_aplicada ? "Sim" : "Não"}</TableCell>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Dados Pessoais</TableHead>
+                      <TableHead>Ativo</TableHead>
+                      <TableHead>Tipo Armazenamento</TableHead>
+                      <TableHead>Criptografia</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {mapeamentos.map((mapeamento) => (
+                      <TableRow key={mapeamento.id}>
+                        <TableCell>{mapeamento.dados_pessoais?.nome}</TableCell>
+                        <TableCell>{mapeamento.ativos?.nome}</TableCell>
+                        <TableCell>{mapeamento.tipo_armazenamento}</TableCell>
+                        <TableCell>{mapeamento.criptografia_aplicada ? "Sim" : "Não"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
             </Card>
           )}
         </TabsContent>
@@ -253,26 +257,28 @@ export default function Dados() {
             />
           ) : (
             <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome do Tratamento</TableHead>
-                    <TableHead>Base Legal</TableHead>
-                    <TableHead>Categoria Titulares</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {ropaRegistros.map((ropa) => (
-                    <TableRow key={ropa.id}>
-                      <TableCell className="font-medium">{ropa.nome_tratamento}</TableCell>
-                      <TableCell>{ropa.base_legal}</TableCell>
-                      <TableCell>{ropa.categoria_titulares}</TableCell>
-                      <TableCell>{getStatusBadge(ropa.status)}</TableCell>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome do Tratamento</TableHead>
+                      <TableHead>Base Legal</TableHead>
+                      <TableHead>Categoria Titulares</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {ropaRegistros.map((ropa) => (
+                      <TableRow key={ropa.id}>
+                        <TableCell className="font-medium">{ropa.nome_tratamento}</TableCell>
+                        <TableCell>{ropa.base_legal}</TableCell>
+                        <TableCell>{ropa.categoria_titulares}</TableCell>
+                        <TableCell>{getStatusBadge(ropa.status)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
             </Card>
           )}
         </TabsContent>
@@ -297,28 +303,30 @@ export default function Dados() {
             />
           ) : (
             <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome do Fluxo</TableHead>
-                    <TableHead>Dados</TableHead>
-                    <TableHead>Origem → Destino</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {fluxos.map((fluxo) => (
-                    <TableRow key={fluxo.id}>
-                      <TableCell className="font-medium">{fluxo.nome_fluxo}</TableCell>
-                      <TableCell>{fluxo.dados_pessoais?.nome}</TableCell>
-                      <TableCell className="flex items-center">
-                        {fluxo.sistema_origem} <ArrowRightLeft className="mx-2 h-3 w-3" /> {fluxo.sistema_destino}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(fluxo.status)}</TableCell>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome do Fluxo</TableHead>
+                      <TableHead>Dados</TableHead>
+                      <TableHead>Origem → Destino</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {fluxos.map((fluxo) => (
+                      <TableRow key={fluxo.id}>
+                        <TableCell className="font-medium">{fluxo.nome_fluxo}</TableCell>
+                        <TableCell>{fluxo.dados_pessoais?.nome}</TableCell>
+                        <TableCell className="flex items-center">
+                          {fluxo.sistema_origem} <ArrowRightLeft className="mx-2 h-3 w-3" /> {fluxo.sistema_destino}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(fluxo.status)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
             </Card>
           )}
         </TabsContent>
@@ -343,28 +351,30 @@ export default function Dados() {
             />
           ) : (
             <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Titular</TableHead>
-                    <TableHead>Canal</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Prazo</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {solicitacoes.map((solicitacao) => (
-                    <TableRow key={solicitacao.id}>
-                      <TableCell>{solicitacao.tipo_solicitacao}</TableCell>
-                      <TableCell>{JSON.parse(solicitacao.dados_titular).nome}</TableCell>
-                      <TableCell>{solicitacao.canal_solicitacao}</TableCell>
-                      <TableCell>{getStatusBadge(solicitacao.status)}</TableCell>
-                      <TableCell>{new Date(solicitacao.prazo_resposta).toLocaleDateString('pt-BR')}</TableCell>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Titular</TableHead>
+                      <TableHead>Canal</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Prazo</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {solicitacoes.map((solicitacao) => (
+                      <TableRow key={solicitacao.id}>
+                        <TableCell>{solicitacao.tipo_solicitacao}</TableCell>
+                        <TableCell>{JSON.parse(solicitacao.dados_titular).nome}</TableCell>
+                        <TableCell>{solicitacao.canal_solicitacao}</TableCell>
+                        <TableCell>{getStatusBadge(solicitacao.status)}</TableCell>
+                        <TableCell>{new Date(solicitacao.prazo_resposta).toLocaleDateString('pt-BR')}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
             </Card>
           )}
         </TabsContent>
