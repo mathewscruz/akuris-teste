@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useIncidentesStats } from '@/hooks/useIncidentesStats';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ import {
   Plus,
   Edit,
   Trash2,
+  Filter,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -81,6 +83,10 @@ export default function Incidentes() {
     open: false,
     incidenteId: ''
   });
+  const [showFilters, setShowFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [tipoFilter, setTipoFilter] = useState<string>("todos");
+  const [criticidadeFilter, setCriticidadeFilter] = useState<string>("todos");
   const { toast } = useToast();
   
   // Buscar estatísticas dos incidentes
@@ -397,10 +403,58 @@ export default function Incidentes() {
                 className="max-w-sm"
               />
               <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filtros
+                </Button>
                 <IncidenteDialog onSuccess={loadIncidentes} />
               </div>
             </div>
           </div>
+          {showFilters && (
+            <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Status</SelectItem>
+                  <SelectItem value="aberto">Aberto</SelectItem>
+                  <SelectItem value="investigacao">Investigação</SelectItem>
+                  <SelectItem value="contido">Contido</SelectItem>
+                  <SelectItem value="resolvido">Resolvido</SelectItem>
+                  <SelectItem value="fechado">Fechado</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={tipoFilter} onValueChange={setTipoFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Tipos</SelectItem>
+                  <SelectItem value="seguranca">Segurança</SelectItem>
+                  <SelectItem value="privacidade">Privacidade</SelectItem>
+                  <SelectItem value="disponibilidade">Disponibilidade</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={criticidadeFilter} onValueChange={setCriticidadeFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Criticidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todas as Criticidades</SelectItem>
+                  <SelectItem value="baixa">Baixa</SelectItem>
+                  <SelectItem value="media">Média</SelectItem>
+                  <SelectItem value="alta">Alta</SelectItem>
+                  <SelectItem value="critica">Crítica</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <Table>
             <TableHeader>
               <TableRow>

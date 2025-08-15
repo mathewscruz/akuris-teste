@@ -81,6 +81,7 @@ export function Documentos() {
   const [filtrosAvancados, setFiltrosAvancados] = useState<any>(null);
   const [showDocGenDialog, setShowDocGenDialog] = useState(false);
   const [relatoriosDialog, setRelatoriosDialog] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; documentoId: string }>({
     open: false,
     documentoId: ''
@@ -523,10 +524,18 @@ export function Documentos() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => setBuscaAvancada(true)}
+                  onClick={() => setShowFilters(!showFilters)}
                 >
                   <Filter className="h-4 w-4 mr-2" />
                   Filtros
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setBuscaAvancada(true)}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Busca Avançada
                 </Button>
                 <Button 
                   variant="outline" 
@@ -555,61 +564,52 @@ export function Documentos() {
             </div>
             
             {/* Filtros básicos */}
-            <div className="flex gap-4 items-center flex-wrap mb-4">
-              <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as categorias</SelectItem>
-                  {categorias.map((categoria) => (
-                    <SelectItem key={categoria.id} value={categoria.nome}>
-                      {categoria.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="ativo">Ativo</SelectItem>
-                  <SelectItem value="inativo">Inativo</SelectItem>
-                  <SelectItem value="arquivado">Arquivado</SelectItem>
-                  <SelectItem value="vencido">Vencido</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={selectedTipo} onValueChange={setSelectedTipo}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os tipos</SelectItem>
-                  <SelectItem value="politica">Política</SelectItem>
-                  <SelectItem value="procedimento">Procedimento</SelectItem>
-                  <SelectItem value="instrucao">Instrução</SelectItem>
-                  <SelectItem value="formulario">Formulário</SelectItem>
-                  <SelectItem value="certificado">Certificado</SelectItem>
-                  <SelectItem value="contrato">Contrato</SelectItem>
-                  <SelectItem value="relatorio">Relatório</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {(filtrosAvancados || searchTerm || selectedCategoria !== 'all' || selectedStatus !== 'all' || selectedTipo !== 'all') && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={limparFiltros}
-                  className="text-muted-foreground"
-                >
-                  Limpar Filtros
-                </Button>
-              )}
-            </div>
+            {showFilters && (
+              <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
+                <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as categorias</SelectItem>
+                    {categorias.map((categoria) => (
+                      <SelectItem key={categoria.id} value={categoria.nome}>
+                        {categoria.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="inativo">Inativo</SelectItem>
+                    <SelectItem value="arquivado">Arquivado</SelectItem>
+                    <SelectItem value="vencido">Vencido</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Select value={selectedTipo} onValueChange={setSelectedTipo}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os tipos</SelectItem>
+                    <SelectItem value="politica">Política</SelectItem>
+                    <SelectItem value="procedimento">Procedimento</SelectItem>
+                    <SelectItem value="instrucao">Instrução</SelectItem>
+                    <SelectItem value="formulario">Formulário</SelectItem>
+                    <SelectItem value="certificado">Certificado</SelectItem>
+                    <SelectItem value="contrato">Contrato</SelectItem>
+                    <SelectItem value="relatorio">Relatório</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Indicador de filtros aplicados */}
             {filtrosAvancados && (

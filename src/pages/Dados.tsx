@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Database, Users, FileText, ArrowRightLeft, AlertTriangle } from "lucide-react";
+import { Plus, Database, Users, FileText, ArrowRightLeft, AlertTriangle, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +43,7 @@ export default function Dados() {
     id: '',
     type: ''
   });
+  const [showFilters, setShowFilters] = useState(false);
   
   const { toast } = useToast();
 
@@ -208,6 +209,14 @@ export default function Dados() {
                     className="max-w-sm"
                   />
                   <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowFilters(!showFilters)}
+                    >
+                      <Filter className="mr-2 h-4 w-4" />
+                      Filtros
+                    </Button>
                     <Button size="sm" onClick={() => setShowDadosDialog(true)}>
                       <Plus className="mr-2 h-4 w-4" />
                       Novo Dado
@@ -215,6 +224,13 @@ export default function Dados() {
                   </div>
                 </div>
               </div>
+              {showFilters && (
+                <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
+                  <Input placeholder="Filtrar por status..." className="w-[180px]" />
+                  <Input placeholder="Filtrar por categoria..." className="w-[180px]" />
+                  <Input placeholder="Filtrar por base legal..." className="w-[180px]" />
+                </div>
+              )}
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -267,6 +283,14 @@ export default function Dados() {
                     className="max-w-sm"
                   />
                   <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowFilters(!showFilters)}
+                    >
+                      <Filter className="mr-2 h-4 w-4" />
+                      Filtros
+                    </Button>
                     <Button size="sm" onClick={() => setShowMapeamentoDialog(true)}>
                       <Plus className="mr-2 h-4 w-4" />
                       Novo Mapeamento
@@ -274,6 +298,12 @@ export default function Dados() {
                   </div>
                 </div>
               </div>
+              {showFilters && (
+                <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
+                  <Input placeholder="Filtrar por tipo armazenamento..." className="w-[180px]" />
+                  <Input placeholder="Filtrar por criptografia..." className="w-[180px]" />
+                </div>
+              )}
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -324,6 +354,14 @@ export default function Dados() {
                     className="max-w-sm"
                   />
                   <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowFilters(!showFilters)}
+                    >
+                      <Filter className="mr-2 h-4 w-4" />
+                      Filtros
+                    </Button>
                     <Button size="sm" onClick={() => setShowRopaDialog(true)}>
                       <Plus className="mr-2 h-4 w-4" />
                       Novo ROPA
@@ -331,6 +369,12 @@ export default function Dados() {
                   </div>
                 </div>
               </div>
+              {showFilters && (
+                <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
+                  <Input placeholder="Filtrar por status..." className="w-[180px]" />
+                  <Input placeholder="Filtrar por base legal..." className="w-[180px]" />
+                </div>
+              )}
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -381,6 +425,14 @@ export default function Dados() {
                     className="max-w-sm"
                   />
                   <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowFilters(!showFilters)}
+                    >
+                      <Filter className="mr-2 h-4 w-4" />
+                      Filtros
+                    </Button>
                     <Button size="sm" onClick={() => setShowFluxoDialog(true)}>
                       <Plus className="mr-2 h-4 w-4" />
                       Novo Fluxo
@@ -388,6 +440,12 @@ export default function Dados() {
                   </div>
                 </div>
               </div>
+              {showFilters && (
+                <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
+                  <Input placeholder="Filtrar por status..." className="w-[180px]" />
+                  <Input placeholder="Filtrar por tipo transferência..." className="w-[180px]" />
+                </div>
+              )}
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -440,6 +498,14 @@ export default function Dados() {
                     className="max-w-sm"
                   />
                   <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowFilters(!showFilters)}
+                    >
+                      <Filter className="mr-2 h-4 w-4" />
+                      Filtros
+                    </Button>
                     <Button size="sm" onClick={() => setShowSolicitacaoDialog(true)}>
                       <Plus className="mr-2 h-4 w-4" />
                       Nova Solicitação
@@ -447,6 +513,12 @@ export default function Dados() {
                   </div>
                 </div>
               </div>
+              {showFilters && (
+                <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
+                  <Input placeholder="Filtrar por status..." className="w-[180px]" />
+                  <Input placeholder="Filtrar por tipo solicitação..." className="w-[180px]" />
+                </div>
+              )}
               <Table>
                 <TableHeader>
                   <TableRow>

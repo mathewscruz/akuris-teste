@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Plus, FileText, AlertTriangle, CheckCircle, User, Edit, Trash2, Eye, Clock } from "lucide-react";
+import { Plus, FileText, AlertTriangle, CheckCircle, User, Edit, Trash2, Eye, Clock, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -57,6 +57,7 @@ const Auditorias = () => {
   const [showAchadosDialog, setShowAchadosDialog] = useState(false);
   const [showRecomendacoesDialog, setShowRecomendacoesDialog] = useState(false);
   const [showEvidenciasDialog, setShowEvidenciasDialog] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const { data: usuarios } = useUsuariosEmpresa();
 
@@ -205,11 +206,13 @@ const Auditorias = () => {
                 className="max-w-sm"
               />
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setStatusFilter("todos")}>
-                  Status
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setTipoFilter("todos")}>
-                  Tipo
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtros
                 </Button>
                 <Button size="sm" onClick={() => setShowAuditoriaDialog(true)}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -217,33 +220,35 @@ const Auditorias = () => {
                 </Button>
               </div>
             </div>
-            <div className="flex gap-4 mb-4">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os Status</SelectItem>
-                  <SelectItem value="planejamento">Planejamento</SelectItem>
-                  <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                  <SelectItem value="concluida">Concluída</SelectItem>
-                  <SelectItem value="cancelada">Cancelada</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={tipoFilter} onValueChange={setTipoFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os Tipos</SelectItem>
-                  <SelectItem value="interna">Interna</SelectItem>
-                  <SelectItem value="externa">Externa</SelectItem>
-                  <SelectItem value="compliance">Compliance</SelectItem>
-                  <SelectItem value="operacional">Operacional</SelectItem>
-                  <SelectItem value="ti">TI</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {showFilters && (
+              <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os Status</SelectItem>
+                    <SelectItem value="planejamento">Planejamento</SelectItem>
+                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                    <SelectItem value="concluida">Concluída</SelectItem>
+                    <SelectItem value="cancelada">Cancelada</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={tipoFilter} onValueChange={setTipoFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os Tipos</SelectItem>
+                    <SelectItem value="interna">Interna</SelectItem>
+                    <SelectItem value="externa">Externa</SelectItem>
+                    <SelectItem value="compliance">Compliance</SelectItem>
+                    <SelectItem value="operacional">Operacional</SelectItem>
+                    <SelectItem value="ti">TI</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <Table>
               <TableHeader>

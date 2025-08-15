@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp, Edit, Trash2 } from "lucide-react";
+import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp, Edit, Trash2, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -58,6 +59,10 @@ export default function Controles() {
     open: false,
     controleId: ''
   });
+  const [showFilters, setShowFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [tipoFilter, setTipoFilter] = useState<string>("todos");
+  const [criticidadeFilter, setCriticidadeFilter] = useState<string>("todos");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -355,6 +360,14 @@ export default function Controles() {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      onClick={() => setShowFilters(!showFilters)}
+                    >
+                      <Filter className="mr-2 h-4 w-4" />
+                      Filtros
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
                       onClick={() => setRelatoriosDialogOpen(true)}
                     >
                       <BarChart3 className="mr-2 h-4 w-4" />
@@ -370,6 +383,45 @@ export default function Controles() {
                   </div>
                 </div>
               </div>
+              {showFilters && (
+                <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos os Status</SelectItem>
+                      <SelectItem value="ativo">Ativo</SelectItem>
+                      <SelectItem value="inativo">Inativo</SelectItem>
+                      <SelectItem value="em_revisao">Em Revisão</SelectItem>
+                      <SelectItem value="descontinuado">Descontinuado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={tipoFilter} onValueChange={setTipoFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos os Tipos</SelectItem>
+                      <SelectItem value="preventivo">Preventivo</SelectItem>
+                      <SelectItem value="detectivo">Detectivo</SelectItem>
+                      <SelectItem value="corretivo">Corretivo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={criticidadeFilter} onValueChange={setCriticidadeFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Criticidade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todas as Criticidades</SelectItem>
+                      <SelectItem value="baixo">Baixo</SelectItem>
+                      <SelectItem value="medio">Médio</SelectItem>
+                      <SelectItem value="alto">Alto</SelectItem>
+                      <SelectItem value="critico">Crítico</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <Table>
                 <TableHeader>
                   <TableRow>
