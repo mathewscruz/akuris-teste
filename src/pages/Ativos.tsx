@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Filter, Server, Activity, AlertTriangle, TrendingUp, Wrench, History, Upload, ArrowUpDown, Download, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { DataTable } from '@/components/ui/data-table';
+import { StatCard } from '@/components/ui/stat-card';
+import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -369,38 +372,141 @@ const Ativos = () => {
     );
   }
 
+  const ativoColumns = [
+    {
+      key: 'nome',
+      label: 'Nome',
+      sortable: true,
+      render: (value: string) => <span className="font-medium">{value}</span>
+    },
+    {
+      key: 'tipo',
+      label: 'Tipo',
+      render: (value: string) => getTipoLabel(value)
+    },
+    {
+      key: 'criticidade',
+      label: 'Criticidade',
+      render: (value: string) => (
+        <Badge variant={getCriticidadeColor(value) as any}>
+          {criticidades.find(c => c.value === value)?.label || value}
+        </Badge>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (value: string) => (
+        <Badge variant={getStatusColor(value) as any}>
+          {statusOptions.find(s => s.value === value)?.label || value}
+        </Badge>
+      )
+    },
+    {
+      key: 'proprietario',
+      label: 'Proprietário',
+      render: (value: string) => value || '-'
+    },
+    {
+      key: 'localizacao',
+      label: 'Localização',
+      render: (value: string) => value || '-'
+    },
+    {
+      key: 'actions',
+      label: 'Ações',
+      render: (value: any, ativo: Ativo) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEdit(ativo)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setManutencaoDialog({open: true, ativoId: ativo.id, ativoNome: ativo.nome})}
+          >
+            <Wrench className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDelete(ativo.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  const filters = [
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select' as const,
+      options: statusOptions.map(status => ({ value: status.value, label: status.label })),
+      value: filtros.status,
+      onChange: (value: string) => setFiltros(prev => ({ ...prev, status: value }))
+    },
+    {
+      key: 'criticidade',
+      label: 'Criticidade',
+      type: 'select' as const,
+      options: criticidades.map(crit => ({ value: crit.value, label: crit.label })),
+      value: filtros.criticidade,
+      onChange: (value: string) => setFiltros(prev => ({ ...prev, criticidade: value }))
+    },
+    {
+      key: 'tipo',
+      label: 'Tipo',
+      type: 'select' as const,
+      options: tiposAtivo.map(tipo => ({ value: tipo.value, label: tipo.label })),
+      value: filtros.tipo,
+      onChange: (value: string) => setFiltros(prev => ({ ...prev, tipo: value }))
+    },
+    {
+      key: 'valor_negocio',
+      label: 'Valor de Negócio',
+      type: 'select' as const,
+      options: valoresNegocio.map(valor => ({ value: valor, label: valor.charAt(0).toUpperCase() + valor.slice(1) })),
+      value: filtros.valor_negocio,
+      onChange: (value: string) => setFiltros(prev => ({ ...prev, valor_negocio: value }))
+    }
+  ];
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestão de Ativos</h1>
-          <p className="text-muted-foreground">
-            Gerencie todos os ativos da organização
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={exportData} variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Exportar
-          </Button>
-          <Button onClick={() => setImportDialog(true)} variant="outline">
-            <Upload className="h-4 w-4 mr-2" />
-            Importar
-          </Button>
-          <Button onClick={() => setAuditDialog({open: true})} variant="outline">
-            <History className="h-4 w-4 mr-2" />
-            Auditoria
-          </Button>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => {
-                setEditingAtivo(null);
-                resetForm();
-              }}>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Ativo
-              </Button>
-            </DialogTrigger>
+      <PageHeader
+        title="Gestão de Ativos"
+        description="Gerencie todos os ativos da organização de forma centralizada"
+        actions={
+          <div className="flex gap-2">
+            <Button onClick={exportData} variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar
+            </Button>
+            <Button onClick={() => setImportDialog(true)} variant="outline">
+              <Upload className="h-4 w-4 mr-2" />
+              Importar
+            </Button>
+            <Button onClick={() => setAuditDialog({open: true})} variant="outline">
+              <History className="h-4 w-4 mr-2" />
+              Auditoria
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => {
+                  setEditingAtivo(null);
+                  resetForm();
+                }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Ativo
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>
@@ -594,300 +700,84 @@ const Ativos = () => {
               </form>
             </DialogContent>
           </Dialog>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       {/* Cards de Indicadores */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Ativos</CardTitle>
-            <Server className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statsLoading ? '...' : stats?.total || 0}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              Críticos: {stats?.criticos || 0} | Altos: {stats?.altos || 0} | Médios: {stats?.medios || 0} | Baixos: {stats?.baixos || 0}
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Total de Ativos"
+          value={stats?.total || 0}
+          description={`Críticos: ${stats?.criticos || 0} | Altos: ${stats?.altos || 0}`}
+          icon={<Server className="h-4 w-4 text-muted-foreground" />}
+          variant={stats?.criticos ? "destructive" : "default"}
+          loading={statsLoading}
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Status</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.ativos || 0}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              Ativos: {stats?.ativos || 0} | Inativos: {stats?.inativos || 0} | Descontinuados: {stats?.descontinuados || 0}
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Ativos"
+          value={stats?.ativos || 0}
+          description={`${stats?.inativos || 0} inativos | ${stats?.descontinuados || 0} descontinuados`}
+          icon={<Activity className="h-4 w-4 text-muted-foreground" />}
+          variant="success"
+          loading={statsLoading}
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Alto Valor</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.altoValorNegocio || 0}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {stats?.percentualAltoValor || 0}% do total
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Alto Valor"
+          value={stats?.altoValorNegocio || 0}
+          description={`${stats?.percentualAltoValor || 0}% do total`}
+          icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
+          variant="warning"
+          loading={statsLoading}
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Criticidade Alta</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{(stats?.criticos || 0) + (stats?.altos || 0)}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              Requerem atenção especial
-            </div>
-          </CardContent>
-        </Card>
-
+        <StatCard
+          title="Criticidade Alta"
+          value={(stats?.criticos || 0) + (stats?.altos || 0)}
+          description="Requerem atenção especial"
+          icon={<Shield className="h-4 w-4 text-muted-foreground" />}
+          variant="info"
+          loading={statsLoading}
+        />
       </div>
 
-      {/* Busca e Filtros */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">Buscar e Filtrar</h3>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filtros {hasActiveFilters && `(${Object.values(filtros).filter(f => f !== '' && f !== 'all').length + (searchTerm ? 1 : 0)})`}
-                </Button>
-                {hasActiveFilters && (
-                  <Button variant="outline" size="sm" onClick={clearFilters}>
-                    Limpar
-                  </Button>
-                )}
-              </div>
-            </div>
-            
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome, tipo, proprietário, cliente, IMEI ou tags..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-
-            {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-4 border-t">
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select value={filtros.status} onValueChange={(value) => setFiltros(prev => ({...prev, status: value}))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos os status</SelectItem>
-                      {statusOptions.map((status) => (
-                        <SelectItem key={status.value} value={status.value}>
-                          {status.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Criticidade</Label>
-                  <Select value={filtros.criticidade} onValueChange={(value) => setFiltros(prev => ({...prev, criticidade: value}))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas as criticidades</SelectItem>
-                      {criticidades.map((crit) => (
-                        <SelectItem key={crit.value} value={crit.value}>
-                          {crit.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Tipo</Label>
-                  <Select value={filtros.tipo} onValueChange={(value) => setFiltros(prev => ({...prev, tipo: value}))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos os tipos</SelectItem>
-                      {tiposAtivo.map((tipo) => (
-                        <SelectItem key={tipo.value} value={tipo.value}>
-                          {tipo.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Valor de Negócio</Label>
-                  <Select value={filtros.valor_negocio} onValueChange={(value) => setFiltros(prev => ({...prev, valor_negocio: value}))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos os valores</SelectItem>
-                      {valoresNegocio.map((valor) => (
-                        <SelectItem key={valor} value={valor}>
-                          {valor.charAt(0).toUpperCase() + valor.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Localização</Label>
-                  <Select value={filtros.localizacao} onValueChange={(value) => setFiltros(prev => ({...prev, localizacao: value}))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todas as localizações" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas as localizações</SelectItem>
-                      {Array.from(new Set(ativos.map(a => a.localizacao).filter(Boolean))).map((loc) => (
-                        <SelectItem key={loc} value={loc!}>
-                          {loc}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tabela de Ativos */}
+      {/* Tabela de Ativos com DataTable */}
       <Card>
         <CardHeader>
-          <CardTitle>Ativos Registrados</CardTitle>
-          <CardDescription>
-            {filteredAtivos.length} de {ativos.length} ativo(s) encontrado(s)
-          </CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <Server className="h-5 w-5" />
+            Ativos Registrados
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {filteredAtivos.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {searchTerm ? 'Nenhum ativo encontrado com o termo pesquisado' : 'Nenhum ativo cadastrado'}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('nome')}>
-                      <div className="flex items-center gap-1">
-                        Nome
-                        <ArrowUpDown className="h-4 w-4" />
-                      </div>
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('tipo')}>
-                      <div className="flex items-center gap-1">
-                        Tipo
-                        <ArrowUpDown className="h-4 w-4" />
-                      </div>
-                    </TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Criticidade</TableHead>
-                    <TableHead>Proprietário</TableHead>
-                    <TableHead>Localização</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAtivos.map((ativo) => (
-                    <TableRow key={ativo.id}>
-                      <TableCell className="font-medium">
-                        <div>
-                          <div className="font-semibold">{ativo.nome}</div>
-                          {ativo.tags && ativo.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {ativo.tags.slice(0, 3).map((tag, index) => (
-                                <Badge key={index} variant="outline" className="text-xs">
-                                  {tag}
-                                </Badge>
-                              ))}
-                              {ativo.tags.length > 3 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{ativo.tags.length - 3}
-                                </Badge>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {getTipoLabel(ativo.tipo)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusColor(ativo.status) as any}>
-                          {statusOptions.find(s => s.value === ativo.status)?.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getCriticidadeColor(ativo.criticidade) as any}>
-                          {criticidades.find(c => c.value === ativo.criticidade)?.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{ativo.proprietario || '-'}</TableCell>
-                      <TableCell>{ativo.localizacao || '-'}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setManutencaoDialog({open: true, ativoId: ativo.id, ativoNome: ativo.nome})}
-                            title="Manutenções"
-                          >
-                            <Wrench className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(ativo)}
-                            title="Editar"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(ativo.id)}
-                            title="Excluir"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+          <DataTable
+            data={filteredAtivos}
+            columns={ativoColumns}
+            loading={loading}
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Buscar ativos..."
+            filters={filters}
+            onExport={exportData}
+            emptyState={{
+              icon: <Server className="h-8 w-8" />,
+              title: searchTerm || hasActiveFilters
+                ? 'Nenhum ativo encontrado'
+                : 'Nenhum ativo cadastrado',
+              description: searchTerm || hasActiveFilters
+                ? 'Tente ajustar os filtros para encontrar o que procura.'
+                : 'Comece cadastrando os ativos da sua organização.',
+              action: !searchTerm && !hasActiveFilters ? {
+                label: 'Cadastrar Primeiro Ativo',
+                onClick: () => setIsDialogOpen(true)
+              } : undefined
+            }}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSort={handleSort}
+          />
         </CardContent>
       </Card>
 
