@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { useRiscosStats } from '@/hooks/useRiscosStats';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { RiscoDialog } from '@/components/riscos/RiscoDialog';
 import { MatrizDialog } from '@/components/riscos/MatrizDialog';
@@ -50,6 +50,7 @@ interface MatrizConfig {
 
 export function Riscos() {
   const { profile } = useAuth();
+  const { toast } = useToast();
   const { data: stats, refetch: refetchStats } = useRiscosStats();
   const [riscos, setRiscos] = useState<Risco[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,7 +99,11 @@ export function Riscos() {
       console.log('Riscos carregados:', data);
       setRiscos(data || []);
     } catch (error: any) {
-      toast.error('Erro ao carregar riscos: ' + error.message);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar riscos: " + error.message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -163,12 +168,19 @@ export function Riscos() {
 
       if (error) throw error;
 
-      toast.success('Risco excluído com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Risco excluído com sucesso!",
+      });
       setDeleteDialogOpen(false);
       setRiscoToDelete(null);
       fetchRiscos();
     } catch (error: any) {
-      toast.error('Erro ao excluir risco: ' + error.message);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir risco: " + error.message,
+        variant: "destructive",
+      });
     }
   };
 

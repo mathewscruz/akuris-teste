@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, BarChart3, FileText, Users, TrendingUp, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import { useGapAnalysisStats } from '@/hooks/useGapAnalysisStats';
 import { FrameworkDialog } from '@/components/gap-analysis/FrameworkDialog';
 import { AssessmentDialog } from '@/components/gap-analysis/AssessmentDialog';
@@ -35,6 +36,7 @@ interface Assessment {
 }
 
 export default function GapAnalysis() {
+  const { toast } = useToast();
   const [isFrameworkDialogOpen, setIsFrameworkDialogOpen] = useState(false);
   const [isAssessmentDialogOpen, setIsAssessmentDialogOpen] = useState(false);
   const [selectedFramework, setSelectedFramework] = useState<Framework | null>(null);
@@ -77,10 +79,18 @@ export default function GapAnalysis() {
 
   const handleFrameworkSuccess = () => {
     setIsFrameworkDialogOpen(false);
+    toast({
+      title: "Sucesso",
+      description: "Framework criado/atualizado com sucesso!",
+    });
   };
 
   const handleAssessmentSuccess = () => {
     setIsAssessmentDialogOpen(false);
+    toast({
+      title: "Sucesso",
+      description: "Avaliação criada/atualizada com sucesso!",
+    });
   };
 
   const handleStartAssessment = (framework: Framework) => {

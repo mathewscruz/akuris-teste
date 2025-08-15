@@ -14,7 +14,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useToast } from '@/hooks/use-toast';
 import { useAuditoriaData, useUsuariosEmpresa } from "@/hooks/useAuditoriaData";
 import AuditoriaDialog from "@/components/auditorias/AuditoriaDialog";
 import TrabalhosDialog from "@/components/auditorias/TrabalhosDialog";
@@ -47,6 +47,7 @@ const getPrioridadeBadge = (prioridade: string) => {
 };
 
 const Auditorias = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
@@ -82,7 +83,11 @@ const Auditorias = () => {
       const { data, error } = await query;
 
       if (error) {
-        toast.error('Erro ao carregar auditorias');
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar auditorias",
+          variant: "destructive",
+        });
         throw error;
       }
 
@@ -104,11 +109,18 @@ const Auditorias = () => {
       .eq('id', id);
 
     if (error) {
-      toast.error('Erro ao excluir auditoria');
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir auditoria",
+        variant: "destructive",
+      });
       return;
     }
 
-    toast.success('Auditoria excluída com sucesso');
+    toast({
+      title: "Sucesso",
+      description: "Auditoria excluída com sucesso",
+    });
     refetch();
   };
 

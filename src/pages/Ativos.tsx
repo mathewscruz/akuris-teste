@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useAtivosStats } from '@/hooks/useAtivosStats';
 import LocalizacaoSelect from '@/components/ativos/LocalizacaoSelect';
@@ -113,6 +113,7 @@ const valoresNegocio = ['alto', 'medio', 'baixo'];
 
 const Ativos = () => {
   const { profile } = useAuth();
+  const { toast } = useToast();
   const [ativos, setAtivos] = useState<Ativo[]>([]);
   const [loading, setLoading] = useState(true);
   const { data: stats, isLoading: statsLoading } = useAtivosStats();
@@ -171,7 +172,11 @@ const Ativos = () => {
       setAtivos(data || []);
     } catch (error) {
       console.error('Error fetching ativos:', error);
-      toast.error('Erro ao carregar ativos');
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar ativos",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -181,7 +186,11 @@ const Ativos = () => {
     e.preventDefault();
     
     if (!profile?.empresa_id) {
-      toast.error('Usuário deve estar vinculado a uma empresa');
+      toast({
+        title: "Erro",
+        description: "Usuário deve estar vinculado a uma empresa",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -200,14 +209,20 @@ const Ativos = () => {
           .eq('id', editingAtivo.id);
 
         if (error) throw error;
-        toast.success('Ativo atualizado com sucesso!');
+        toast({
+          title: "Sucesso",
+          description: "Ativo atualizado com sucesso!",
+        });
       } else {
         const { error } = await supabase
           .from('ativos')
           .insert(ativoData);
 
         if (error) throw error;
-        toast.success('Ativo criado com sucesso!');
+        toast({
+          title: "Sucesso",
+          description: "Ativo criado com sucesso!",
+        });
       }
 
       setIsDialogOpen(false);
@@ -216,7 +231,11 @@ const Ativos = () => {
       fetchAtivos();
     } catch (error: any) {
       console.error('Error saving ativo:', error);
-      toast.error(error.message || 'Erro ao salvar ativo');
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao salvar ativo",
+        variant: "destructive",
+      });
     }
   };
 
@@ -254,11 +273,18 @@ const Ativos = () => {
         .eq('id', deleteConfirm.ativoId);
 
       if (error) throw error;
-      toast.success('Ativo excluído com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Ativo excluído com sucesso!",
+      });
       fetchAtivos();
     } catch (error: any) {
       console.error('Error deleting ativo:', error);
-      toast.error(error.message || 'Erro ao excluir ativo');
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao excluir ativo",
+        variant: "destructive",
+      });
     }
   };
 

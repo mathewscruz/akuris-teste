@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { DueDiligenceDashboard } from '@/components/due-diligence/DueDiligenceDashboard';
 import { TemplatesManager } from '@/components/due-diligence/TemplatesManager';
 import { AssessmentsManagerEnhanced } from '@/components/due-diligence/AssessmentsManagerEnhanced';
@@ -9,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/ui/page-header';
 
 export default function DueDiligence() {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   return (
