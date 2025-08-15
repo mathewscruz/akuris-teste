@@ -472,67 +472,68 @@ export function Riscos() {
           />
         </div>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="rounded-lg border overflow-hidden">
+          <CardContent className="p-0">
             {/* Custom header with search and action buttons */}
-            <div className="flex items-center justify-between gap-4 mb-4">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Buscar riscos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+            <div className="p-6 pb-4">
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Buscar riscos..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setCategoriasDialogOpen(true)} className="whitespace-nowrap">
+                    <Tag className="mr-2 h-4 w-4" />
+                    Categorias
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setMatrizDialogOpen(true)} className="whitespace-nowrap">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Matriz
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowFilters(!showFilters)}
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filtros
+                  </Button>
+                  <Button size="sm" onClick={openCreateDialog}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Novo Risco
+                  </Button>
+                </div>
               </div>
-              
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setCategoriasDialogOpen(true)} className="whitespace-nowrap">
-                  <Tag className="mr-2 h-4 w-4" />
-                  Categorias
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setMatrizDialogOpen(true)} className="whitespace-nowrap">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Matriz
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filtros
-                </Button>
-                <Button onClick={openCreateDialog}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Novo Risco
-                </Button>
-              </div>
+
+              {/* Filters row */}
+              {showFilters && (
+                <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg">
+                  {filters.map((filter) => (
+                    <Select key={filter.key} value={filter.value} onValueChange={filter.onChange}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder={filter.label} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filter.options.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Filters row */}
-            {showFilters && (
-              <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
-                {filters.map((filter) => (
-                  <Select key={filter.key} value={filter.value} onValueChange={filter.onChange}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder={filter.label} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filter.options.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ))}
-              </div>
-            )}
-
-            {/* Table without built-in header */}
-            <div className="rounded-lg border overflow-hidden">
-              <Table>
+            {/* Table integrated directly */}
+            <Table>
                 <TableHeader>
                   <TableRow>
                     {riscoColumns.map((column) => (
@@ -600,7 +601,6 @@ export function Riscos() {
                   )}
                 </TableBody>
               </Table>
-            </div>
           </CardContent>
         </Card>
         
