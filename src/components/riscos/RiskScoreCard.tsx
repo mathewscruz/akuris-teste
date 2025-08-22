@@ -19,7 +19,7 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
           <div className="space-y-4">
             <div className="h-8 w-16 bg-muted animate-pulse rounded" />
             <div className="h-2 w-full bg-muted animate-pulse rounded" />
-            <div className="grid grid-cols-4 gap-2">
+            <div className="space-y-2">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="h-4 bg-muted animate-pulse rounded" />
               ))}
@@ -36,6 +36,15 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
   const mediumPercentage = stats.total > 0 ? Math.round((stats.medios / stats.total) * 100) : 0;
   const lowPercentage = stats.total > 0 ? Math.round((stats.baixos / stats.total) * 100) : 0;
 
+  // Calcular tendência real baseada na efetividade dos tratamentos
+  const treatmentEfficiency = stats.total > 0 ? (stats.tratados / stats.total) * 100 : 0;
+  const acceptanceRate = stats.total > 0 ? (stats.aceitos / stats.total) * 100 : 0;
+  const criticalityScore = 100 - (criticalPercentage * 0.5 + highPercentage * 0.3 + mediumPercentage * 0.15 + lowPercentage * 0.05);
+  
+  // Tendência baseada na combinação de fatores (pode ser positiva ou negativa)
+  const trendValue = Math.round((treatmentEfficiency + acceptanceRate + criticalityScore) / 3 - 50);
+  const isPositiveTrend = trendValue >= 0;
+
   return (
     <Card className="bg-card border border-border shadow-card">
       <CardHeader className="pb-2">
@@ -47,61 +56,76 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
         {/* Score Principal */}
         <div className="flex items-center justify-between">
           <div className="text-3xl font-bold text-foreground">{scorePercentage}%</div>
-          <div className="flex items-center gap-1 text-success text-sm font-medium">
-            <TrendingUp className="h-3 w-3" />
-            <span>+5.7%</span>
+          <div className={`flex items-center gap-1 text-sm font-medium ${isPositiveTrend ? 'text-success' : 'text-destructive'}`}>
+            <TrendingUp className={`h-3 w-3 ${!isPositiveTrend ? 'rotate-180' : ''}`} />
+            <span>{isPositiveTrend ? '+' : ''}{trendValue}%</span>
           </div>
         </div>
 
-        {/* Barra de Progresso Segmentada */}
-        <div className="w-full bg-muted rounded-full h-2 flex overflow-hidden">
-          {stats.criticos > 0 && (
-            <div 
-              className="bg-destructive h-full" 
-              style={{ width: `${criticalPercentage}%` }}
-            />
-          )}
-          {stats.altos > 0 && (
-            <div 
-              className="bg-warning h-full" 
-              style={{ width: `${highPercentage}%` }}
-            />
-          )}
-          {stats.medios > 0 && (
-            <div 
-              className="bg-info h-full" 
-              style={{ width: `${mediumPercentage}%` }}
-            />
-          )}
-          {stats.baixos > 0 && (
-            <div 
-              className="bg-success h-full" 
-              style={{ width: `${lowPercentage}%` }}
-            />
-          )}
-        </div>
+        {/* Barras Horizontais Dinâmicas */}
+        <div className="space-y-2">
+          {/* Crítico */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs font-medium text-foreground">CRÍTICO</span>
+            </div>
+            <div className="flex items-center gap-2 flex-1 ml-2">
+              <div className="flex-1 bg-muted/30 rounded-full h-2 overflow-hidden">
+                <div 
+                  className="bg-destructive h-full rounded-full transition-all duration-300" 
+                  style={{ width: `${criticalPercentage}%` }}
+                />
+              </div>
+              <span className="text-xs font-bold text-foreground min-w-[2rem] text-right">{criticalPercentage}%</span>
+            </div>
+          </div>
 
-        {/* Distribuição por Criticidade */}
-        <div className="grid grid-cols-4 gap-2 text-xs">
-          <div className="flex flex-col items-center">
-            <div className="w-2 h-2 bg-destructive rounded-full mb-1" />
-            <span className="text-muted-foreground">Crítico</span>
-            <span className="font-medium text-foreground">{criticalPercentage}%</span>
+          {/* Alto */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs font-medium text-foreground">ALTO</span>
+            </div>
+            <div className="flex items-center gap-2 flex-1 ml-2">
+              <div className="flex-1 bg-muted/30 rounded-full h-2 overflow-hidden">
+                <div 
+                  className="bg-warning h-full rounded-full transition-all duration-300" 
+                  style={{ width: `${highPercentage}%` }}
+                />
+              </div>
+              <span className="text-xs font-bold text-foreground min-w-[2rem] text-right">{highPercentage}%</span>
+            </div>
           </div>
-          <div className="flex flex-col items-center">
-            <div className="w-2 h-2 bg-warning rounded-full mb-1" />
-            <span className="text-muted-foreground">Alto</span>
-            <span className="font-medium text-foreground">{highPercentage}%</span>
+
+          {/* Médio */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs font-medium text-foreground">MÉDIO</span>
+            </div>
+            <div className="flex items-center gap-2 flex-1 ml-2">
+              <div className="flex-1 bg-muted/30 rounded-full h-2 overflow-hidden">
+                <div 
+                  className="bg-info h-full rounded-full transition-all duration-300" 
+                  style={{ width: `${mediumPercentage}%` }}
+                />
+              </div>
+              <span className="text-xs font-bold text-foreground min-w-[2rem] text-right">{mediumPercentage}%</span>
+            </div>
           </div>
-          <div className="flex flex-col items-center">
-            <div className="w-2 h-2 bg-info rounded-full mb-1" />
-            <span className="text-muted-foreground">Médio</span>
-            <span className="font-medium text-foreground">{mediumPercentage}%</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="w-2 h-2 bg-success rounded-full mb-1" />
-            <span className="text-muted-foreground">Baixo</span>
-            <span className="font-medium text-foreground">{lowPercentage}%</span>
+
+          {/* Baixo */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs font-medium text-foreground">BAIXO</span>
+            </div>
+            <div className="flex items-center gap-2 flex-1 ml-2">
+              <div className="flex-1 bg-muted/30 rounded-full h-2 overflow-hidden">
+                <div 
+                  className="bg-success h-full rounded-full transition-all duration-300" 
+                  style={{ width: `${lowPercentage}%` }}
+                />
+              </div>
+              <span className="text-xs font-bold text-foreground min-w-[2rem] text-right">{lowPercentage}%</span>
+            </div>
           </div>
         </div>
       </CardContent>
