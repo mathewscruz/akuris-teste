@@ -23,6 +23,7 @@ import { RiscoDialog } from '@/components/riscos/RiscoDialog';
 import { MatrizDialog } from '@/components/riscos/MatrizDialog';
 import { CategoriasDialog } from '@/components/riscos/CategoriasDialog';
 import { RiscoAnexosIcone } from '@/components/riscos/RiscoAnexosIcone';
+import { RiskScoreCard } from '@/components/riscos/RiskScoreCard';
 
 interface Risco {
   id: string;
@@ -462,14 +463,7 @@ export function Riscos() {
             loading={!stats}
           />
 
-          <StatCard
-            title="Efetividade"
-            value={stats?.tratados || 0}
-            description="Com avaliação residual"
-            icon={<Shield className="h-4 w-4 text-muted-foreground" />}
-            variant="info"
-            loading={!stats}
-          />
+          <RiskScoreCard stats={stats} loading={!stats} />
         </div>
 
         <Card className="rounded-lg border overflow-hidden">
