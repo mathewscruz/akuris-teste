@@ -3946,6 +3946,7 @@ export type Database = {
           expires_at: string | null
           id: string
           is_temporary: boolean | null
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
@@ -3953,6 +3954,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_temporary?: boolean | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
@@ -3960,6 +3962,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_temporary?: boolean | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: []
