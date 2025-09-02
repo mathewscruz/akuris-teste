@@ -115,10 +115,11 @@ export default function LandingPage() {
       <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-foreground">GovernAII</span>
+            <img 
+              src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/sign/logotipo/Governiaa%20(500%20x%20200%20px)%20(20).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NTdhMjYzYS1jZjc1LTQ3OGYtYjNkMy01NWM2ODViMTQ0MTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvdGlwby9Hb3Zlcm5pYWEgKDUwMCB4IDIwMCBweCkgKDIwKS5wbmciLCJpYXQiOjE3NTY4MjA3MzIsImV4cCI6MTc4ODM1NjczMn0.lPzbjAHL4z4wjBU8WTAL-IvS3D6W-MjCU47clsRo1t0" 
+              alt="GovernAII" 
+              className="h-8 w-auto"
+            />
           </div>
           
           <Link to="/auth">
@@ -148,11 +149,17 @@ export default function LandingPage() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" className="gap-2" asChild>
-              <Link to="#contato">
-                Solicitar Demonstração
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+            <Button 
+              size="lg" 
+              className="gap-2" 
+              onClick={() => {
+                document.getElementById('contato')?.scrollIntoView({ 
+                  behavior: 'smooth' 
+                });
+              }}
+            >
+              Solicitar Demonstração
+              <ArrowRight className="w-4 h-4" />
             </Button>
             
             <Button variant="outline" size="lg" asChild>
@@ -372,10 +379,11 @@ export default function LandingPage() {
       <footer className="bg-background border-t border-border py-12 px-4">
         <div className="container mx-auto max-w-4xl text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-foreground">GovernAII</span>
+            <img 
+              src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/sign/logotipo/Governiaa%20(500%20x%20200%20px)%20(20).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NTdhMjYzYS1jZjc1LTQ3OGYtYjNkMy01NWM2ODViMTQ0MTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvdGlwby9Hb3Zlcm5pYWEgKDUwMCB4IDIwMCBweCkgKDIwKS5wbmciLCJpYXQiOjE3NTY4MjA3MzIsImV4cCI6MTc4ODM1NjczMn0.lPzbjAHL4z4wjBU8WTAL-IvS3D6W-MjCU47clsRo1t0" 
+              alt="GovernAII" 
+              className="h-8 w-auto"
+            />
           </div>
           
           <p className="text-muted-foreground mb-4">
@@ -383,7 +391,7 @@ export default function LandingPage() {
           </p>
           
           <p className="text-sm text-muted-foreground">
-            © 2024 GovernAII. Todos os direitos reservados.
+            © 2025 GovernAII. Todos os direitos reservados.
           </p>
         </div>
       </footer>
