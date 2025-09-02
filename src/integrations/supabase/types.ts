@@ -623,6 +623,42 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_form_submissions: {
+        Row: {
+          company: string | null
+          created_at: string | null
+          email: string
+          id: string
+          message: string
+          name: string
+          phone: string | null
+          processed_at: string | null
+          status: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          message: string
+          name: string
+          phone?: string | null
+          processed_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          phone?: string | null
+          processed_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       contas_aprovacoes: {
         Row: {
           aprovador_id: string
