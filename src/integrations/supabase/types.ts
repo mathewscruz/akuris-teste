@@ -4200,6 +4200,34 @@ export type Database = {
         Args: { matriz_id: string }
         Returns: boolean
       }
+      popular_ativos_demo: {
+        Args: { p_empresa_id: string; p_user_id: string }
+        Returns: number
+      }
+      popular_categorias_base: {
+        Args: { p_empresa_id: string }
+        Returns: undefined
+      }
+      popular_controles_demo: {
+        Args: { p_empresa_id: string; p_user_id: string }
+        Returns: number
+      }
+      popular_dados_demonstracao: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      popular_documentos_demo: {
+        Args: { p_empresa_id: string; p_user_id: string }
+        Returns: number
+      }
+      popular_incidentes_demo: {
+        Args: { p_empresa_id: string; p_user_id: string }
+        Returns: number
+      }
+      popular_riscos_demo: {
+        Args: { p_empresa_id: string; p_user_id: string }
+        Returns: number
+      }
       requirement_pertence_empresa: {
         Args: { requirement_id: string }
         Returns: boolean
