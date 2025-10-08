@@ -4216,6 +4216,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      popular_dados_demonstracao_direto: {
+        Args: { p_empresa_id: string; p_user_id: string }
+        Returns: Json
+      }
       popular_documentos_demo: {
         Args: { p_empresa_id: string; p_user_id: string }
         Returns: number
