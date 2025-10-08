@@ -174,7 +174,7 @@ export const emailStyles = {
   },
   warningBox: {
     backgroundColor: '#fff8e6',
-    border: '1px solid '#ffd666',
+    border: '1px solid #ffd666',
     borderLeft: '4px solid #faad14',
     borderRadius: '6px',
     padding: '16px',
