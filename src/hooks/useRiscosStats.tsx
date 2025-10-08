@@ -12,6 +12,8 @@ export interface RiscosStats {
   tratamentos_concluidos: number;
   aceitos: number;
   tratados: number;
+  scoreAtual: number;
+  variacao7dias: number | null;
 }
 
 // Função auxiliar para normalizar comparação de nível
@@ -19,21 +21,47 @@ const normalizeNivel = (nivel: string | null | undefined): string => {
   return (nivel || '').toLowerCase().trim();
 };
 
+// Função para calcular score de risco (quanto menor, melhor)
+// Crítico=100, Alto=75, Médio=50, Baixo=25, Muito Baixo=10
+const calcularScore = (nivel: string): number => {
+  const nivelNorm = normalizeNivel(nivel);
+  if (nivelNorm === 'crítico' || nivelNorm === 'muito alto') return 100;
+  if (nivelNorm === 'alto') return 75;
+  if (nivelNorm === 'médio') return 50;
+  if (nivelNorm === 'baixo') return 25;
+  if (nivelNorm === 'muito baixo') return 10;
+  return 0;
+};
+
 export const useRiscosStats = () => {
   return useQuery({
     queryKey: ['riscos-stats'],
     queryFn: async (): Promise<RiscosStats> => {
-      // Buscar riscos
+      const hoje = new Date();
+      const seteDiasAtras = new Date(hoje);
+      seteDiasAtras.setDate(hoje.getDate() - 7);
+
+      // Buscar riscos atuais
       const { data: riscos, error: riscosError } = await supabase
         .from('riscos')
         .select(`
           id,
           nivel_risco_inicial,
           nivel_risco_residual,
-          aceito
+          aceito,
+          created_at,
+          updated_at
         `);
 
       if (riscosError) throw riscosError;
+
+      // Buscar riscos que existiam há 7 dias (criados antes ou na data)
+      const { data: riscosAntigos, error: riscosAntigosError } = await supabase
+        .from('riscos')
+        .select('nivel_risco_inicial, nivel_risco_residual')
+        .lte('created_at', seteDiasAtras.toISOString());
+
+      if (riscosAntigosError) console.error('Erro ao buscar riscos antigos:', riscosAntigosError);
 
       // Normalizar e contar níveis de risco
       const newStats: RiscosStats = {
@@ -52,8 +80,35 @@ export const useRiscosStats = () => {
         tratamentos_andamento: 0,
         tratamentos_concluidos: 0,
         aceitos: riscos?.filter(r => r.aceito).length || 0,
-        tratados: riscos?.filter(r => r.nivel_risco_residual).length || 0
+        tratados: riscos?.filter(r => r.nivel_risco_residual).length || 0,
+        scoreAtual: 0,
+        variacao7dias: null
       };
+
+      // Calcular score atual (média ponderada dos riscos)
+      if (riscos && riscos.length > 0) {
+        const somaScores = riscos.reduce((acc, r) => {
+          // Usar nível residual se existir, senão inicial
+          const nivel = r.nivel_risco_residual || r.nivel_risco_inicial;
+          return acc + calcularScore(nivel);
+        }, 0);
+        newStats.scoreAtual = Math.round(somaScores / riscos.length);
+
+        // Calcular score de 7 dias atrás
+        if (riscosAntigos && riscosAntigos.length > 0) {
+          const somaScoresAntigos = riscosAntigos.reduce((acc, r) => {
+            const nivel = r.nivel_risco_residual || r.nivel_risco_inicial;
+            return acc + calcularScore(nivel);
+          }, 0);
+          const scoreAntigo = somaScoresAntigos / riscosAntigos.length;
+          
+          // Calcular variação percentual (quanto menor o score, melhor - então inversão de sinal)
+          // Se score diminuiu (melhorou), variação é positiva
+          // Se score aumentou (piorou), variação é negativa
+          const variacao = ((scoreAntigo - newStats.scoreAtual) / scoreAntigo) * 100;
+          newStats.variacao7dias = Math.round(variacao);
+        }
+      }
 
       // Buscar estatísticas de tratamentos se houver riscos
       if (riscos && riscos.length > 0) {

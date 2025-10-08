@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { RiscosStats } from "@/hooks/useRiscosStats";
 
 interface RiskScoreCardProps {
@@ -30,20 +30,18 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
     );
   }
 
-  const scorePercentage = stats.total > 0 ? Math.round((stats.tratados / stats.total) * 100) : 0;
   const criticalPercentage = stats.total > 0 ? Math.round((stats.criticos / stats.total) * 100) : 0;
   const highPercentage = stats.total > 0 ? Math.round((stats.altos / stats.total) * 100) : 0;
   const mediumPercentage = stats.total > 0 ? Math.round((stats.medios / stats.total) * 100) : 0;
   const lowPercentage = stats.total > 0 ? Math.round((stats.baixos / stats.total) * 100) : 0;
 
-  // Calcular tendência real baseada na efetividade dos tratamentos
-  const treatmentEfficiency = stats.total > 0 ? (stats.tratados / stats.total) * 100 : 0;
-  const acceptanceRate = stats.total > 0 ? (stats.aceitos / stats.total) * 100 : 0;
-  const criticalityScore = 100 - (criticalPercentage * 0.5 + highPercentage * 0.3 + mediumPercentage * 0.15 + lowPercentage * 0.05);
-  
-  // Tendência baseada na combinação de fatores (pode ser positiva ou negativa)
-  const trendValue = Math.round((treatmentEfficiency + acceptanceRate + criticalityScore) / 3 - 50);
-  const isPositiveTrend = trendValue >= 0;
+  // Score invertido: 100 = pior (todos críticos), 0 = melhor (todos baixos)
+  // Para exibir: inverter para que 100 = melhor
+  const displayScore = stats.total > 0 ? 100 - stats.scoreAtual : 0;
+
+  // Determinar se há variação válida
+  const hasVariation = stats.variacao7dias !== null && stats.variacao7dias !== 0;
+  const isPositiveTrend = stats.variacao7dias && stats.variacao7dias > 0;
 
   return (
     <Card className="bg-card border border-border shadow-card">
@@ -55,11 +53,22 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
       <CardContent className="space-y-4">
         {/* Score Principal */}
         <div className="flex items-center justify-between">
-          <div className="text-3xl font-bold text-foreground">{scorePercentage}%</div>
-          <div className={`flex items-center gap-1 text-sm font-medium ${isPositiveTrend ? 'text-success' : 'text-destructive'}`}>
-            <TrendingUp className={`h-3 w-3 ${!isPositiveTrend ? 'rotate-180' : ''}`} />
-            <span>{isPositiveTrend ? '+' : ''}{trendValue}%</span>
-          </div>
+          <div className="text-3xl font-bold text-foreground">{displayScore}%</div>
+          {hasVariation ? (
+            <div className={`flex items-center gap-1 text-sm font-medium ${isPositiveTrend ? 'text-success' : 'text-destructive'}`}>
+              {isPositiveTrend ? (
+                <TrendingUp className="h-3 w-3" />
+              ) : (
+                <TrendingDown className="h-3 w-3" />
+              )}
+              <span>{isPositiveTrend ? '+' : ''}{stats.variacao7dias}%</span>
+            </div>
+          ) : stats.total > 0 ? (
+            <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
+              <Minus className="h-3 w-3" />
+              <span>-</span>
+            </div>
+          ) : null}
         </div>
 
         {/* Barras Horizontais Dinâmicas */}
