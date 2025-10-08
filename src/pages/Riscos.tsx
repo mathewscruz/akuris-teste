@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag, Edit, FileText, Trash2, Filter, LayoutGrid, Table as TableIcon, X } from 'lucide-react';
+import { Plus, Search, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag, Edit, FileText, Trash2, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
+import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
@@ -23,10 +24,6 @@ import { MatrizDialog } from '@/components/riscos/MatrizDialog';
 import { CategoriasDialog } from '@/components/riscos/CategoriasDialog';
 import { RiscoAnexosIcone } from '@/components/riscos/RiscoAnexosIcone';
 import { RiskScoreCard } from '@/components/riscos/RiskScoreCard';
-import { AnimatedStatCard } from '@/components/riscos/AnimatedStatCard';
-import { RiscosCharts } from '@/components/riscos/RiscosCharts';
-import { MatrizHeatmap } from '@/components/riscos/MatrizHeatmap';
-import { RiscosCardView } from '@/components/riscos/RiscosCardView';
 
 interface Risco {
   id: string;
@@ -75,7 +72,6 @@ export function Riscos() {
   const [matrizConfig, setMatrizConfig] = useState<MatrizConfig | null>(null);
   const [categoriasDialogOpen, setCategoriasDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   const fetchRiscos = async () => {
     try {
@@ -439,204 +435,100 @@ export function Riscos() {
           description="Identifique, avalie e monitore riscos organizacionais de forma estruturada"
         />
 
-        {/* KPI Cards - Animados */}
+        {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <AnimatedStatCard
+          <StatCard
             title="Total de Riscos"
             value={stats?.total || 0}
             description={`${stats?.criticos || 0} críticos, ${stats?.altos || 0} altos`}
             icon={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}
             variant={stats?.criticos ? "destructive" : "default"}
+            loading={!stats}
           />
 
-          <AnimatedStatCard
+          <StatCard
             title="Tratamentos Concluídos"
             value={stats?.tratamentos_concluidos || 0}
             description={`${stats?.tratamentos_andamento || 0} em andamento`}
             icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
             variant="success"
+            loading={!stats}
           />
 
-          <AnimatedStatCard
+          <StatCard
             title="Riscos Aceitos"
             value={stats?.aceitos || 0}
             description="Aceitos formalmente"
             icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
             variant="warning"
+            loading={!stats}
           />
 
           <RiskScoreCard stats={stats} loading={!stats} />
-        </div>
-
-        {/* Gráficos e Heatmap */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
-            <RiscosCharts stats={stats} />
-          </div>
-          <div className="lg:col-span-1">
-            <MatrizHeatmap riscos={filteredRiscos} />
-          </div>
         </div>
 
         <Card className="rounded-lg border overflow-hidden">
           <CardContent className="p-0">
             {/* Custom header with search and action buttons */}
             <div className="p-6 pb-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                      placeholder="Buscar riscos..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <div className="flex gap-1 border rounded-lg p-1">
-                      <Button
-                        variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-                        size="sm"
-                        onClick={() => setViewMode('table')}
-                      >
-                        <TableIcon className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
-                        size="sm"
-                        onClick={() => setViewMode('cards')}
-                      >
-                        <LayoutGrid className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <Button variant="outline" size="sm" onClick={() => setCategoriasDialogOpen(true)} className="whitespace-nowrap">
-                      <Tag className="mr-2 h-4 w-4" />
-                      Categorias
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => setMatrizDialogOpen(true)} className="whitespace-nowrap">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Matriz
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowFilters(!showFilters)}
-                    >
-                      <Filter className="h-4 w-4 mr-2" />
-                      Filtros
-                    </Button>
-                    <Button size="sm" onClick={openCreateDialog}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Novo Risco
-                    </Button>
-                  </div>
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Buscar riscos..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
                 
-                {/* Filtros Ativos (Chips) */}
-                {(statusFilter || nivelFilter || aceitoFilter) && (
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {statusFilter && statusFilter !== 'all' && (
-                      <Badge variant="secondary" className="gap-2">
-                        Status: {statusFilter}
-                        <X 
-                          className="h-3 w-3 cursor-pointer" 
-                          onClick={() => setStatusFilter('')}
-                        />
-                      </Badge>
-                    )}
-                    {nivelFilter && nivelFilter !== 'all' && (
-                      <Badge variant="secondary" className="gap-2">
-                        Nível: {nivelFilter}
-                        <X 
-                          className="h-3 w-3 cursor-pointer" 
-                          onClick={() => setNivelFilter('')}
-                        />
-                      </Badge>
-                    )}
-                    {aceitoFilter && aceitoFilter !== 'all' && (
-                      <Badge variant="secondary" className="gap-2">
-                        {aceitoFilter === 'aceito' ? 'Aceitos' : 'Não Aceitos'}
-                        <X 
-                          className="h-3 w-3 cursor-pointer" 
-                          onClick={() => setAceitoFilter('')}
-                        />
-                      </Badge>
-                    )}
-                  </div>
-                )}
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setCategoriasDialogOpen(true)} className="whitespace-nowrap">
+                    <Tag className="mr-2 h-4 w-4" />
+                    Categorias
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setMatrizDialogOpen(true)} className="whitespace-nowrap">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Matriz
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowFilters(!showFilters)}
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filtros
+                  </Button>
+                  <Button size="sm" onClick={openCreateDialog}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Novo Risco
+                  </Button>
+                </div>
               </div>
-              
-              {/* Filtros Expandidos */}
+
+              {/* Filters row */}
               {showFilters && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Status</label>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todos os status" />
+                <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg">
+                  {filters.map((filter) => (
+                    <Select key={filter.key} value={filter.value} onValueChange={filter.onChange}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder={filter.label} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="identificado">Identificado</SelectItem>
-                        <SelectItem value="analisado">Analisado</SelectItem>
-                        <SelectItem value="tratado">Tratado</SelectItem>
-                        <SelectItem value="monitorado">Monitorado</SelectItem>
-                        <SelectItem value="aceito">Aceito</SelectItem>
+                        {filter.options.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Nível</label>
-                    <Select value={nivelFilter} onValueChange={setNivelFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todos os níveis" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="Crítico">Crítico</SelectItem>
-                        <SelectItem value="Alto">Alto</SelectItem>
-                        <SelectItem value="Médio">Médio</SelectItem>
-                        <SelectItem value="Baixo">Baixo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Aceite</label>
-                    <Select value={aceitoFilter} onValueChange={setAceitoFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todos" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="aceito">Aceitos</SelectItem>
-                        <SelectItem value="nao_aceito">Não Aceitos</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  ))}
                 </div>
               )}
             </div>
 
-            {/* Table/Cards content */}
-            {filteredRiscos.length === 0 ? (
-              <div className="p-6">
-                <EmptyState
-                  title="Nenhum risco encontrado"
-                  description="Cadastre o primeiro risco da sua organização"
-                  icon={<AlertTriangle />}
-                  action={{
-                    label: "Novo Risco",
-                    onClick: openCreateDialog
-                  }}
-                />
-              </div>
-            ) : viewMode === 'table' ? (
-              <Table>
+            {/* Table integrated directly */}
+            <Table>
                 <TableHeader>
                   <TableRow>
                     {riscoColumns.map((column) => (
@@ -702,18 +594,8 @@ export function Riscos() {
                       </TableRow>
                     ))
                   )}
-                 </TableBody>
+                </TableBody>
               </Table>
-            ) : (
-              <RiscosCardView
-                riscos={filteredRiscos}
-                onEdit={handleEdit}
-                onDelete={openDeleteDialog}
-                getNivelBadgeVariant={getNivelBadgeVariant}
-                getNivelBadgeStyle={getNivelBadgeStyle}
-                getStatusBadgeVariant={getStatusBadgeVariant}
-              />
-            )}
           </CardContent>
         </Card>
         
