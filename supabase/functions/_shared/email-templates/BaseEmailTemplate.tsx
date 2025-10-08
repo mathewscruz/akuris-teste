@@ -193,7 +193,7 @@ export const emailStyles = {
     border: '1px solid #e6ebf1',
     borderRadius: '4px',
     color: '#1a1a1a',
-    fontFamily: 'Courier, "Courier New", monospace',
+    fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
     fontSize: '14px',
     fontWeight: '600',
     padding: '12px 16px',

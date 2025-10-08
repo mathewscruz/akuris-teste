@@ -112,7 +112,7 @@ const handler = async (req: Request): Promise<Response> => {
               border: 1px solid #e6ebf1;
               border-radius: 4px;
               color: #1a1a1a;
-              font-family: Courier, "Courier New", monospace;
+              font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
               font-size: 14px;
               font-weight: 600;
               padding: 12px 16px;
