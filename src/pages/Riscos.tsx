@@ -20,6 +20,7 @@ import { useRiscosStats } from '@/hooks/useRiscosStats';
 import { useToast } from '@/hooks/use-toast';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { RiscoDialog } from '@/components/riscos/RiscoDialog';
+import { TratamentosDialog } from '@/components/riscos/TratamentosDialog';
 import { MatrizDialog } from '@/components/riscos/MatrizDialog';
 import { CategoriasDialog } from '@/components/riscos/CategoriasDialog';
 import { RiscoAnexosIcone } from '@/components/riscos/RiscoAnexosIcone';
@@ -67,6 +68,8 @@ export function Riscos() {
   const [riscoDialogOpen, setRiscoDialogOpen] = useState(false);
   const [matrizDialogOpen, setMatrizDialogOpen] = useState(false);
   const [editingRisco, setEditingRisco] = useState<Risco | null>(null);
+  const [tratamentosDialogOpen, setTratamentosDialogOpen] = useState(false);
+  const [tratamentosRisco, setTratamentosRisco] = useState<Risco | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [riscoToDelete, setRiscoToDelete] = useState<Risco | null>(null);
   const [matrizConfig, setMatrizConfig] = useState<MatrizConfig | null>(null);
@@ -157,6 +160,11 @@ export function Riscos() {
   const handleEdit = (risco: Risco) => {
     setEditingRisco(risco);
     setRiscoDialogOpen(true);
+  };
+
+  const openTratamentosDialog = (risco: Risco) => {
+    setTratamentosRisco(risco);
+    setTratamentosDialogOpen(true);
   };
 
   const openDeleteDialog = (risco: Risco) => {
@@ -364,13 +372,22 @@ export function Riscos() {
     {
       key: 'actions',
       label: 'Ações',
-      className: undefined,
+      className: 'w-[120px]',
       render: (value: any, risco: Risco) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => openTratamentosDialog(risco)}
+            title="Gerenciar Tratamentos"
+          >
+            <Shield className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => handleEdit(risco)}
+            title="Editar Risco"
           >
             <Edit className="h-4 w-4" />
           </Button>
@@ -378,6 +395,7 @@ export function Riscos() {
             variant="ghost"
             size="sm"
             onClick={() => openDeleteDialog(risco)}
+            title="Excluir Risco"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -606,6 +624,13 @@ export function Riscos() {
           onOpenChange={setRiscoDialogOpen}
           risco={editingRisco}
           onSuccess={handleDialogSuccess}
+        />
+
+        <TratamentosDialog
+          open={tratamentosDialogOpen}
+          onOpenChange={setTratamentosDialogOpen}
+          risco={tratamentosRisco}
+          onSuccess={fetchRiscos}
         />
 
         <MatrizDialog

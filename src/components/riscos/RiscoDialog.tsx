@@ -1,9 +1,7 @@
 
-import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RiscoFormWizard } from './RiscoFormWizard';
-import { TratamentosList } from './TratamentosList';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface RiscoDialogProps {
   open: boolean;
@@ -13,64 +11,29 @@ interface RiscoDialogProps {
 }
 
 export function RiscoDialog({ open, onOpenChange, risco, onSuccess }: RiscoDialogProps) {
-  const [activeTab, setActiveTab] = useState('risco');
-
   const handleSuccess = () => {
     onSuccess();
     onOpenChange(false);
   };
 
-  const handleRiscoFormSuccess = () => {
-    // Não fecha o dialog para permitir navegação para tratamentos
-    onSuccess();
-    if (!risco) {
-      // Se é um novo risco, muda para aba de tratamentos
-      setActiveTab('tratamentos');
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>
-            {risco ? 'Gerenciar Risco' : 'Novo Risco'}
+            {risco ? 'Editar Risco' : 'Novo Risco'}
           </DialogTitle>
           <DialogDescription>
             {risco 
-              ? 'Gerencie as informações do risco e seus tratamentos.' 
-              : 'Cadastre um novo risco organizacional e defina seus tratamentos.'
+              ? 'Atualize as informações do risco conforme necessário.' 
+              : 'Preencha os campos abaixo para cadastrar um novo risco. Você pode preencher na ordem que preferir.'
             }
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="risco">Informações do Risco</TabsTrigger>
-            <TabsTrigger value="tratamentos" disabled={!risco}>
-              Tratamentos {risco ? '' : '(Salve o risco primeiro)'}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="risco" className="mt-6">
-            <RiscoFormWizard risco={risco} onSuccess={handleRiscoFormSuccess} />
-          </TabsContent>
-
-          <TabsContent value="tratamentos" className="mt-6">
-            {risco && (
-              <TratamentosList 
-                riscoId={risco.id} 
-                riscoNome={risco.nome}
-                riscoData={{
-                  nome: risco.nome,
-                  descricao: risco.descricao || '',
-                  categoria: risco.categoria?.nome,
-                  nivel_risco_inicial: risco.nivel_risco_inicial
-                }}
-              />
-            )}
-          </TabsContent>
-        </Tabs>
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <RiscoFormWizard risco={risco} onSuccess={handleSuccess} />
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
