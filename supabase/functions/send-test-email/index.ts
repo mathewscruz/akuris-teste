@@ -168,7 +168,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <div class="content">
               <p>
-                Sua conta foi criada com sucesso na plataforma <strong>${companyName}</strong>.
+                Sua conta foi criada com sucesso no GovernAII.
               </p>
 
               <p>
@@ -203,7 +203,7 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
             
             <div class="footer">
-              <p>Este é um e-mail automático de <strong>${companyName}</strong>.</p>
+              <p>Este é um e-mail automático do GovernAII.</p>
               <p>Em caso de dúvidas, entre em contato conosco.</p>
               <p>
                 <a href="https://governaii.com.br" style="color: #2563eb; text-decoration: none;">GovernAII</a>

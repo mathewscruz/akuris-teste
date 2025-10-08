@@ -60,7 +60,7 @@ export const BaseEmailTemplate = ({
           {showFooter && (
             <Section style={footer}>
               <Text style={footerText}>
-                Este é um e-mail automático de <strong>{companyName}</strong>.
+                Este é um e-mail automático do GovernAII.
                 <br />
                 Em caso de dúvidas, entre em contato conosco.
               </Text>
