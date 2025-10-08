@@ -10,7 +10,6 @@ import { PermissionMatrix } from '@/components/configuracoes/PermissionMatrix';
 import ConfiguracoesGerais from '@/components/configuracoes/ConfiguracoesGerais';
 import { ReminderSettings } from '@/components/configuracoes/ReminderSettings';
 import { EmailTestDialog } from '@/components/configuracoes/EmailTestDialog';
-import { DadosDemonstracao } from '@/components/configuracoes/DadosDemonstracao';
 import { Button } from '@/components/ui/button';
 import { Mail } from 'lucide-react';
 
@@ -147,8 +146,6 @@ const Configuracoes = () => {
                 <ConfiguracoesGerais userRole={userRole} />
               </CardContent>
             </Card>
-
-            <DadosDemonstracao />
 
             <Card>
               <CardHeader>
