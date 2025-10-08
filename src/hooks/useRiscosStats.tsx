@@ -14,6 +14,11 @@ export interface RiscosStats {
   tratados: number;
 }
 
+// Função auxiliar para normalizar comparação de nível
+const normalizeNivel = (nivel: string | null | undefined): string => {
+  return (nivel || '').toLowerCase().trim();
+};
+
 export const useRiscosStats = () => {
   return useQuery({
     queryKey: ['riscos-stats'],
@@ -30,12 +35,19 @@ export const useRiscosStats = () => {
 
       if (riscosError) throw riscosError;
 
+      // Normalizar e contar níveis de risco
       const newStats: RiscosStats = {
         total: riscos?.length || 0,
-        criticos: riscos?.filter(r => r.nivel_risco_inicial === 'Crítico' || r.nivel_risco_inicial === 'Muito Alto').length || 0,
-        altos: riscos?.filter(r => r.nivel_risco_inicial === 'Alto').length || 0,
-        medios: riscos?.filter(r => r.nivel_risco_inicial === 'Médio').length || 0,
-        baixos: riscos?.filter(r => r.nivel_risco_inicial === 'Baixo' || r.nivel_risco_inicial === 'Muito Baixo').length || 0,
+        criticos: riscos?.filter(r => {
+          const nivel = normalizeNivel(r.nivel_risco_inicial);
+          return nivel === 'crítico' || nivel === 'muito alto';
+        }).length || 0,
+        altos: riscos?.filter(r => normalizeNivel(r.nivel_risco_inicial) === 'alto').length || 0,
+        medios: riscos?.filter(r => normalizeNivel(r.nivel_risco_inicial) === 'médio').length || 0,
+        baixos: riscos?.filter(r => {
+          const nivel = normalizeNivel(r.nivel_risco_inicial);
+          return nivel === 'baixo' || nivel === 'muito baixo';
+        }).length || 0,
         tratamentos_pendentes: 0,
         tratamentos_andamento: 0,
         tratamentos_concluidos: 0,
@@ -61,6 +73,8 @@ export const useRiscosStats = () => {
 
       return newStats;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 0, // Sempre refetch para dados em tempo real
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 };

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RiscoForm } from './RiscoForm';
+import { RiscoFormWizard } from './RiscoFormWizard';
 import { TratamentosList } from './TratamentosList';
 
 interface RiscoDialogProps {
@@ -53,7 +53,7 @@ export function RiscoDialog({ open, onOpenChange, risco, onSuccess }: RiscoDialo
           </TabsList>
 
           <TabsContent value="risco" className="mt-6">
-            <RiscoForm risco={risco} onSuccess={handleRiscoFormSuccess} />
+            <RiscoFormWizard risco={risco} onSuccess={handleRiscoFormSuccess} />
           </TabsContent>
 
           <TabsContent value="tratamentos" className="mt-6">

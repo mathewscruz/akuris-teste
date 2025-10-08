@@ -200,6 +200,7 @@ export function Riscos() {
     setRiscoDialogOpen(false);
     setEditingRisco(null);
     fetchRiscos();
+    // Invalidar cache de stats para forçar recálculo em tempo real
     refetchStats();
   };
 
