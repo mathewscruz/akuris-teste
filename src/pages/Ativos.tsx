@@ -177,24 +177,17 @@ const Ativos = () => {
       const { data, error } = await query;
       if (error) throw error;
       
-      console.log('[Ativos] Dados brutos:', data);
-      
       // Fetch user names for proprietarios
       if (data && data.length > 0) {
         const proprietarioIds = data
           .map(a => a.proprietario)
           .filter(p => p !== null);
         
-        console.log('[Ativos] IDs de proprietários encontrados:', proprietarioIds);
-        
         if (proprietarioIds.length > 0) {
-          const { data: profiles, error: profilesError } = await supabase
+          const { data: profiles } = await supabase
             .from('profiles')
             .select('user_id, nome')
             .in('user_id', proprietarioIds);
-          
-          console.log('[Ativos] Perfis encontrados:', profiles);
-          console.log('[Ativos] Erro nos perfis:', profilesError);
           
           const profileMap = new Map(
             profiles?.map(p => [p.user_id, { nome: p.nome }]) || []
@@ -202,17 +195,14 @@ const Ativos = () => {
           
           const mappedData = data.map(ativo => {
             const profileData = ativo.proprietario ? profileMap.get(ativo.proprietario) : null;
-            console.log(`[Ativos] Ativo ${ativo.nome} - proprietario: ${ativo.proprietario}, profileData:`, profileData);
             return {
               ...ativo,
               proprietario_nome: profileData?.nome || null
             };
           });
           
-          console.log('[Ativos] Dados mapeados finais:', mappedData);
           setAtivos(mappedData);
         } else {
-          console.log('[Ativos] Nenhum proprietário encontrado nos ativos');
           setAtivos(data);
         }
       } else {
@@ -246,6 +236,8 @@ const Ativos = () => {
       const ativoData = {
         ...formData,
         empresa_id: profile.empresa_id,
+        proprietario: formData.proprietario || null,
+        localizacao: formData.localizacao || null,
         data_aquisicao: formData.data_aquisicao || null,
         tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : null,
       };
