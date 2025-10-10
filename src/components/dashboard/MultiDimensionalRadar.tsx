@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
 
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload, navigate }: any) => {
   if (!active || !payload || !payload[0]) return null;
 
   const data: RadarDataPoint = payload[0].payload;
@@ -30,8 +30,17 @@ const CustomTooltip = ({ active, payload }: any) => {
   const config = statusConfig[data.details.status];
   const StatusIcon = config.icon;
 
+  const handleClick = () => {
+    if (data.link) {
+      navigate(data.link);
+    }
+  };
+
   return (
-    <div className="bg-background border border-border rounded-lg shadow-lg p-4 min-w-[250px]">
+    <div 
+      className="bg-background border border-border rounded-lg shadow-lg p-4 min-w-[250px] cursor-pointer hover:shadow-xl transition-shadow" 
+      onClick={handleClick}
+    >
       <div className="flex items-center gap-2 mb-3">
         <StatusIcon className={`w-5 h-5 ${config.color}`} />
         <h3 className="font-semibold text-foreground">{data.subject}</h3>
@@ -68,12 +77,6 @@ export const MultiDimensionalRadar = () => {
   const { data, isLoading } = useRadarChartData();
   const navigate = useNavigate();
 
-  const handleClick = (data: any) => {
-    if (data && data.link) {
-      navigate(data.link);
-    }
-  };
-
   if (isLoading) {
     return (
       <Card>
@@ -101,7 +104,7 @@ export const MultiDimensionalRadar = () => {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={400}>
-          <RadarChart data={data} onClick={handleClick} className="cursor-pointer">
+          <RadarChart data={data}>
             <PolarGrid 
               strokeDasharray="3 3" 
               stroke="hsl(var(--muted-foreground))"
@@ -133,7 +136,7 @@ export const MultiDimensionalRadar = () => {
               animationDuration={800}
               animationBegin={0}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={(props) => <CustomTooltip {...props} navigate={navigate} />} />
             <Legend
               iconType="circle"
               wrapperStyle={{

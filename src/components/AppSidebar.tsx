@@ -125,16 +125,17 @@ export function AppSidebar() {
   useEffect(() => {
     const activeGroup = getActiveGroup();
     if (activeGroup && !openGroups.includes(activeGroup)) {
-      setOpenGroups(prev => [...prev, activeGroup]);
+      setOpenGroups([activeGroup]);
     }
   }, [currentPath]);
 
   const toggleGroup = (groupTitle: string) => {
-    setOpenGroups(prev => 
-      prev.includes(groupTitle) 
-        ? prev.filter(title => title !== groupTitle)
-        : [...prev, groupTitle]
-    );
+    setOpenGroups(prev => {
+      if (prev.includes(groupTitle)) {
+        return prev.filter(title => title !== groupTitle);
+      }
+      return [groupTitle];
+    });
   };
 
   const isActive = (path: string) => currentPath === path;
