@@ -60,7 +60,7 @@ export const useRadarChartData = () => {
         ? Math.max(0, 100 - (
             (riscosData.criticos * 100 + riscosData.altos * 75 + riscosData.medios * 50 + riscosData.baixos * 25) / 
             (riscosData.total * 100)
-          ) * 100)
+          ))
         : 50;
 
       // 2. CONTROLES INTERNOS
@@ -68,7 +68,7 @@ export const useRadarChartData = () => {
         ? (
             (controlesData.ativos / controlesData.total) * 50 +
             ((controlesData.total - controlesData.vencendoAvaliacao) / controlesData.total) * 50
-          ) * 100
+          )
         : 50;
 
       // 3. GESTÃO DE ATIVOS
@@ -77,15 +77,15 @@ export const useRadarChartData = () => {
             (ativosData.ativos / ativosData.total) * 50 +
             (1 - (ativosData.criticos / ativosData.total)) * 30 +
             (ativosData.altoValorNegocio / ativosData.total) * 20
-          ) * 100
+          )
         : 50;
 
       // 4. INCIDENTES
       const scoreIncidentes = incidentesData.total > 0
-        ? Math.max(0, 100 - (
+        ? Math.min(100, Math.max(0, 100 - (
             (incidentesData.criticos * 100 + incidentesData.altos * 75 + incidentesData.medios * 50 + incidentesData.baixos * 25) / 
             (incidentesData.total * 100)
-          ) * 100) + (incidentesData.mes < 5 ? 10 : 0)
+          )) + (incidentesData.mes < 5 ? 10 : 0))
         : 100; // Se não há incidentes, score máximo
 
       // 5. GAP ANALYSIS
@@ -97,7 +97,7 @@ export const useRadarChartData = () => {
             (dueDiligenceData.completedAssessments / dueDiligenceData.totalAssessments) * 40 +
             (dueDiligenceData.averageScore / 100) * 40 +
             (1 - (dueDiligenceData.expiredAssessments / dueDiligenceData.totalAssessments)) * 20
-          ) * 100
+          )
         : 50;
 
       // 7. DOCUMENTOS
@@ -106,7 +106,7 @@ export const useRadarChartData = () => {
             (documentosData.ativos / documentosData.total) * 30 +
             ((documentosData.total - documentosData.vencidos) / documentosData.total) * 40 +
             (documentosData.aprovados / documentosData.total) * 30
-          ) * 100
+          )
         : 50;
 
       // 8. DENÚNCIAS
@@ -115,7 +115,7 @@ export const useRadarChartData = () => {
             (denunciasData.resolvidas / denunciasData.total) * 60 +
             (1 - (denunciasData.novas / denunciasData.total)) * 20 +
             (1 - (denunciasData.em_andamento / denunciasData.total)) * 20
-          ) * 100
+          )
         : 100; // Se não há denúncias, score máximo
 
       return [
