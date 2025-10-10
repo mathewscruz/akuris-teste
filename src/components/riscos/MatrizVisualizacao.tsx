@@ -187,10 +187,11 @@ export function MatrizVisualizacao() {
                   <div 
                     key={`${probabilidade.valor}-${impacto.valor}`}
                     onClick={() => handleCellClick(riscosNaCelula)}
-                    className={`p-0.5 border border-border rounded min-h-[40px] flex flex-col items-center justify-center relative aspect-square ${
-                      riscosNaCelula.length > 0 ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
+                    className={`p-0.5 border border-border rounded min-h-[40px] flex flex-col items-center justify-center relative aspect-square transition-all ${
+                      riscosNaCelula.length > 0 ? 'cursor-pointer hover:opacity-80 hover:scale-105 hover:shadow-md' : ''
                     }`}
                     style={{ backgroundColor: cor + '20' }}
+                    title={riscosNaCelula.length > 0 ? `Clique para ver ${riscosNaCelula.length} risco(s)` : ''}
                   >
                     {nivelRisco && (
                       <Badge 

@@ -9,6 +9,7 @@ import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,6 +22,7 @@ import LocalizacaoSelect from '@/components/ativos/LocalizacaoSelect';
 import ManutencaoDialog from '@/components/ativos/ManutencaoDialog';
 import TrilhaAuditoriaAtivos from '@/components/ativos/TrilhaAuditoriaAtivos';
 import ImportacaoAtivos from '@/components/ativos/ImportacaoAtivos';
+import { UserSelect } from '@/components/riscos/UserSelect';
 
 interface Ativo {
   id: string;
@@ -28,6 +30,7 @@ interface Ativo {
   tipo: string;
   descricao: string | null;
   proprietario: string | null;
+  proprietario_nome?: string | null;
   localizacao: string | null;
   valor_negocio: string | null;
   criticidade: string;
@@ -163,13 +166,40 @@ const Ativos = () => {
 
   const fetchAtivos = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('ativos')
         .select('*')
         .order(sortField, { ascending: sortDirection === 'asc' });
 
+      const { data, error } = await query;
       if (error) throw error;
-      setAtivos(data || []);
+      
+      // Fetch user names for proprietarios
+      if (data && data.length > 0) {
+        const proprietarioIds = data
+          .map(a => a.proprietario)
+          .filter(p => p !== null);
+        
+        if (proprietarioIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, nome')
+            .in('user_id', proprietarioIds);
+          
+          const profileMap = new Map(profiles?.map(p => [p.user_id, p.nome]) || []);
+          
+          const mappedData = data.map(ativo => ({
+            ...ativo,
+            proprietario_nome: ativo.proprietario ? profileMap.get(ativo.proprietario) : null
+          }));
+          
+          setAtivos(mappedData);
+        } else {
+          setAtivos(data);
+        }
+      } else {
+        setAtivos(data || []);
+      }
     } catch (error) {
       console.error('Error fetching ativos:', error);
       toast({
@@ -431,7 +461,7 @@ const Ativos = () => {
     {
       key: 'proprietario',
       label: 'Proprietário',
-      render: (value: string) => value || '-'
+      render: (value: string, ativo: Ativo) => ativo.proprietario_nome || '-'
     },
     {
       key: 'localizacao',
@@ -512,7 +542,7 @@ const Ativos = () => {
       />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh]">
               <DialogHeader>
                 <DialogTitle>
                   {editingAtivo ? 'Editar Ativo' : 'Novo Ativo'}
@@ -521,6 +551,7 @@ const Ativos = () => {
                   {editingAtivo ? 'Atualize as informações do ativo' : 'Cadastre um novo ativo na plataforma'}
                 </DialogDescription>
               </DialogHeader>
+              <ScrollArea className="max-h-[calc(90vh-120px)] pr-4">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -562,10 +593,10 @@ const Ativos = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="proprietario">Proprietário</Label>
-                    <Input
-                      id="proprietario"
+                    <UserSelect
                       value={formData.proprietario}
-                      onChange={(e) => setFormData(prev => ({...prev, proprietario: e.target.value}))}
+                      onValueChange={(value) => setFormData(prev => ({...prev, proprietario: value}))}
+                      placeholder="Selecionar proprietário..."
                     />
                   </div>
                   <div className="space-y-2">
@@ -703,6 +734,7 @@ const Ativos = () => {
                   </Button>
                 </div>
               </form>
+              </ScrollArea>
         </DialogContent>
       </Dialog>
 
