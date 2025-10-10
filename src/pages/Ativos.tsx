@@ -181,7 +181,7 @@ const Ativos = () => {
       if (data && data.length > 0) {
         const proprietarioIds = data
           .map(a => a.proprietario)
-          .filter(p => p !== null);
+          .filter(p => p && p.trim() !== ''); // Excluir null, undefined e strings vazias
         
         if (proprietarioIds.length > 0) {
           const { data: profiles } = await supabase
@@ -194,7 +194,9 @@ const Ativos = () => {
           );
           
           const mappedData = data.map(ativo => {
-            const profileData = ativo.proprietario ? profileMap.get(ativo.proprietario) : null;
+            const profileData = (ativo.proprietario && ativo.proprietario.trim() !== '') 
+              ? profileMap.get(ativo.proprietario) 
+              : null;
             return {
               ...ativo,
               proprietario_nome: profileData?.nome || null
