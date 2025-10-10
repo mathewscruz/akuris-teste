@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
-import { useAuditoriaData, useUsuariosEmpresa } from "@/hooks/useAuditoriaData";
+import { useUsuariosEmpresa } from "@/hooks/useAuditoriaData";
 import AuditoriaDialog from "@/components/auditorias/AuditoriaDialog";
 import TrabalhosDialog from "@/components/auditorias/TrabalhosDialog";
 import AchadosDialog from "@/components/auditorias/AchadosDialog";
@@ -94,6 +94,42 @@ const Auditorias = () => {
 
       return data || [];
     },
+  });
+
+  // Buscar contagens para todas as auditorias de uma vez
+  const { data: auditoriasCounts } = useQuery({
+    queryKey: ['auditorias-counts', auditorias?.map(a => a.id)],
+    queryFn: async () => {
+      if (!auditorias || auditorias.length === 0) return {};
+      
+      const counts: any = {};
+      
+      for (const auditoria of auditorias) {
+        const trabalhosRes = await supabase
+          .from('auditoria_trabalhos')
+          .select('id', { count: 'exact', head: true })
+          .eq('auditoria_id', auditoria.id);
+          
+        const achadosRes = await supabase
+          .from('auditoria_achados')
+          .select('id', { count: 'exact', head: true })
+          .eq('auditoria_id', auditoria.id);
+          
+        const recomendacoesRes = await supabase
+          .from('auditoria_recomendacoes')
+          .select('*, auditoria_achados!inner(auditoria_id)', { count: 'exact', head: true })
+          .eq('auditoria_achados.auditoria_id', auditoria.id);
+        
+        counts[auditoria.id] = {
+          trabalhos: trabalhosRes.count ?? 0,
+          achados: achadosRes.count ?? 0,
+          recomendacoes: recomendacoesRes.count ?? 0,
+        };
+      }
+      
+      return counts;
+    },
+    enabled: !!auditorias && auditorias.length > 0,
   });
 
   const handleEdit = (auditoria: any) => {
@@ -301,7 +337,7 @@ const Auditorias = () => {
                 ) : (
                   <TooltipProvider>
                     {auditorias.map((auditoria) => {
-                      const { trabalhoCount, achadoCount, recomendacaoCount } = useAuditoriaData(auditoria.id);
+                      const counts = auditoriasCounts?.[auditoria.id] || { trabalhos: 0, achados: 0, recomendacoes: 0 };
                       const auditorResponsavel = usuarios?.find((u: any) => u.user_id === auditoria.auditor_responsavel);
                       
                       return (
@@ -340,19 +376,19 @@ const Auditorias = () => {
                           <TableCell>
                             <div className="flex items-center gap-1">
                               <FileText className="w-4 h-4" />
-                              <span>{trabalhoCount}</span>
+                              <span>{counts.trabalhos}</span>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
                               <AlertTriangle className="w-4 h-4" />
-                              <span>{achadoCount}</span>
+                              <span>{counts.achados}</span>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
-                              <CheckCircle className="w-4 h-4" />
-                              <span>{recomendacaoCount}</span>
+                              <CheckCircle className="w-4 w-4" />
+                              <span>{counts.recomendacoes}</span>
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
@@ -380,7 +416,7 @@ const Auditorias = () => {
                                     <FileText className="w-4 h-4" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Trabalhos ({trabalhoCount})</TooltipContent>
+                                <TooltipContent>Trabalhos ({counts.trabalhos})</TooltipContent>
                               </Tooltip>
                               
                               <Tooltip>
@@ -393,7 +429,7 @@ const Auditorias = () => {
                                     <AlertTriangle className="w-4 h-4" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Achados ({achadoCount})</TooltipContent>
+                                <TooltipContent>Achados ({counts.achados})</TooltipContent>
                               </Tooltip>
                               
                               <Tooltip>
@@ -406,7 +442,7 @@ const Auditorias = () => {
                                     <CheckCircle className="w-4 h-4" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Recomendações ({recomendacaoCount})</TooltipContent>
+                                <TooltipContent>Recomendações ({counts.recomendacoes})</TooltipContent>
                               </Tooltip>
                               
                               <Tooltip>

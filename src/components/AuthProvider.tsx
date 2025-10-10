@@ -175,15 +175,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .select('is_temporary, created_at, expires_at')
           .eq('user_id', user.id)
           .eq('is_temporary', true)
-          .single(),
+          .maybeSingle(),
         { userId: user.id, module: 'auth' }
       );
 
       if (error) {
-        logger.debug('No temporary password record found', { 
+        logger.error('Error checking temporary password', { 
           error: error.message, 
           userId: user.id 
         });
+        setHasTemporaryPassword(false);
+        return;
+      }
+
+      if (!data) {
+        logger.debug('No temporary password record found', { userId: user.id });
         setHasTemporaryPassword(false);
         return;
       }
