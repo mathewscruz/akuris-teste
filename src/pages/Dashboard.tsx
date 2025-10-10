@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { HardDrive, Shield, AlertCircle, Bell } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
-import { MatrizVisualizacao } from '@/components/riscos/MatrizVisualizacao';
+import { MultiDimensionalRadar } from '@/components/dashboard/MultiDimensionalRadar';
 import { RecentActivities } from '@/components/dashboard/RecentActivities';
 import { RiskScoreTimeline } from '@/components/dashboard/RiskScoreTimeline';
 import { useAtivosStats } from '@/hooks/useAtivosStats';
@@ -179,10 +179,10 @@ export default function Dashboard() {
       </div>
 
       {/* 2ª Linha - Matriz de Risco e Atividades Recentes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <MatrizVisualizacao />
-        <RecentActivities />
-      </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <MultiDimensionalRadar />
+          <RecentActivities />
+        </div>
 
       {/* 3ª Linha - Timeline do Score de Risco */}
       <RiskScoreTimeline />
