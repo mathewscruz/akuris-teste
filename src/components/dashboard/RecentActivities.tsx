@@ -210,18 +210,18 @@ export function RecentActivities() {
   };
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>Atividades Recentes</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-h-[500px] overflow-y-auto">
         {loading ? (
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="animate-pulse">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-muted rounded-full"></div>
-                  <div className="flex-1">
+                  <div className="w-8 h-8 bg-muted rounded-full flex-shrink-0"></div>
+                  <div className="flex-1 min-w-0">
                     <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
                     <div className="h-3 bg-muted rounded w-1/2"></div>
                   </div>
@@ -237,7 +237,7 @@ export function RecentActivities() {
                   {activity.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <p className="text-sm font-medium text-foreground truncate">
                       {activity.title}
                     </p>

@@ -48,9 +48,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           }}
         />
         
-        <div className="flex-1 flex flex-col">
-          <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card">
-            <div className="flex items-center gap-4">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card flex-shrink-0">
+            <div className="flex items-center gap-4 min-w-0">
               <SidebarTrigger />
               
               <Breadcrumb>
@@ -78,13 +78,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </Breadcrumb>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-shrink-0">
               <NotificationCenter />
               <UserProfile />
             </div>
           </header>
 
-          <main className="flex-1 p-6 overflow-auto">
+          <main className="flex-1 p-4 md:p-6 overflow-auto overflow-x-hidden w-full max-w-full">
             <PageTransition routeKey={location.pathname}>
               {children}
             </PageTransition>

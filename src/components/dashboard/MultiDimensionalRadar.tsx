@@ -102,7 +102,7 @@ export const MultiDimensionalRadar = () => {
   }
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className="hover:shadow-lg transition-shadow w-full">
       <CardHeader>
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-primary" />
@@ -112,7 +112,7 @@ export const MultiDimensionalRadar = () => {
           Visão consolidada de todos os módulos de governança, risco e compliance
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="w-full overflow-hidden">
         <ResponsiveContainer width="100%" height={400}>
           <RadarChart data={data}>
             <PolarGrid 
@@ -177,21 +177,21 @@ export const MultiDimensionalRadar = () => {
           </RadarChart>
         </ResponsiveContainer>
         
-        <div className="mt-4 grid grid-cols-4 gap-2">
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="flex items-center gap-1 text-xs">
-            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+            <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
             <span className="text-muted-foreground">80-100%: Excelente</span>
           </div>
           <div className="flex items-center gap-1 text-xs">
-            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+            <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></div>
             <span className="text-muted-foreground">60-79%: Bom</span>
           </div>
           <div className="flex items-center gap-1 text-xs">
-            <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+            <div className="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0"></div>
             <span className="text-muted-foreground">40-59%: Atenção</span>
           </div>
           <div className="flex items-center gap-1 text-xs">
-            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+            <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
             <span className="text-muted-foreground">0-39%: Crítico</span>
           </div>
         </div>

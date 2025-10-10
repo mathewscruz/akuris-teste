@@ -57,7 +57,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in w-full max-w-full overflow-x-hidden">
       {/* Saudação personalizada */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -69,8 +69,7 @@ export default function Dashboard() {
       </div>
 
       {/* 1ª Linha - KPIs Principais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Card 1: Gestão de Ativos */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 w-full">{/* Card 1: Gestão de Ativos */}
         <Card variant="elevated" interactive className="group">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
@@ -82,7 +81,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold mb-2">{ativosStats.data?.total || 0}</div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge 
                 variant={ativosStats.data?.criticos > 0 ? "destructive" : "success"}
                 icon={<div className="w-2 h-2 rounded-full bg-current" />}
@@ -133,7 +132,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold mb-2">{controlesStats.data?.ativos || 0}</div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge 
                 variant={controlesStats.data?.vencendoAvaliacao > 0 ? "warning" : "success"}
                 icon={<div className="w-2 h-2 rounded-full bg-current" />}
@@ -161,7 +160,7 @@ export default function Dashboard() {
             <div className="text-3xl font-bold mb-2">
               {(incidentesStats.data?.abertos || 0) + (incidentesStats.data?.investigacao || 0)}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge 
                 variant={(incidentesStats.data?.mes || 0) > 0 ? "info" : "neutral"}
                 icon={<div className="w-2 h-2 rounded-full bg-current" />}
@@ -179,7 +178,7 @@ export default function Dashboard() {
       </div>
 
       {/* 2ª Linha - Matriz de Risco e Atividades Recentes */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6 w-full">
           <MultiDimensionalRadar />
           <RecentActivities />
         </div>

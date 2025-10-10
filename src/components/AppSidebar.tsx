@@ -300,7 +300,9 @@ export function AppSidebar() {
                   ) : (
                     <SidebarMenuButton asChild className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-sm h-9">
                       <NavLink to={item.url} className={({ isActive }) => getNavCls({ isActive })}>
-                        <item.icon className="h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out" />
+                        <item.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out ${
+                          isActive(item.url) ? 'text-blue-600 dark:text-blue-400 scale-110' : ''
+                        }`} />
                         {!isCollapsed && (
                           <span className="text-sm font-medium transition-all duration-300 ease-out truncate">
                             {item.title}
@@ -322,7 +324,9 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-sm h-9">
                     <NavLink to="/configuracoes" className={({ isActive }) => getNavCls({ isActive })}>
-                      <Settings className="h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out" />
+                      <Settings className={`h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out ${
+                        isActive('/configuracoes') ? 'text-blue-600 dark:text-blue-400 scale-110' : ''
+                      }`} />
                       {!isCollapsed && (
                         <span className="text-sm font-medium transition-all duration-300 ease-out truncate">
                           Configurações

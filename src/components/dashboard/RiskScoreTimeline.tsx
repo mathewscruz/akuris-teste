@@ -112,9 +112,9 @@ export function RiskScoreTimeline() {
   }
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <CardTitle>Evolução de Riscos por Criticidade</CardTitle>
           <div className="flex items-center space-x-4">
             <div className="text-right">
@@ -133,8 +133,8 @@ export function RiskScoreTimeline() {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="h-80">
+      <CardContent className="w-full overflow-hidden">
+        <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
@@ -186,7 +186,7 @@ export function RiskScoreTimeline() {
             </LineChart>
           </ResponsiveContainer>
         </div>
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Críticos</p>
             <p className="text-lg font-semibold text-destructive">
