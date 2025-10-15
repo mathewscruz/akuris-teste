@@ -8,6 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { UserSelect } from "@/components/riscos/UserSelect";
+import { RiscoSelect } from "@/components/controles/RiscoSelect";
+import { AuditoriasMultiSelect } from "@/components/controles/AuditoriasMultiSelect";
 
 interface Controle {
   id: string;
@@ -15,9 +18,8 @@ interface Controle {
   descricao?: string;
   tipo: string;
   categoria_id?: string;
-  processo?: string;
   area?: string;
-  responsavel?: string;
+  responsavel_id?: string;
   frequencia?: string;
   status: string;
   criticidade: string;
@@ -44,14 +46,15 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
     descricao: "",
     tipo: "preventivo",
     categoria_id: "sem_categoria",
-    processo: "",
+    risco_id: "",
     area: "",
-    responsavel: "",
+    responsavel_id: "",
     frequencia: "",
     status: "ativo",
     criticidade: "medio",
     data_implementacao: "",
-    proxima_avaliacao: ""
+    proxima_avaliacao: "",
+    auditorias_ids: [] as string[]
   });
 
   const { toast } = useToast();
@@ -59,41 +62,67 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
 
   useEffect(() => {
     if (controle) {
-      setFormData({
-        nome: controle.nome || "",
-        descricao: controle.descricao || "",
-        tipo: controle.tipo || "preventivo",
-        categoria_id: controle.categoria_id || "sem_categoria",
-        processo: controle.processo || "",
-        area: controle.area || "",
-        responsavel: controle.responsavel || "",
-        frequencia: controle.frequencia || "",
-        status: controle.status || "ativo",
-        criticidade: controle.criticidade || "medio",
-        data_implementacao: controle.data_implementacao || "",
-        proxima_avaliacao: controle.proxima_avaliacao || ""
-      });
+      // Buscar risco vinculado
+      const fetchRiscoVinculado = async () => {
+        const { data } = await supabase
+          .from('controles_riscos')
+          .select('risco_id')
+          .eq('controle_id', controle.id)
+          .maybeSingle();
+        
+        return data?.risco_id || "";
+      };
+
+      // Buscar auditorias vinculadas
+      const fetchAuditoriasVinculadas = async () => {
+        const { data } = await supabase
+          .from('controles_auditorias')
+          .select('auditoria_id')
+          .eq('controle_id', controle.id);
+        
+        return data?.map(item => item.auditoria_id) || [];
+      };
+
+      Promise.all([fetchRiscoVinculado(), fetchAuditoriasVinculadas()]).then(
+        ([riscoId, auditoriasIds]) => {
+          setFormData({
+            nome: controle.nome || "",
+            descricao: controle.descricao || "",
+            tipo: controle.tipo || "preventivo",
+            categoria_id: controle.categoria_id || "sem_categoria",
+            risco_id: riscoId,
+            area: controle.area || "",
+            responsavel_id: controle.responsavel_id || "",
+            frequencia: controle.frequencia || "",
+            status: controle.status || "ativo",
+            criticidade: controle.criticidade || "medio",
+            data_implementacao: controle.data_implementacao || "",
+            proxima_avaliacao: controle.proxima_avaliacao || "",
+            auditorias_ids: auditoriasIds
+          });
+        }
+      );
     } else {
       setFormData({
         nome: "",
         descricao: "",
         tipo: "preventivo",
         categoria_id: "sem_categoria",
-        processo: "",
+        risco_id: "",
         area: "",
-        responsavel: "",
+        responsavel_id: "",
         frequencia: "",
         status: "ativo",
         criticidade: "medio",
         data_implementacao: "",
-        proxima_avaliacao: ""
+        proxima_avaliacao: "",
+        auditorias_ids: []
       });
     }
   }, [controle, open]);
 
   const saveControleMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      // Obter empresa_id do usuário atual
       const { data: profile } = await supabase
         .from('profiles')
         .select('empresa_id')
@@ -105,12 +134,21 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
       }
 
       const controleData = {
-        ...data,
-        empresa_id: profile.empresa_id,
+        nome: data.nome,
+        descricao: data.descricao,
+        tipo: data.tipo,
         categoria_id: data.categoria_id === "sem_categoria" ? null : data.categoria_id,
+        responsavel_id: data.responsavel_id || null,
+        area: data.area,
+        frequencia: data.frequencia,
+        status: data.status,
+        criticidade: data.criticidade,
         data_implementacao: data.data_implementacao || null,
-        proxima_avaliacao: data.proxima_avaliacao || null
+        proxima_avaliacao: data.proxima_avaliacao || null,
+        empresa_id: profile.empresa_id
       };
+
+      let controleId: string;
 
       if (controle) {
         const { error } = await supabase
@@ -118,11 +156,48 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
           .update(controleData)
           .eq('id', controle.id);
         if (error) throw error;
+        controleId = controle.id;
       } else {
-        const { error } = await supabase
+        const { data: newControle, error } = await supabase
           .from('controles')
-          .insert([controleData]);
+          .insert([controleData])
+          .select()
+          .single();
         if (error) throw error;
+        controleId = newControle.id;
+      }
+
+      // Gerenciar relacionamento com risco
+      await supabase
+        .from('controles_riscos')
+        .delete()
+        .eq('controle_id', controleId);
+
+      if (data.risco_id) {
+        await supabase
+          .from('controles_riscos')
+          .insert([{
+            controle_id: controleId,
+            risco_id: data.risco_id,
+            tipo_vinculacao: 'mitigacao'
+          }]);
+      }
+
+      // Gerenciar relacionamentos com auditorias
+      await supabase
+        .from('controles_auditorias')
+        .delete()
+        .eq('controle_id', controleId);
+
+      if (data.auditorias_ids.length > 0) {
+        const auditoriasInserts = data.auditorias_ids.map(auditoriaId => ({
+          controle_id: controleId,
+          auditoria_id: auditoriaId
+        }));
+
+        await supabase
+          .from('controles_auditorias')
+          .insert(auditoriasInserts);
       }
     },
     onSuccess: () => {
@@ -222,12 +297,11 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
             </div>
 
             <div>
-              <Label htmlFor="processo">Processo</Label>
-              <Input
-                id="processo"
-                value={formData.processo}
-                onChange={(e) => setFormData(prev => ({ ...prev, processo: e.target.value }))}
-                placeholder="Processo relacionado"
+              <Label htmlFor="risco">Risco Relacionado</Label>
+              <RiscoSelect
+                value={formData.risco_id}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, risco_id: value }))}
+                placeholder="Nenhum risco"
               />
             </div>
           </div>
@@ -245,13 +319,24 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
 
             <div>
               <Label htmlFor="responsavel">Responsável</Label>
-              <Input
-                id="responsavel"
-                value={formData.responsavel}
-                onChange={(e) => setFormData(prev => ({ ...prev, responsavel: e.target.value }))}
-                placeholder="Responsável pelo controle"
+              <UserSelect
+                value={formData.responsavel_id}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, responsavel_id: value }))}
+                placeholder="Selecionar responsável..."
               />
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="auditorias">Auditorias Relacionadas</Label>
+            <AuditoriasMultiSelect
+              value={formData.auditorias_ids}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, auditorias_ids: value }))}
+              placeholder="Nenhuma auditoria selecionada"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Selecione as auditorias onde este controle será testado/avaliado
+            </p>
           </div>
 
           <div className="grid grid-cols-3 gap-4">

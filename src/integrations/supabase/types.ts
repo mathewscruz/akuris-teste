@@ -1061,9 +1061,10 @@ export type Database = {
           frequencia: string | null
           id: string
           nome: string
-          processo: string | null
+          processo_backup: string | null
           proxima_avaliacao: string | null
-          responsavel: string | null
+          responsavel_backup: string | null
+          responsavel_id: string | null
           status: string
           tipo: string
           updated_at: string
@@ -1079,9 +1080,10 @@ export type Database = {
           frequencia?: string | null
           id?: string
           nome: string
-          processo?: string | null
+          processo_backup?: string | null
           proxima_avaliacao?: string | null
-          responsavel?: string | null
+          responsavel_backup?: string | null
+          responsavel_id?: string | null
           status?: string
           tipo?: string
           updated_at?: string
@@ -1097,9 +1099,10 @@ export type Database = {
           frequencia?: string | null
           id?: string
           nome?: string
-          processo?: string | null
+          processo_backup?: string | null
           proxima_avaliacao?: string | null
-          responsavel?: string | null
+          responsavel_backup?: string | null
+          responsavel_id?: string | null
           status?: string
           tipo?: string
           updated_at?: string
@@ -1111,6 +1114,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "controles_categorias"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_controles_responsavel"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1149,6 +1159,51 @@ export type Database = {
           },
           {
             foreignKeyName: "controles_ativos_controle_id_fkey"
+            columns: ["controle_id"]
+            isOneToOne: false
+            referencedRelation: "controles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      controles_auditorias: {
+        Row: {
+          auditoria_id: string
+          controle_id: string
+          created_at: string | null
+          id: string
+          observacoes: string | null
+          tipo_relacao: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          auditoria_id: string
+          controle_id: string
+          created_at?: string | null
+          id?: string
+          observacoes?: string | null
+          tipo_relacao?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          auditoria_id?: string
+          controle_id?: string
+          created_at?: string | null
+          id?: string
+          observacoes?: string | null
+          tipo_relacao?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controles_auditorias_auditoria_id_fkey"
+            columns: ["auditoria_id"]
+            isOneToOne: false
+            referencedRelation: "auditorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "controles_auditorias_controle_id_fkey"
             columns: ["controle_id"]
             isOneToOne: false
             referencedRelation: "controles"

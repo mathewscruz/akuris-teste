@@ -135,16 +135,30 @@ export default function ControlesDashboard() {
 
       const { data } = await supabase
         .from('controles')
-        .select('id, nome, proxima_avaliacao, responsavel')
+        .select('id, nome, proxima_avaliacao, responsavel_id')
         .not('proxima_avaliacao', 'is', null)
         .gte('proxima_avaliacao', format(hoje, 'yyyy-MM-dd'))
         .lte('proxima_avaliacao', format(em30Dias, 'yyyy-MM-dd'))
         .order('proxima_avaliacao');
 
-      return data?.map(controle => ({
-        ...controle,
+      if (!data) return [];
+
+      // Buscar nomes dos responsáveis
+      const userIds = data.map(c => c.responsavel_id).filter(Boolean);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, nome')
+        .in('user_id', userIds);
+
+      const profilesMap = new Map(profiles?.map(p => [p.user_id, p.nome]) || []);
+
+      return data.map(controle => ({
+        id: controle.id,
+        nome: controle.nome,
+        proxima_avaliacao: controle.proxima_avaliacao,
+        responsavel: controle.responsavel_id ? (profilesMap.get(controle.responsavel_id) || '-') : '-',
         diasRestantes: Math.ceil((new Date(controle.proxima_avaliacao!).getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24))
-      })) || [];
+      }));
     }
   });
 
