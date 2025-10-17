@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Plus, Search, Filter, Upload, FileText, FolderOpen, Eye, Download, Edit, Trash2, MessageSquare, CheckCircle, XCircle, Clock, History, Activity, Shield, Brain, BarChart3, TrendingUp, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,6 +66,7 @@ interface Categoria {
 }
 
 export function Documentos() {
+  const location = useLocation();
   const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [documentosFiltrados, setDocumentosFiltrados] = useState<Documento[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -105,6 +107,17 @@ export function Documentos() {
   useEffect(() => {
     aplicarFiltros();
   }, [documentos, searchTerm, selectedCategoria, selectedStatus, selectedTipo, filtrosAvancados]);
+
+  // Detectar se veio com itemId do dashboard
+  useEffect(() => {
+    const itemId = location.state?.itemId;
+    if (itemId && documentos.length > 0) {
+      const documento = documentos.find(d => d.id === itemId);
+      if (documento) {
+        setDocumentoDialog({ open: true, documento });
+      }
+    }
+  }, [location.state, documentos]);
 
   const fetchDocumentos = async () => {
     try {

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { HardDrive, Shield, AlertCircle, Bell } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
+import { useNavigate } from 'react-router-dom';
 import { MultiDimensionalRadar } from '@/components/dashboard/MultiDimensionalRadar';
 import { RecentActivities } from '@/components/dashboard/RecentActivities';
 import { RiskScoreTimeline } from '@/components/dashboard/RiskScoreTimeline';
@@ -14,6 +15,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 
 export default function Dashboard() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   
   // Usar hooks otimizados para dados reais
   const ativosStats = useAtivosStats();
@@ -69,8 +71,17 @@ export default function Dashboard() {
       </div>
 
       {/* 1ª Linha - KPIs Principais */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 w-full">{/* Card 1: Gestão de Ativos */}
-        <Card variant="elevated" interactive className="group">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 w-full">
+        {/* Card 1: Gestão de Ativos */}
+        <Card 
+          variant="elevated" 
+          interactive 
+          className="group cursor-pointer"
+          onClick={() => navigate('/ativos')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && navigate('/ativos')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
               Gestão de Ativos
@@ -121,7 +132,15 @@ export default function Dashboard() {
         </Card>
 
         {/* Card 3: Controles Internos */}
-        <Card variant="elevated" interactive className="group">
+        <Card 
+          variant="elevated" 
+          interactive 
+          className="group cursor-pointer"
+          onClick={() => navigate('/controles')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && navigate('/controles')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
               Controles Internos
@@ -147,7 +166,15 @@ export default function Dashboard() {
         </Card>
 
         {/* Card 4: Incidentes de Segurança */}
-        <Card variant="elevated" interactive className="group">
+        <Card 
+          variant="elevated" 
+          interactive 
+          className="group cursor-pointer"
+          onClick={() => navigate('/incidentes')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && navigate('/incidentes')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
               Incidentes Ativos

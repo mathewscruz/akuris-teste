@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { Plus, Search, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag, Edit, FileText, Trash2, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,6 +62,7 @@ interface MatrizConfig {
 export function Riscos() {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
   const { data: stats, refetch: refetchStats } = useRiscosStats();
   const [searchParams, setSearchParams] = useSearchParams();
   const [riscos, setRiscos] = useState<Risco[]>([]);
@@ -183,6 +184,17 @@ export function Riscos() {
       fetchMatrizConfig();
     }
   }, [profile]);
+
+  // Detectar se veio com itemId do dashboard
+  useEffect(() => {
+    const itemId = location.state?.itemId;
+    if (itemId && riscos.length > 0) {
+      const risco = riscos.find(r => r.id === itemId);
+      if (risco) {
+        handleEdit(risco);
+      }
+    }
+  }, [location.state, riscos]);
 
   useEffect(() => {
     const ids = searchParams.get('ids');

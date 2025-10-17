@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
+import { useNavigate } from 'react-router-dom';
 import { FileText, AlertTriangle, Shield, Users, Calendar, Building } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -20,6 +21,7 @@ interface Activity {
 
 export function RecentActivities() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -90,6 +92,23 @@ export function RecentActivities() {
     };
     
     return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
+  };
+
+  const handleActivityClick = (activity: Activity) => {
+    const routeMap: Record<string, string> = {
+      'riscos': '/riscos',
+      'controles': '/controles',
+      'documentos': '/documentos',
+      'auditorias': '/auditorias',
+      'denuncias': '/denuncia'
+    };
+
+    const route = routeMap[activity.module];
+    if (route) {
+      // Extrair o ID real do formato "module-id"
+      const itemId = activity.id.split('-')[1];
+      navigate(route, { state: { itemId } });
+    }
   };
 
   const fetchRecentActivities = async () => {
@@ -232,7 +251,14 @@ export function RecentActivities() {
         ) : activities.length > 0 ? (
           <div className="space-y-4">
             {activities.map((activity) => (
-              <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-lg border bg-card/50">
+              <div 
+                key={activity.id} 
+                className="flex items-start space-x-3 p-3 rounded-lg border bg-card/50 cursor-pointer hover:bg-accent transition-colors"
+                onClick={() => handleActivityClick(activity)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && handleActivityClick(activity)}
+              >
                 <div className="flex-shrink-0 mt-1">
                   {activity.icon}
                 </div>

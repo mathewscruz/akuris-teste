@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Plus, FileText, AlertTriangle, CheckCircle, User, Edit, Trash2, Eye, Clock, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,6 +104,7 @@ const getTipoCustomClass = (tipo: string) => {
 
 const Auditorias = () => {
   const { toast } = useToast();
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
@@ -235,6 +237,17 @@ const Auditorias = () => {
     setSelectedAuditoria(auditoria);
     setShowEvidenciasDialog(true);
   };
+
+  // Detectar se veio com itemId do dashboard
+  useEffect(() => {
+    const itemId = location.state?.itemId;
+    if (itemId && auditorias) {
+      const auditoria = auditorias.find(a => a.id === itemId);
+      if (auditoria) {
+        handleEdit(auditoria);
+      }
+    }
+  }, [location.state, auditorias]);
 
   const statsCards = [
     {

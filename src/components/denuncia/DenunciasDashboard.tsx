@@ -57,7 +57,7 @@ const gravidadeMap = {
   critica: { label: 'Crítica', color: 'bg-red-100 text-red-800' }
 };
 
-export function DenunciasDashboard() {
+export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | null }) {
   const [denuncias, setDenuncias] = useState<Denuncia[]>([]);
   const [filteredDenuncias, setFilteredDenuncias] = useState<Denuncia[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,6 +76,17 @@ export function DenunciasDashboard() {
   useEffect(() => {
     aplicarFiltros();
   }, [denuncias, searchTerm, statusFilter, gravidadeFilter]);
+
+  // Detectar se veio com itemIdToOpen
+  useEffect(() => {
+    if (itemIdToOpen && denuncias.length > 0) {
+      const denuncia = denuncias.find(d => d.id === itemIdToOpen);
+      if (denuncia) {
+        setSelectedDenuncia(denuncia);
+        setDialogOpen(true);
+      }
+    }
+  }, [itemIdToOpen, denuncias]);
 
   const carregarDenuncias = async () => {
     try {

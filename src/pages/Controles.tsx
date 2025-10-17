@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp, Edit, Trash2, Filter, TestTube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +58,7 @@ interface Categoria {
 }
 
 export default function Controles() {
+  const location = useLocation();
   const [controleDialogOpen, setControleDialogOpen] = useState(false);
   const [categoriasDialogOpen, setCategoriasDialogOpen] = useState(false);
   const [testesDialogOpen, setTestesDialogOpen] = useState(false);
@@ -102,6 +104,17 @@ export default function Controles() {
       return data as Controle[];
     }
   });
+
+  // Detectar se veio com itemId do dashboard
+  useEffect(() => {
+    const itemId = location.state?.itemId;
+    if (itemId && controles.length > 0) {
+      const controle = controles.find(c => c.id === itemId);
+      if (controle) {
+        handleEdit(controle);
+      }
+    }
+  }, [location.state, controles]);
 
   // Buscar categorias
   const { data: categorias = [] } = useQuery({

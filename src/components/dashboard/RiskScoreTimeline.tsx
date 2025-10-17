@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -14,56 +15,113 @@ interface RiskData {
   baixos: number;
 }
 
+type TimeRange = 'week' | 'month' | 'year';
+
 export function RiskScoreTimeline() {
   const { profile } = useAuth();
   const [data, setData] = useState<RiskData[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCritical, setTotalCritical] = useState(0);
   const [trend, setTrend] = useState<'up' | 'down' | 'stable'>('stable');
+  const [timeRange, setTimeRange] = useState<TimeRange>('month');
 
   useEffect(() => {
     if (profile) {
       fetchRiskData();
     }
-  }, [profile]);
+  }, [profile, timeRange]);
 
   const fetchRiskData = async () => {
     try {
-      // Buscar dados dos últimos 12 meses
-      const months = [];
+      setLoading(true);
+      const periods = [];
       const now = new Date();
       
-      for (let i = 11; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const nextMonthDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-        
-        // Buscar riscos criados até esse mês
-        const { data: riscosData } = await supabase
-          .from('riscos')
-          .select('nivel_risco_inicial, created_at')
-          .lte('created_at', nextMonthDate.toISOString());
+      if (timeRange === 'week') {
+        // Últimas 12 semanas
+        for (let i = 11; i >= 0; i--) {
+          const endDate = new Date(now);
+          endDate.setDate(endDate.getDate() - (i * 7));
+          const startDate = new Date(endDate);
+          startDate.setDate(startDate.getDate() - 6);
 
-        const riscos = riscosData || [];
-        const criticos = riscos.filter(r => r.nivel_risco_inicial === 'Crítico').length;
-        const altos = riscos.filter(r => r.nivel_risco_inicial === 'Alto' || r.nivel_risco_inicial === 'Muito Alto').length;
-        const medios = riscos.filter(r => r.nivel_risco_inicial === 'Médio' || r.nivel_risco_inicial === 'Moderado').length;
-        const baixos = riscos.filter(r => r.nivel_risco_inicial === 'Baixo' || r.nivel_risco_inicial === 'Muito Baixo').length;
+          const { data: riscosData } = await supabase
+            .from('riscos')
+            .select('nivel_risco_inicial, created_at')
+            .lte('created_at', endDate.toISOString());
 
-        months.push({
-          month: date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
-          criticos,
-          altos,
-          medios,
-          baixos
-        });
+          const riscos = riscosData || [];
+          const criticos = riscos.filter(r => r.nivel_risco_inicial === 'Crítico').length;
+          const altos = riscos.filter(r => r.nivel_risco_inicial === 'Alto' || r.nivel_risco_inicial === 'Muito Alto').length;
+          const medios = riscos.filter(r => r.nivel_risco_inicial === 'Médio' || r.nivel_risco_inicial === 'Moderado').length;
+          const baixos = riscos.filter(r => r.nivel_risco_inicial === 'Baixo' || r.nivel_risco_inicial === 'Muito Baixo').length;
+
+          periods.push({
+            month: `Sem ${12 - i}`,
+            criticos,
+            altos,
+            medios,
+            baixos
+          });
+        }
+      } else if (timeRange === 'month') {
+        // Últimos 12 meses
+        for (let i = 11; i >= 0; i--) {
+          const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const nextMonthDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+          
+          const { data: riscosData } = await supabase
+            .from('riscos')
+            .select('nivel_risco_inicial, created_at')
+            .lte('created_at', nextMonthDate.toISOString());
+
+          const riscos = riscosData || [];
+          const criticos = riscos.filter(r => r.nivel_risco_inicial === 'Crítico').length;
+          const altos = riscos.filter(r => r.nivel_risco_inicial === 'Alto' || r.nivel_risco_inicial === 'Muito Alto').length;
+          const medios = riscos.filter(r => r.nivel_risco_inicial === 'Médio' || r.nivel_risco_inicial === 'Moderado').length;
+          const baixos = riscos.filter(r => r.nivel_risco_inicial === 'Baixo' || r.nivel_risco_inicial === 'Muito Baixo').length;
+
+          periods.push({
+            month: date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
+            criticos,
+            altos,
+            medios,
+            baixos
+          });
+        }
+      } else {
+        // Últimos 5 anos
+        for (let i = 4; i >= 0; i--) {
+          const year = now.getFullYear() - i;
+          const endDate = new Date(year, 11, 31);
+          
+          const { data: riscosData } = await supabase
+            .from('riscos')
+            .select('nivel_risco_inicial, created_at')
+            .lte('created_at', endDate.toISOString());
+
+          const riscos = riscosData || [];
+          const criticos = riscos.filter(r => r.nivel_risco_inicial === 'Crítico').length;
+          const altos = riscos.filter(r => r.nivel_risco_inicial === 'Alto' || r.nivel_risco_inicial === 'Muito Alto').length;
+          const medios = riscos.filter(r => r.nivel_risco_inicial === 'Médio' || r.nivel_risco_inicial === 'Moderado').length;
+          const baixos = riscos.filter(r => r.nivel_risco_inicial === 'Baixo' || r.nivel_risco_inicial === 'Muito Baixo').length;
+
+          periods.push({
+            month: year.toString(),
+            criticos,
+            altos,
+            medios,
+            baixos
+          });
+        }
       }
 
-      setData(months);
+      setData(periods);
       
       // Calcular totais atuais e tendência
-      if (months.length >= 2) {
-        const current = months[months.length - 1];
-        const previous = months[months.length - 2];
+      if (periods.length >= 2) {
+        const current = periods[periods.length - 1];
+        const previous = periods[periods.length - 2];
         const currentTotal = current.criticos + current.altos;
         const previousTotal = previous.criticos + previous.altos;
         
@@ -115,21 +173,30 @@ export function RiskScoreTimeline() {
     <Card className="w-full">
       <CardHeader>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <CardTitle>Evolução de Riscos por Criticidade</CardTitle>
-          <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <div className="flex items-center space-x-2">
-                <span className="text-2xl font-bold text-destructive">
-                  {totalCritical}
-                </span>
-                {trend === 'up' && <TrendingUp className="h-5 w-5 text-destructive" />}
-                {trend === 'down' && <TrendingDown className="h-5 w-5 text-green-600" />}
-                {trend === 'stable' && <AlertTriangle className="h-5 w-5 text-warning" />}
-              </div>
-              <Badge variant={totalCritical === 0 ? 'default' : 'destructive'}>
-                {totalCritical === 0 ? 'Sem Críticos' : 'Riscos Críticos'}
-              </Badge>
+          <div className="flex items-center justify-between w-full">
+            <CardTitle>Evolução de Riscos por Criticidade</CardTitle>
+            <Tabs value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
+              <TabsList>
+                <TabsTrigger value="week">Semanal</TabsTrigger>
+                <TabsTrigger value="month">Mensal</TabsTrigger>
+                <TabsTrigger value="year">Anual</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
+        <div className="flex items-center space-x-4 mt-4">
+          <div className="text-right">
+            <div className="flex items-center space-x-2">
+              <span className="text-2xl font-bold text-destructive">
+                {totalCritical}
+              </span>
+              {trend === 'up' && <TrendingUp className="h-5 w-5 text-destructive" />}
+              {trend === 'down' && <TrendingDown className="h-5 w-5 text-green-600" />}
+              {trend === 'stable' && <AlertTriangle className="h-5 w-5 text-warning" />}
             </div>
+            <Badge variant={totalCritical === 0 ? 'default' : 'destructive'}>
+              {totalCritical === 0 ? 'Sem Críticos' : 'Riscos Críticos'}
+            </Badge>
           </div>
         </div>
       </CardHeader>

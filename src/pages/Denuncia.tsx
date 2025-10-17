@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
@@ -12,7 +12,9 @@ import { Shield, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
 
 export default function Denuncia() {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [denunciaIdToOpen, setDenunciaIdToOpen] = useState<string | null>(null);
   const { data: stats, isLoading: statsLoading } = useDenunciasStats();
 
   useEffect(() => {
@@ -21,6 +23,15 @@ export default function Denuncia() {
       setActiveTab(tab);
     }
   }, [searchParams]);
+
+  // Detectar se veio com itemId do dashboard
+  useEffect(() => {
+    const itemId = location.state?.itemId;
+    if (itemId) {
+      setDenunciaIdToOpen(itemId);
+      setActiveTab('dashboard'); // Garantir que está na aba dashboard
+    }
+  }, [location.state]);
 
   return (
     <div className="space-y-6">
@@ -76,7 +87,7 @@ export default function Denuncia() {
         </TabsList>
 
         <TabsContent value="dashboard">
-          <DenunciasDashboard />
+          <DenunciasDashboard itemIdToOpen={denunciaIdToOpen} />
         </TabsContent>
 
         <TabsContent value="configuracoes">
