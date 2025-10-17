@@ -40,6 +40,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     // Buscar dados do solicitante
+    console.log("Buscando solicitante com ID:", solicitante_id);
     const { data: solicitante, error: solicitanteError } = await supabase
       .from('profiles')
       .select('nome')
@@ -52,8 +53,10 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const solicitanteNome = solicitante.nome;
+    console.log("Solicitante encontrado:", solicitanteNome);
 
     // Buscar dados do aprovador
+    console.log("Buscando aprovador com ID:", aprovador_id);
     const { data: aprovador, error: aprovadorError } = await supabase
       .from('profiles')
       .select('nome, email')
@@ -65,7 +68,10 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Aprovador não encontrado");
     }
 
+    console.log("Aprovador encontrado:", aprovador.nome);
+
     // Buscar dados do documento
+    console.log("Buscando documento com ID:", documento_id);
     const { data: document, error: docError } = await supabase
       .from('documentos')
       .select('nome, empresa_id')
@@ -76,6 +82,8 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Erro ao buscar documento:", docError);
       throw new Error("Documento não encontrado");
     }
+
+    console.log("Documento encontrado:", document.nome);
 
     // Buscar dados da empresa separadamente
     const { data: empresa, error: empresaError } = await supabase
