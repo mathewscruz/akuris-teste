@@ -9,15 +9,11 @@ import GerenciamentoUsuariosEnhanced from '@/components/configuracoes/Gerenciame
 import { PermissionMatrix } from '@/components/configuracoes/PermissionMatrix';
 import ConfiguracoesGerais from '@/components/configuracoes/ConfiguracoesGerais';
 import { ReminderSettings } from '@/components/configuracoes/ReminderSettings';
-import { EmailTestDialog } from '@/components/configuracoes/EmailTestDialog';
-import { Button } from '@/components/ui/button';
-import { Mail } from 'lucide-react';
 
 const Configuracoes = () => {
   const { user } = useAuth();
   const [userRole, setUserRole] = useState<string>('user');
   const [loading, setLoading] = useState(true);
-  const [emailTestOpen, setEmailTestOpen] = useState(false);
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -57,7 +53,7 @@ const Configuracoes = () => {
   const isAdmin = userRole === 'admin' || isSuperAdmin;
 
   return (
-    <div className="container mx-auto py-6 px-4 max-w-7xl">
+    <div className="py-6 px-4">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">Configurações</h1>
         <p className="text-muted-foreground">
@@ -134,43 +130,19 @@ const Configuracoes = () => {
         </TabsContent>
 
         <TabsContent value="geral">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Configurações Gerais
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ConfiguracoesGerais userRole={userRole} />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="h-5 w-5" />
-                  Sistema de E-mails
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Teste o novo layout profissional dos e-mails do sistema
-                  </p>
-                  <Button onClick={() => setEmailTestOpen(true)}>
-                    <Mail className="mr-2 h-4 w-4" />
-                    Enviar E-mail de Teste
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Configurações Gerais
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ConfiguracoesGerais userRole={userRole} />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
-
-      <EmailTestDialog open={emailTestOpen} onOpenChange={setEmailTestOpen} />
     </div>
   );
 };

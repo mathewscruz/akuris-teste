@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
+import { UserProfilePopover } from './UserProfilePopover';
 
 const UserProfile: React.FC = () => {
   const { user, profile, loading } = useAuth();
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [popoverOpen, setPopoverOpen] = useState(false);
   
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -91,21 +94,28 @@ const UserProfile: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center gap-3">
-      <Avatar className="h-8 w-8">
-        <AvatarImage src={userProfile?.foto_url} />
-        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-          {getInitials(displayName)}
-        </AvatarFallback>
-      </Avatar>
-      
-      <div className="hidden sm:block">
-        <p className="text-sm font-medium text-foreground">{displayName}</p>
-        <Badge variant={getRoleColor(displayRole)} className="text-xs">
-          {getRoleLabel(displayRole)}
-        </Badge>
-      </div>
-    </div>
+    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+      <PopoverTrigger asChild>
+        <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={userProfile?.foto_url} />
+            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+              {getInitials(displayName)}
+            </AvatarFallback>
+          </Avatar>
+          
+          <div className="hidden sm:block">
+            <p className="text-sm font-medium text-foreground">{displayName}</p>
+            <Badge variant={getRoleColor(displayRole)} className="text-xs">
+              {getRoleLabel(displayRole)}
+            </Badge>
+          </div>
+        </div>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-auto p-0">
+        <UserProfilePopover onClose={() => setPopoverOpen(false)} />
+      </PopoverContent>
+    </Popover>
   );
 };
 

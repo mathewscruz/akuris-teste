@@ -1,0 +1,342 @@
+import { useState, useRef } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Separator } from '@/components/ui/separator';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/AuthProvider';
+import { toast } from 'sonner';
+import { Upload, User, Eye, EyeOff } from 'lucide-react';
+
+const perfilSchema = z.object({
+  nome: z.string().min(1, 'Nome é obrigatório'),
+  senha_atual: z.string().optional(),
+  nova_senha: z.string().optional(),
+  confirmar_senha: z.string().optional(),
+}).refine((data) => {
+  if (data.nova_senha || data.confirmar_senha) {
+    return data.senha_atual && data.nova_senha === data.confirmar_senha;
+  }
+  return true;
+}, {
+  message: "As senhas não coincidem ou senha atual não foi informada",
+  path: ["confirmar_senha"],
+});
+
+type PerfilForm = z.infer<typeof perfilSchema>;
+
+interface UserProfilePopoverProps {
+  onClose?: () => void;
+}
+
+export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
+  const { user, profile, refetchProfile } = useAuth();
+  const [uploading, setUploading] = useState(false);
+  const [fotoUrl, setFotoUrl] = useState((profile as any)?.foto_url);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showPasswords, setShowPasswords] = useState({
+    atual: false,
+    nova: false,
+    confirmar: false,
+  });
+
+  const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp'];
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+  const form = useForm<PerfilForm>({
+    resolver: zodResolver(perfilSchema),
+    defaultValues: {
+      nome: profile?.nome || '',
+      senha_atual: '',
+      nova_senha: '',
+      confirmar_senha: '',
+    },
+  });
+
+  const validateImageFile = (file: File): string | null => {
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      return 'Formato de arquivo não suportado. Use: JPG, PNG, GIF, SVG ou WebP';
+    }
+    
+    if (file.size > MAX_FILE_SIZE) {
+      return 'Arquivo muito grande. Tamanho máximo: 5MB';
+    }
+    
+    return null;
+  };
+
+  const handlePhotoUpload = async (file: File) => {
+    if (!user) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('profile-photos')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('profile-photos')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ foto_url: urlData.publicUrl })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      setFotoUrl(urlData.publicUrl);
+      await refetchProfile();
+      toast.success('Foto atualizada com sucesso');
+    } catch (error) {
+      console.error('Erro ao fazer upload da foto:', error);
+      toast.error('Erro ao fazer upload da foto');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleProfileSubmit = async (data: PerfilForm) => {
+    try {
+      // Atualizar perfil
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ nome: data.nome })
+        .eq('user_id', user?.id);
+
+      if (profileError) throw profileError;
+
+      // Atualizar senha se fornecida
+      if (data.nova_senha && data.senha_atual) {
+        const { error: passwordError } = await supabase.auth.updateUser({
+          password: data.nova_senha
+        });
+
+        if (passwordError) throw passwordError;
+      }
+
+      await refetchProfile();
+      toast.success('Perfil atualizado com sucesso');
+      
+      // Limpar campos de senha
+      form.reset({
+        nome: data.nome,
+        senha_atual: '',
+        nova_senha: '',
+        confirmar_senha: '',
+      });
+
+      // Fechar popover após sucesso
+      if (onClose) {
+        setTimeout(onClose, 500);
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar perfil:', error);
+      toast.error('Erro ao atualizar perfil');
+    }
+  };
+
+  const togglePasswordVisibility = (field: 'atual' | 'nova' | 'confirmar') => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  return (
+    <div className="w-80 space-y-4">
+      {/* Foto de Perfil */}
+      <div className="flex flex-col items-center gap-3 pb-4 border-b">
+        <div className="relative">
+          <Avatar className="h-20 w-20">
+            <AvatarImage src={fotoUrl || (profile as any)?.foto_url} />
+            <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+              {getInitials(profile?.nome || user?.email?.split('@')[0] || 'U')}
+            </AvatarFallback>
+          </Avatar>
+          {uploading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-full">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            </div>
+          )}
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={ACCEPTED_IMAGE_TYPES.join(',')}
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handlePhotoUpload(file);
+          }}
+          disabled={uploading}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+        >
+          <Upload className="h-4 w-4 mr-2" />
+          Alterar Foto
+        </Button>
+        <p className="text-xs text-muted-foreground text-center">
+          JPG, PNG, GIF, SVG, WebP (máx. 5MB)
+        </p>
+      </div>
+
+      {/* Formulário */}
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleProfileSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="nome"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome</FormLabel>
+                <FormControl>
+                  <Input placeholder="Seu nome completo" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Separator />
+
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium">Alterar Senha</h4>
+            
+            <FormField
+              control={form.control}
+              name="senha_atual"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Senha Atual</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        type={showPasswords.atual ? "text" : "password"}
+                        placeholder="Digite sua senha atual"
+                        {...field}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        onClick={() => togglePasswordVisibility('atual')}
+                      >
+                        {showPasswords.atual ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="nova_senha"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nova Senha</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        type={showPasswords.nova ? "text" : "password"}
+                        placeholder="Digite a nova senha"
+                        {...field}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        onClick={() => togglePasswordVisibility('nova')}
+                      >
+                        {showPasswords.nova ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="confirmar_senha"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirmar Nova Senha</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        type={showPasswords.confirmar ? "text" : "password"}
+                        placeholder="Confirme a nova senha"
+                        {...field}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        onClick={() => togglePasswordVisibility('confirmar')}
+                      >
+                        {showPasswords.confirmar ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <Button type="submit" className="w-full">
+            Salvar Alterações
+          </Button>
+        </form>
+      </Form>
+    </div>
+  );
+}
