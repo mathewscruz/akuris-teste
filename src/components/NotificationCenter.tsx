@@ -23,12 +23,34 @@ interface Notification {
   isAutomatic?: boolean;
 }
 
+const STORAGE_KEY = 'readAutomaticNotifications';
+
+const getReadAutomaticNotifications = (): Set<string> => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  } catch {
+    return new Set();
+  }
+};
+
+const markAutomaticNotificationAsRead = (notificationId: string) => {
+  try {
+    const readNotifications = getReadAutomaticNotifications();
+    readNotifications.add(notificationId);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...readNotifications]));
+  } catch (error) {
+    console.error('Erro ao salvar notificação como lida:', error);
+  }
+};
+
 const NotificationCenter: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [readAutomaticIds, setReadAutomaticIds] = useState<Set<string>>(getReadAutomaticNotifications());
 
   // Buscar notificações manuais
   const { data: notifications = [], isLoading } = useQuery({
@@ -49,9 +71,10 @@ const NotificationCenter: React.FC = () => {
 
   // Buscar todas as notificações automáticas do sistema
   const { data: automaticNotifications = [] } = useQuery({
-    queryKey: ['automatic-notifications'],
+    queryKey: ['automatic-notifications', [...readAutomaticIds]],
     queryFn: async () => {
       const notificacoes: Notification[] = [];
+      const readIds = readAutomaticIds;
       
       // Buscar documentos vencendo
       const { data: documentos } = await supabase
@@ -255,7 +278,11 @@ const NotificationCenter: React.FC = () => {
          });
        });
 
-       return notificacoes;
+       // Marcar como lidas as notificações que estão no localStorage
+       return notificacoes.map(notif => ({
+         ...notif,
+         read: readIds.has(notif.id)
+       }));
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // 5 minutos
@@ -268,25 +295,12 @@ const NotificationCenter: React.FC = () => {
 
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      // Só marcar como lida se for uma notificação do banco (UUID válido, não é ID automático)
-      const isAutomaticId = notificationId.includes('-') && (
-        notificationId.startsWith('doc-') ||
-        notificationId.startsWith('contrato-') ||
-        notificationId.startsWith('controle-') ||
-        notificationId.startsWith('incidente-') ||
-        notificationId.startsWith('ativo-') ||
-        notificationId.startsWith('manutencao-') ||
-        notificationId.startsWith('aprovacao-')
-      );
-      
-      if (!isAutomaticId) {
-        const { error } = await supabase
-          .from('notifications')
-          .update({ read: true })
-          .eq('id', notificationId);
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId);
 
-        if (error) throw error;
-      }
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -305,7 +319,20 @@ const NotificationCenter: React.FC = () => {
   const handleNotificationClick = (notification: Notification) => {
     // Marcar como lida se ainda não foi lida
     if (!notification.read) {
-      markAsReadMutation.mutate(notification.id);
+      if (notification.isAutomatic) {
+        // Para notificações automáticas, salvar no localStorage
+        markAutomaticNotificationAsRead(notification.id);
+        setReadAutomaticIds(prev => {
+          const newSet = new Set(prev);
+          newSet.add(notification.id);
+          return newSet;
+        });
+        // Invalidar query para atualizar a lista
+        queryClient.invalidateQueries({ queryKey: ['automatic-notifications'] });
+      } else {
+        // Para notificações manuais, atualizar no banco de dados
+        markAsReadMutation.mutate(notification.id);
+      }
     }
 
     if (notification.link_to) {
