@@ -49,18 +49,46 @@ export function ReminderSettings() {
 
   const loadSettings = async () => {
     try {
+      // Obter empresa_id do usuário logado
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        console.error('Usuário não autenticado')
+        return
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('empresa_id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (profileError || !profile) {
+        console.error('Erro ao buscar perfil:', profileError)
+        return
+      }
+
+      // Buscar configurações da empresa
       const { data, error } = await supabase
         .from('empresa_reminder_settings')
         .select('*')
-        .single()
+        .eq('empresa_id', profile.empresa_id)
+        .maybeSingle()
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Erro ao carregar configurações:', error)
         return
       }
 
       if (data) {
         setSettings(data)
+      } else {
+        // Se não existir configuração, criar uma padrão
+        setSettings({
+          empresa_id: profile.empresa_id,
+          reminders_enabled: true,
+          reminder_intervals: [3, 7, 14],
+          max_reminders: 3
+        })
       }
     } catch (error) {
       console.error('Erro ao carregar configurações:', error)
