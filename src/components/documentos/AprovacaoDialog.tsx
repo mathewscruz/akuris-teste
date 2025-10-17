@@ -172,10 +172,38 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
         .from('documentos_aprovacoes')
         .insert([aprovacaoData]);
 
-      if (error) throw error;
+    if (error) throw error;
 
-      // Se for aprovação direta, atualizar o documento
-      if (tipoFormulario === 'aprovacao' && formData.status === 'aprovado') {
+    // Enviar e-mail de notificação para solicitações
+    if (tipoFormulario === 'solicitacao') {
+      try {
+        const { data: solicitanteData } = await supabase
+          .from('profiles')
+          .select('nome')
+          .eq('user_id', userData.user?.id)
+          .single();
+
+        const { error: emailError } = await supabase.functions.invoke('send-approval-notification', {
+          body: {
+            documento_id: documento.id,
+            aprovador_id: formData.aprovador_id,
+            solicitante_nome: solicitanteData?.nome || 'Usuário',
+            documento_nome: documento.nome
+          }
+        });
+
+        if (emailError) {
+          console.error('Erro ao enviar e-mail de notificação:', emailError);
+        } else {
+          console.log('E-mail de notificação enviado com sucesso');
+        }
+      } catch (emailError) {
+        console.error('Erro ao chamar edge function:', emailError);
+      }
+    }
+
+    // Se for aprovação direta, atualizar o documento
+    if (tipoFormulario === 'aprovacao' && formData.status === 'aprovado') {
         const { error: updateError } = await supabase
           .from('documentos')
           .update({
