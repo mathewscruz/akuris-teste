@@ -2163,6 +2163,7 @@ export type Database = {
           id: string
           is_current_version: boolean | null
           nome: string
+          requer_aprovacao: boolean | null
           status: string | null
           tags: string[] | null
           tipo: string
@@ -2185,6 +2186,7 @@ export type Database = {
           id?: string
           is_current_version?: boolean | null
           nome: string
+          requer_aprovacao?: boolean | null
           status?: string | null
           tags?: string[] | null
           tipo?: string
@@ -2207,6 +2209,7 @@ export type Database = {
           id?: string
           is_current_version?: boolean | null
           nome?: string
+          requer_aprovacao?: boolean | null
           status?: string | null
           tags?: string[] | null
           tipo?: string

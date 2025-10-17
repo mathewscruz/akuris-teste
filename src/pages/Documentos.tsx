@@ -44,6 +44,7 @@ interface Documento {
   arquivo_tamanho?: number;
   versao: number;
   is_current_version: boolean;
+  requer_aprovacao?: boolean;
   status: string;
   data_vencimento?: string;
   data_aprovacao?: string;
@@ -285,12 +286,34 @@ export function Documentos() {
   };
 
   const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { className: string; label: string }> = {
+      'ativo': {
+        className: 'border-green-500 bg-green-50 text-green-700',
+        label: 'Ativo'
+      },
+      'inativo': {
+        className: 'border-gray-500 bg-gray-50 text-gray-700',
+        label: 'Inativo'
+      },
+      'arquivado': {
+        className: 'border-blue-500 bg-blue-50 text-blue-700',
+        label: 'Arquivado'
+      },
+      'pendente': {
+        className: 'border-yellow-500 bg-yellow-50 text-yellow-700',
+        label: 'Pendente'
+      },
+      'vencido': {
+        className: 'border-red-500 bg-red-50 text-red-700',
+        label: 'Vencido'
+      }
+    };
+
+    const config = statusConfig[status] || statusConfig.ativo;
+
     return (
-      <Badge 
-        variant="secondary" 
-        className={`border ${getStatusColor(status)}`}
-      >
-        {capitalizeText(status)}
+      <Badge className={`border ${config.className}`}>
+        {config.label}
       </Badge>
     );
   };
@@ -716,12 +739,14 @@ export function Documentos() {
                             <MessageSquare className="mr-2 h-4 w-4" />
                             Comentários
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setAprovacaoDialog({ open: true, documento })}
-                          >
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Aprovação
-                          </DropdownMenuItem>
+                          {documento.requer_aprovacao && (
+                            <DropdownMenuItem
+                              onClick={() => setAprovacaoDialog({ open: true, documento })}
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Aprovação
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             onClick={() => setAuditoriaDialog({ open: true, documento })}
                           >

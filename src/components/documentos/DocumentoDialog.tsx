@@ -68,6 +68,7 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
     tipo: 'documento',
     classificacao: 'interna',
     tags: [] as string[],
+    requer_aprovacao: false,
     status: 'ativo',
     data_vencimento: undefined as Date | undefined,
   });
@@ -83,6 +84,7 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
           tipo: documento.tipo,
           classificacao: documento.classificacao || 'interna',
           tags: documento.tags || [],
+          requer_aprovacao: (documento as any).requer_aprovacao || false,
           status: documento.status,
           data_vencimento: documento.data_vencimento ? new Date(documento.data_vencimento) : undefined,
         }
@@ -92,6 +94,7 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
           tipo: 'documento',
           classificacao: 'interna',
           tags: [] as string[],
+          requer_aprovacao: false,
           status: 'ativo',
           data_vencimento: undefined as Date | undefined,
         };
@@ -207,7 +210,8 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
         arquivo_tipo,
         arquivo_tamanho,
         versao,
-        status: formData.status,
+        requer_aprovacao: formData.requer_aprovacao,
+        status: formData.requer_aprovacao ? 'pendente' : formData.status,
         data_vencimento: formData.data_vencimento ? format(formData.data_vencimento, 'yyyy-MM-dd') : null,
         empresa_id: profileData.empresa_id,
         created_by: userData.user.id,
@@ -402,10 +406,30 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
                   initialFocus
                 />
               </PopoverContent>
-            </Popover>
+          </Popover>
           </div>
 
-          {/* Switch de confidencial removido - agora é gerenciado pela classificação */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="requer_aprovacao">Requer Aprovação</Label>
+                <p className="text-sm text-muted-foreground">
+                  Se habilitado, o documento precisará de aprovação para ficar ativo
+                </p>
+              </div>
+              <Switch
+                id="requer_aprovacao"
+                checked={formData.requer_aprovacao}
+                onCheckedChange={(checked) => 
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    requer_aprovacao: checked,
+                    status: checked ? 'pendente' : 'ativo'
+                  }))
+                }
+              />
+            </div>
+          </div>
 
           <div className="space-y-2">
             <Label>Arquivo</Label>
