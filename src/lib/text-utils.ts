@@ -106,3 +106,50 @@ export const getControleTipoColor = (tipo: string): string => {
       return 'text-gray-700 bg-gray-50 border-gray-200';
   }
 };
+
+export const getAuditoriaStatusColor = (status: string): string => {
+  switch (status.toLowerCase()) {
+    case 'planejamento':
+      return 'text-amber-700 bg-amber-50 border-amber-200';
+    case 'em_andamento':
+      return 'text-blue-700 bg-blue-50 border-blue-200';
+    case 'concluida':
+      return 'text-green-700 bg-green-50 border-green-200';
+    case 'cancelada':
+      return 'text-red-700 bg-red-50 border-red-200';
+    default:
+      return 'text-gray-700 bg-gray-50 border-gray-200';
+  }
+};
+
+export const getAuditoriaTipoColor = (tipo: string): string => {
+  switch (tipo.toLowerCase()) {
+    case 'interna':
+      return 'text-blue-700 bg-blue-50 border-blue-200';
+    case 'externa':
+      return 'text-purple-700 bg-purple-50 border-purple-200';
+    case 'compliance':
+      return 'text-indigo-700 bg-indigo-50 border-indigo-200';
+    case 'operacional':
+      return 'text-teal-700 bg-teal-50 border-teal-200';
+    case 'ti':
+      return 'text-cyan-700 bg-cyan-50 border-cyan-200';
+    default:
+      return 'text-gray-700 bg-gray-50 border-gray-200';
+  }
+};
+
+export const getAuditoriaPrioridadeColor = (prioridade: string): string => {
+  switch (prioridade.toLowerCase()) {
+    case 'baixa':
+      return 'text-green-700 bg-green-50 border-green-200';
+    case 'media':
+      return 'text-yellow-700 bg-yellow-50 border-yellow-200';
+    case 'alta':
+      return 'text-orange-700 bg-orange-50 border-orange-200';
+    case 'critica':
+      return 'text-red-700 bg-red-50 border-red-200';
+    default:
+      return 'text-gray-700 bg-gray-50 border-gray-200';
+  }
+};
