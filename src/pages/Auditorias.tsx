@@ -1,106 +1,24 @@
 
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { Plus, FileText, AlertTriangle, CheckCircle, User, Edit, Trash2, Eye, Clock, Filter } from "lucide-react";
+import { Plus, FileText, AlertTriangle, CheckCircle, Clock, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { DataTable } from "@/components/ui/data-table";
+import { Card, CardContent } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
 import { useUsuariosEmpresa } from "@/hooks/useAuditoriaData";
-import { capitalizeText } from "@/lib/text-utils";
 import AuditoriaDialog from "@/components/auditorias/AuditoriaDialog";
 import TrabalhosDialog from "@/components/auditorias/TrabalhosDialog";
 import AchadosDialog from "@/components/auditorias/AchadosDialog";
 import RecomendacoesDialog from "@/components/auditorias/RecomendacoesDialog";
 import EvidenciasDialog from "@/components/auditorias/EvidenciasDialog";
-
-const getStatusBadgeVariant = (status: string): "default" | "destructive" | "secondary" | "outline" => {
-  switch (status) {
-    case 'planejamento':
-      return 'outline';
-    case 'em_andamento':
-      return 'default';
-    case 'concluida':
-      return 'secondary';
-    case 'cancelada':
-      return 'destructive';
-    default:
-      return 'secondary';
-  }
-};
-
-const getStatusCustomClass = (status: string) => {
-  switch (status) {
-    case 'concluida':
-      return 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200';
-    default:
-      return '';
-  }
-};
-
-const getPrioridadeBadgeVariant = (prioridade: string): "default" | "destructive" | "secondary" | "outline" => {
-  switch (prioridade) {
-    case 'critica':
-      return 'destructive';
-    case 'alta':
-      return 'default';
-    case 'media':
-      return 'secondary';
-    case 'baixa':
-      return 'outline';
-    default:
-      return 'secondary';
-  }
-};
-
-const getPrioridadeCustomClass = (prioridade: string) => {
-  switch (prioridade) {
-    case 'critica':
-      return 'bg-red-600 text-white border-red-700 hover:bg-red-700';
-    case 'alta':
-      return 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200';
-    default:
-      return '';
-  }
-};
-
-const getTipoBadgeVariant = (tipo: string): "default" | "destructive" | "secondary" | "outline" => {
-  switch (tipo) {
-    case 'interna':
-      return 'default';
-    case 'externa':
-      return 'destructive';
-    case 'compliance':
-      return 'outline';
-    case 'operacional':
-      return 'secondary';
-    case 'ti':
-      return 'default';
-    default:
-      return 'secondary';
-  }
-};
-
-const getTipoCustomClass = (tipo: string) => {
-  switch (tipo) {
-    case 'ti':
-      return 'bg-purple-100 text-purple-800 border-purple-300 hover:bg-purple-200';
-    case 'compliance':
-      return 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200';
-    default:
-      return '';
-  }
-};
+import { AuditoriaCardAccordion } from "@/components/auditorias/AuditoriaCardAccordion";
 
 const Auditorias = () => {
   const { toast } = useToast();
@@ -357,217 +275,52 @@ const Auditorias = () => {
               </div>
             )}
           </div>
-          <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Prioridade</TableHead>
-                  <TableHead>Data Início</TableHead>
-                  <TableHead>Auditor</TableHead>
-                  <TableHead>Trabalhos</TableHead>
-                  <TableHead>Achados</TableHead>
-                  <TableHead>Recomendações</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  [...Array(5)].map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    </TableRow>
-                  ))
-                ) : !auditorias || auditorias.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={10} className="p-0">
-                      <EmptyState
-                        icon={<FileText className="h-8 w-8" />}
-                        title="Nenhuma auditoria encontrada"
-                        description="Ainda não há auditorias cadastradas. Comece criando a primeira auditoria."
-                        action={{
-                          label: "Nova Auditoria",
-                          onClick: () => {
-                            setSelectedAuditoria(null);
-                            setShowAuditoriaDialog(true);
-                          }
-                        }}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  <TooltipProvider>
-                    {auditorias.map((auditoria) => {
-                      const counts = auditoriasCounts?.[auditoria.id] || { trabalhos: 0, achados: 0, recomendacoes: 0 };
-                      const auditorResponsavel = usuarios?.find((u: any) => u.user_id === auditoria.auditor_responsavel);
-                      
-                      return (
-                        <TableRow key={auditoria.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{auditoria.nome}</div>
-                              <div className="text-sm text-muted-foreground line-clamp-1">
-                                {auditoria.descricao || 'Sem descrição'}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={getTipoBadgeVariant(auditoria.tipo)}
-                              className={getTipoCustomClass(auditoria.tipo)}
-                            >
-                              {capitalizeText(auditoria.tipo)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={getStatusBadgeVariant(auditoria.status)}
-                              className={getStatusCustomClass(auditoria.status)}
-                            >
-                              {capitalizeText(auditoria.status.replace(/_/g, ' '))}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={getPrioridadeBadgeVariant(auditoria.prioridade)}
-                              className={getPrioridadeCustomClass(auditoria.prioridade)}
-                            >
-                              {capitalizeText(auditoria.prioridade)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {auditoria.data_inicio 
-                              ? new Date(auditoria.data_inicio).toLocaleDateString('pt-BR')
-                              : '-'
-                            }
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <User className="w-4 h-4" />
-                              <span className="text-sm">
-                                {auditorResponsavel?.nome || 'Não definido'}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <FileText className="w-4 h-4" />
-                              <span>{counts.trabalhos}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <AlertTriangle className="w-4 h-4" />
-                              <span>{counts.achados}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <CheckCircle className="w-4 w-4" />
-                              <span>{counts.recomendacoes}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleEdit(auditoria)}
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Editar auditoria</TooltipContent>
-                              </Tooltip>
-                              
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleOpenTrabalhos(auditoria)}
-                                  >
-                                    <FileText className="w-4 h-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Trabalhos ({counts.trabalhos})</TooltipContent>
-                              </Tooltip>
-                              
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleOpenAchados(auditoria)}
-                                  >
-                                    <AlertTriangle className="w-4 h-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Achados ({counts.achados})</TooltipContent>
-                              </Tooltip>
-                              
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleOpenRecomendacoes(auditoria)}
-                                  >
-                                    <CheckCircle className="w-4 h-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Recomendações ({counts.recomendacoes})</TooltipContent>
-                              </Tooltip>
-                              
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleOpenEvidencias(auditoria)}
-                                  >
-                                    <Eye className="w-4 h-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Evidências</TooltipContent>
-                              </Tooltip>
-                              
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleDelete(auditoria.id)}
-                                    className="text-destructive hover:text-destructive"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Excluir auditoria</TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TooltipProvider>
-                )}
-              </TableBody>
-            </Table>
+          
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-64 bg-muted rounded-lg animate-pulse"></div>
+              ))}
+            </div>
+          ) : !auditorias || auditorias.length === 0 ? (
+            <EmptyState
+              icon={<FileText className="h-8 w-8" />}
+              title="Nenhuma auditoria encontrada"
+              description="Ainda não há auditorias cadastradas. Comece criando a primeira auditoria."
+              action={{
+                label: "Nova Auditoria",
+                onClick: () => {
+                  setSelectedAuditoria(null);
+                  setShowAuditoriaDialog(true);
+                }
+              }}
+            />
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {auditorias.map((auditoria) => {
+                const counts = auditoriasCounts?.[auditoria.id] || { trabalhos: 0, achados: 0, recomendacoes: 0 };
+                const auditorResponsavel = usuarios?.find((u: any) => u.user_id === auditoria.auditor_responsavel);
+                
+                return (
+                  <AuditoriaCardAccordion
+                    key={auditoria.id}
+                    auditoria={auditoria}
+                    counts={counts}
+                    onEdit={() => handleEdit(auditoria)}
+                    onDelete={() => handleDelete(auditoria.id)}
+                    onOpenTrabalhos={() => handleOpenTrabalhos(auditoria)}
+                    onOpenAchados={() => handleOpenAchados(auditoria)}
+                    onOpenRecomendacoes={() => handleOpenRecomendacoes(auditoria)}
+                    onOpenEvidencias={() => handleOpenEvidencias(auditoria)}
+                    auditorNome={auditorResponsavel?.nome}
+                  />
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
+      
       <AuditoriaDialog
         open={showAuditoriaDialog}
         onOpenChange={setShowAuditoriaDialog}
