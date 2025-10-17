@@ -1,17 +1,18 @@
 import { useState, useEffect } from "react";
-import { Plus, Database, Users, FileText, ArrowRightLeft, AlertTriangle, Filter } from "lucide-react";
+import { Plus, Database, Users, FileText, AlertTriangle, Filter, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DadosPessoaisDialog } from "@/components/dados/DadosPessoaisDialog";
+import { DadosPessoaisCard } from "@/components/dados/DadosPessoaisCard";
 import { MapeamentoDialog } from "@/components/dados/MapeamentoDialog";
-import { RopaDialog } from "@/components/dados/RopaDialog";
-import { FluxoDadosDialog } from "@/components/dados/FluxoDadosDialog";
+import { RopaWizard } from "@/components/dados/RopaWizard";
 import { SolicitacaoTitularDialog } from "@/components/dados/SolicitacaoTitularDialog";
 import { StatCard } from "@/components/ui/stat-card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -21,29 +22,32 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 export default function Dados() {
   const [activeTab, setActiveTab] = useState("catalogo");
   const [dadosPessoais, setDadosPessoais] = useState<any[]>([]);
-  const [mapeamentos, setMapeamentos] = useState<any[]>([]);
   const [ropaRegistros, setRopaRegistros] = useState<any[]>([]);
-  const [fluxos, setFluxos] = useState<any[]>([]);
   const [solicitacoes, setSolicitacoes] = useState<any[]>([]);
   const [stats, setStats] = useState({
     totalDados: 0,
     dadosSensiveis: 0,
-    ativosComDados: 0,
+    mapeamentos: 0,
     ropaAtivos: 0,
     solicitacoesPendentes: 0
   });
   
   const [showDadosDialog, setShowDadosDialog] = useState(false);
   const [showMapeamentoDialog, setShowMapeamentoDialog] = useState(false);
-  const [showRopaDialog, setShowRopaDialog] = useState(false);
-  const [showFluxoDialog, setShowFluxoDialog] = useState(false);
+  const [showRopaWizard, setShowRopaWizard] = useState(false);
   const [showSolicitacaoDialog, setShowSolicitacaoDialog] = useState(false);
+  const [selectedDado, setSelectedDado] = useState<any>(null);
+  const [selectedRopa, setSelectedRopa] = useState<any>(null);
+  const [selectedSolicitacao, setSelectedSolicitacao] = useState<any>(null);
+  const [showDadoSheet, setShowDadoSheet] = useState(false);
+  const [preSelectedDadoId, setPreSelectedDadoId] = useState<string | undefined>();
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; type: string }>({
     open: false,
     id: '',
     type: ''
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   
   const { toast } = useToast();
 
@@ -53,18 +57,15 @@ export default function Dados() {
 
   const loadData = async () => {
     try {
-      const [dadosRes, mapeamentosRes, ropaRes, fluxosRes, solicitacoesRes] = await Promise.all([
+      const [dadosRes, mapeamentosRes, ropaRes, solicitacoesRes] = await Promise.all([
         supabase.from('dados_pessoais').select('*').order('nome'),
-        supabase.from('dados_mapeamento').select('*, dados_pessoais(nome), ativos(nome)').order('created_at', { ascending: false }),
+        supabase.from('dados_mapeamento').select('id, dados_pessoais_id').order('created_at', { ascending: false }),
         supabase.from('ropa_registros').select('*').order('nome_tratamento'),
-        supabase.from('dados_fluxos').select('*, dados_pessoais(nome)').order('nome_fluxo'),
-        supabase.from('dados_solicitacoes_titular').select('*').order('data_solicitacao', { ascending: false })
+        supabase.from('dados_solicitacoes_titular').select('*, dados_pessoais(nome)').order('data_solicitacao', { ascending: false })
       ]);
 
       setDadosPessoais(dadosRes.data || []);
-      setMapeamentos(mapeamentosRes.data || []);
       setRopaRegistros(ropaRes.data || []);
-      setFluxos(fluxosRes.data || []);
       setSolicitacoes(solicitacoesRes.data || []);
 
       // Calcular estatísticas
@@ -75,7 +76,7 @@ export default function Dados() {
       setStats({
         totalDados: dados.length,
         dadosSensiveis: sensiveis,
-        ativosComDados: new Set((mapeamentosRes.data || []).map(m => m.ativo_id)).size,
+        mapeamentos: (mapeamentosRes.data || []).length,
         ropaAtivos: (ropaRes.data || []).filter(r => r.status === 'ativo').length,
         solicitacoesPendentes: pendentes
       });
@@ -176,11 +177,10 @@ export default function Dados() {
           variant="warning"
         />
         <StatCard
-          title="ROPA Ativos"
-          value={stats.ropaAtivos}
-          description="Registros de processamento"
-          icon={<FileText className="h-4 w-4" />}
-          variant="success"
+          title="Mapeamentos"
+          value={stats.mapeamentos}
+          description="Dados x Ativos"
+          icon={<Database className="h-4 w-4" />}
         />
         <StatCard
           title="Solicitações Pendentes"
@@ -191,155 +191,89 @@ export default function Dados() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="catalogo">Catálogo</TabsTrigger>
-          <TabsTrigger value="mapeamento">Mapeamento</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="catalogo">Catálogo & Mapeamento</TabsTrigger>
           <TabsTrigger value="ropa">ROPA</TabsTrigger>
-          <TabsTrigger value="fluxos">Fluxos</TabsTrigger>
           <TabsTrigger value="solicitacoes">Solicitações</TabsTrigger>
         </TabsList>
 
         <TabsContent value="catalogo" className="space-y-4">
-          <Card className="rounded-lg border overflow-hidden">
-            <CardContent className="p-0">
-              <div className="p-6 pb-4">
-                <div className="flex items-center justify-between gap-4 mb-4">
-                  <Input
-                    placeholder="Buscar dados..."
-                    className="max-w-sm"
-                  />
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setShowFilters(!showFilters)}
-                    >
-                      <Filter className="mr-2 h-4 w-4" />
-                      Filtros
-                    </Button>
-                    <Button size="sm" onClick={() => setShowDadosDialog(true)}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Novo Dado
-                    </Button>
-                  </div>
+          <Card className="rounded-lg border">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between gap-4 mb-6">
+                <Input
+                  placeholder="Buscar dados pessoais..."
+                  className="max-w-sm"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowFilters(!showFilters)}
+                  >
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filtros
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowMapeamentoDialog(true)}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Mapear Dado
+                  </Button>
+                  <Button size="sm" onClick={() => setShowDadosDialog(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Novo Dado
+                  </Button>
                 </div>
               </div>
-              {showFilters && (
-                <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
-                  <Input placeholder="Filtrar por status..." className="w-[180px]" />
-                  <Input placeholder="Filtrar por categoria..." className="w-[180px]" />
-                  <Input placeholder="Filtrar por base legal..." className="w-[180px]" />
-                </div>
-              )}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Sensibilidade</TableHead>
-                    <TableHead>Base Legal</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {dadosPessoais.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="p-0">
-                        <EmptyState
-                          icon={<Database className="h-8 w-8" />}
-                          title="Nenhum dado catalogado"
-                          description="Ainda não há dados pessoais catalogados. Comece criando o primeiro registro."
-                          action={{
-                            label: "Novo Dado",
-                            onClick: () => setShowDadosDialog(true)
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    dadosPessoais.map((dado) => (
-                      <TableRow key={dado.id}>
-                        <TableCell className="font-medium">{dado.nome}</TableCell>
-                        <TableCell>{dado.categoria_dados}</TableCell>
-                        <TableCell>{dado.tipo_dados}</TableCell>
-                        <TableCell>{getSensibilidadeBadge(dado.tipo_dados, dado.sensibilidade)}</TableCell>
-                        <TableCell>{dado.base_legal}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="mapeamento" className="space-y-4">
-          <Card className="rounded-lg border overflow-hidden">
-            <CardContent className="p-0">
-              <div className="p-6 pb-4">
-                <div className="flex items-center justify-between gap-4 mb-4">
-                  <Input
-                    placeholder="Buscar mapeamentos..."
-                    className="max-w-sm"
-                  />
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setShowFilters(!showFilters)}
-                    >
-                      <Filter className="mr-2 h-4 w-4" />
-                      Filtros
-                    </Button>
-                    <Button size="sm" onClick={() => setShowMapeamentoDialog(true)}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Novo Mapeamento
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              {showFilters && (
-                <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
-                  <Input placeholder="Filtrar por tipo armazenamento..." className="w-[180px]" />
-                  <Input placeholder="Filtrar por criptografia..." className="w-[180px]" />
+              {dadosPessoais.length === 0 ? (
+                <EmptyState
+                  icon={<Database className="h-8 w-8" />}
+                  title="Nenhum dado catalogado"
+                  description="Ainda não há dados pessoais catalogados. Comece criando o primeiro registro."
+                  action={{
+                    label: "Novo Dado",
+                    onClick: () => setShowDadosDialog(true)
+                  }}
+                />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {dadosPessoais
+                    .filter(dado => 
+                      !searchTerm || 
+                      dado.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      dado.categoria_dados.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((dado) => (
+                      <DadosPessoaisCard
+                        key={dado.id}
+                        dado={dado}
+                        onEdit={() => {
+                          setSelectedDado(dado);
+                          setShowDadosDialog(true);
+                        }}
+                        onDelete={() => handleDelete(dado.id, 'dados')}
+                        onMapear={() => {
+                          setSelectedDado(dado);
+                          setShowMapeamentoDialog(true);
+                        }}
+                        onCriarRopa={() => {
+                          setPreSelectedDadoId(dado.id);
+                          setShowRopaWizard(true);
+                        }}
+                        onViewDetalhes={() => {
+                          setSelectedDado(dado);
+                          setShowDadoSheet(true);
+                        }}
+                      />
+                    ))}
                 </div>
               )}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Dados Pessoais</TableHead>
-                    <TableHead>Ativo</TableHead>
-                    <TableHead>Tipo Armazenamento</TableHead>
-                    <TableHead>Criptografia</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mapeamentos.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="p-0">
-                        <EmptyState
-                          icon={<ArrowRightLeft className="h-8 w-8" />}
-                          title="Nenhum mapeamento criado"
-                          description="Ainda não há mapeamentos entre dados pessoais e ativos. Comece criando o primeiro registro."
-                          action={{
-                            label: "Novo Mapeamento",
-                            onClick: () => setShowMapeamentoDialog(true)
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    mapeamentos.map((mapeamento) => (
-                      <TableRow key={mapeamento.id}>
-                        <TableCell>{mapeamento.dados_pessoais?.nome}</TableCell>
-                        <TableCell>{mapeamento.ativos?.nome}</TableCell>
-                        <TableCell>{mapeamento.tipo_armazenamento}</TableCell>
-                        <TableCell>{mapeamento.criptografia_aplicada ? "Sim" : "Não"}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
             </CardContent>
           </Card>
         </TabsContent>
@@ -362,10 +296,10 @@ export default function Dados() {
                       <Filter className="mr-2 h-4 w-4" />
                       Filtros
                     </Button>
-                    <Button size="sm" onClick={() => setShowRopaDialog(true)}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Novo ROPA
-                    </Button>
+                     <Button size="sm" onClick={() => setShowRopaWizard(true)}>
+                       <Plus className="mr-2 h-4 w-4" />
+                       Novo ROPA
+                     </Button>
                   </div>
                 </div>
               </div>
@@ -392,10 +326,10 @@ export default function Dados() {
                           icon={<FileText className="h-8 w-8" />}
                           title="Nenhum registro ROPA criado"
                           description="Ainda não há registros ROPA cadastrados. Comece criando o primeiro registro."
-                          action={{
-                            label: "Novo ROPA",
-                            onClick: () => setShowRopaDialog(true)
-                          }}
+                           action={{
+                             label: "Novo ROPA",
+                             onClick: () => setShowRopaWizard(true)
+                           }}
                         />
                       </TableCell>
                     </TableRow>
@@ -406,79 +340,6 @@ export default function Dados() {
                         <TableCell>{ropa.base_legal}</TableCell>
                         <TableCell>{ropa.categoria_titulares}</TableCell>
                         <TableCell>{getStatusBadge(ropa.status)}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="fluxos" className="space-y-4">
-          <Card className="rounded-lg border overflow-hidden">
-            <CardContent className="p-0">
-              <div className="p-6 pb-4">
-                <div className="flex items-center justify-between gap-4 mb-4">
-                  <Input
-                    placeholder="Buscar fluxos..."
-                    className="max-w-sm"
-                  />
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setShowFilters(!showFilters)}
-                    >
-                      <Filter className="mr-2 h-4 w-4" />
-                      Filtros
-                    </Button>
-                    <Button size="sm" onClick={() => setShowFluxoDialog(true)}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Novo Fluxo
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              {showFilters && (
-                <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
-                  <Input placeholder="Filtrar por status..." className="w-[180px]" />
-                  <Input placeholder="Filtrar por tipo transferência..." className="w-[180px]" />
-                </div>
-              )}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome do Fluxo</TableHead>
-                    <TableHead>Dados</TableHead>
-                    <TableHead>Origem → Destino</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {fluxos.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="p-0">
-                        <EmptyState
-                          icon={<ArrowRightLeft className="h-8 w-8" />}
-                          title="Nenhum fluxo de dados criado"
-                          description="Ainda não há fluxos de dados cadastrados. Comece criando o primeiro registro."
-                          action={{
-                            label: "Novo Fluxo",
-                            onClick: () => setShowFluxoDialog(true)
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    fluxos.map((fluxo) => (
-                      <TableRow key={fluxo.id}>
-                        <TableCell className="font-medium">{fluxo.nome_fluxo}</TableCell>
-                        <TableCell>{fluxo.dados_pessoais?.nome}</TableCell>
-                        <TableCell className="flex items-center">
-                          {fluxo.sistema_origem} <ArrowRightLeft className="mx-2 h-3 w-3" /> {fluxo.sistema_destino}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(fluxo.status)}</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -564,29 +425,65 @@ export default function Dados() {
 
       <DadosPessoaisDialog
         isOpen={showDadosDialog}
-        onClose={() => setShowDadosDialog(false)}
+        onClose={() => {
+          setShowDadosDialog(false);
+          setSelectedDado(null);
+        }}
         onSave={loadData}
+        dados={selectedDado}
       />
       <MapeamentoDialog
         isOpen={showMapeamentoDialog}
-        onClose={() => setShowMapeamentoDialog(false)}
+        onClose={() => {
+          setShowMapeamentoDialog(false);
+          setSelectedDado(null);
+        }}
         onSave={loadData}
       />
-      <RopaDialog
-        isOpen={showRopaDialog}
-        onClose={() => setShowRopaDialog(false)}
+      <RopaWizard
+        isOpen={showRopaWizard}
+        onClose={() => {
+          setShowRopaWizard(false);
+          setPreSelectedDadoId(undefined);
+        }}
         onSave={loadData}
-      />
-      <FluxoDadosDialog
-        isOpen={showFluxoDialog}
-        onClose={() => setShowFluxoDialog(false)}
-        onSave={loadData}
+        preSelectedDadoId={preSelectedDadoId}
       />
       <SolicitacaoTitularDialog
         isOpen={showSolicitacaoDialog}
-        onClose={() => setShowSolicitacaoDialog(false)}
+        onClose={() => {
+          setShowSolicitacaoDialog(false);
+          setSelectedSolicitacao(null);
+        }}
         onSave={loadData}
+        solicitacao={selectedSolicitacao}
       />
+
+      <Sheet open={showDadoSheet} onOpenChange={setShowDadoSheet}>
+        <SheetContent className="w-[600px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Detalhes do Dado Pessoal</SheetTitle>
+          </SheetHeader>
+          {selectedDado && (
+            <div className="space-y-4 mt-6">
+              <div>
+                <h3 className="font-semibold mb-2">{selectedDado.nome}</h3>
+                <p className="text-sm text-muted-foreground">{selectedDado.descricao}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-sm text-muted-foreground">Categoria</span>
+                  <p className="font-medium">{selectedDado.categoria_dados}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-muted-foreground">Base Legal</span>
+                  <p className="font-medium">{selectedDado.base_legal}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
 
       <ConfirmDialog
         open={deleteConfirm.open}
