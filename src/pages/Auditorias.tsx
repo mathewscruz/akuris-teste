@@ -24,26 +24,50 @@ import EvidenciasDialog from "@/components/auditorias/EvidenciasDialog";
 
 const getStatusBadge = (status: string) => {
   const statusMap = {
-    planejamento: { label: "Planejamento", variant: "secondary" as const },
-    em_andamento: { label: "Em Andamento", variant: "default" as const },
-    concluida: { label: "Concluída", variant: "outline" as const },
-    cancelada: { label: "Cancelada", variant: "destructive" as const },
+    planejamento: { label: "Planejamento", variant: "outline" as const, className: "border-amber-500 text-amber-700 bg-amber-50 dark:bg-amber-950 dark:text-amber-400" },
+    em_andamento: { label: "Em Andamento", variant: "outline" as const, className: "border-blue-500 text-blue-700 bg-blue-50 dark:bg-blue-950 dark:text-blue-400" },
+    concluida: { label: "Concluída", variant: "outline" as const, className: "border-green-500 text-green-700 bg-green-50 dark:bg-green-950 dark:text-green-400" },
+    cancelada: { label: "Cancelada", variant: "outline" as const, className: "border-red-500 text-red-700 bg-red-50 dark:bg-red-950 dark:text-red-400" },
   };
   
-  const statusInfo = statusMap[status as keyof typeof statusMap] || { label: status, variant: "secondary" as const };
-  return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
+  const statusInfo = statusMap[status as keyof typeof statusMap] || { 
+    label: status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' '), 
+    variant: "outline" as const,
+    className: "border-gray-500 text-gray-700 bg-gray-50 dark:bg-gray-950 dark:text-gray-400"
+  };
+  return <Badge variant={statusInfo.variant} className={statusInfo.className}>{statusInfo.label}</Badge>;
 };
 
 const getPrioridadeBadge = (prioridade: string) => {
   const prioridadeMap = {
-    baixa: { label: "Baixa", variant: "outline" as const },
-    media: { label: "Média", variant: "secondary" as const },
-    alta: { label: "Alta", variant: "default" as const },
-    critica: { label: "Crítica", variant: "destructive" as const },
+    baixa: { label: "Baixa", variant: "outline" as const, className: "border-green-500 text-green-700 bg-green-50 dark:bg-green-950 dark:text-green-400" },
+    media: { label: "Média", variant: "outline" as const, className: "border-yellow-500 text-yellow-700 bg-yellow-50 dark:bg-yellow-950 dark:text-yellow-400" },
+    alta: { label: "Alta", variant: "outline" as const, className: "border-orange-500 text-orange-700 bg-orange-50 dark:bg-orange-950 dark:text-orange-400" },
+    critica: { label: "Crítica", variant: "outline" as const, className: "border-red-500 text-red-700 bg-red-50 dark:bg-red-950 dark:text-red-400" },
   };
   
-  const prioridadeInfo = prioridadeMap[prioridade as keyof typeof prioridadeMap] || { label: prioridade, variant: "secondary" as const };
-  return <Badge variant={prioridadeInfo.variant}>{prioridadeInfo.label}</Badge>;
+  const prioridadeInfo = prioridadeMap[prioridade as keyof typeof prioridadeMap] || { 
+    label: prioridade.charAt(0).toUpperCase() + prioridade.slice(1), 
+    variant: "outline" as const,
+    className: ""
+  };
+  return <Badge variant={prioridadeInfo.variant} className={prioridadeInfo.className}>{prioridadeInfo.label}</Badge>;
+};
+
+const getTipoBadge = (tipo: string) => {
+  const tipoMap = {
+    interna: { label: "Interna", className: "border-blue-500 text-blue-700 bg-blue-50 dark:bg-blue-950 dark:text-blue-400" },
+    externa: { label: "Externa", className: "border-purple-500 text-purple-700 bg-purple-50 dark:bg-purple-950 dark:text-purple-400" },
+    compliance: { label: "Compliance", className: "border-indigo-500 text-indigo-700 bg-indigo-50 dark:bg-indigo-950 dark:text-indigo-400" },
+    operacional: { label: "Operacional", className: "border-teal-500 text-teal-700 bg-teal-50 dark:bg-teal-950 dark:text-teal-400" },
+    ti: { label: "TI", className: "border-cyan-500 text-cyan-700 bg-cyan-50 dark:bg-cyan-950 dark:text-cyan-400" },
+  };
+  
+  const tipoInfo = tipoMap[tipo as keyof typeof tipoMap] || { 
+    label: tipo.charAt(0).toUpperCase() + tipo.slice(1), 
+    className: "border-gray-500 text-gray-700 bg-gray-50 dark:bg-gray-950 dark:text-gray-400"
+  };
+  return <Badge variant="outline" className={tipoInfo.className}>{tipoInfo.label}</Badge>;
 };
 
 const Auditorias = () => {
@@ -351,7 +375,7 @@ const Auditorias = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline">{auditoria.tipo}</Badge>
+                            {getTipoBadge(auditoria.tipo)}
                           </TableCell>
                           <TableCell>
                             {getStatusBadge(auditoria.status)}
