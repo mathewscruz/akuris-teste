@@ -78,64 +78,63 @@ export function AuditoriaCardAccordion({
 
   return (
     <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <FileText className="h-5 w-5 text-muted-foreground" />
-              <h3 className="font-semibold text-lg">{auditoria.nome}</h3>
+      <CardHeader className="py-3 px-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <h3 className="font-semibold text-base truncate">{auditoria.nome}</h3>
             </div>
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {auditoria.descricao || "Sem descrição"}
-            </p>
+            {auditoria.descricao && (
+              <p className="text-xs text-muted-foreground line-clamp-1">
+                {auditoria.descricao}
+              </p>
+            )}
           </div>
-          <div className="flex gap-1 ml-2">
-            <Button variant="ghost" size="sm" onClick={onEdit}>
-              <Edit className="h-4 w-4" />
+          <div className="flex gap-1 flex-shrink-0">
+            <Button variant="ghost" size="sm" onClick={onEdit} className="h-7 w-7 p-0">
+              <Edit className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={onDelete}>
-              <Trash2 className="h-4 w-4" />
+            <Button variant="ghost" size="sm" onClick={onDelete} className="h-7 w-7 p-0">
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 mt-3">
-          <Badge variant="outline">{capitalizeText(auditoria.tipo)}</Badge>
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          <Badge variant="outline" className="text-xs py-0 h-5">{capitalizeText(auditoria.tipo)}</Badge>
           <Badge 
             variant={getStatusBadgeVariant(auditoria.status)}
-            className={getStatusCustomClass(auditoria.status)}
+            className={`text-xs py-0 h-5 ${getStatusCustomClass(auditoria.status)}`}
           >
             {capitalizeText(auditoria.status.replace(/_/g, ' '))}
           </Badge>
           <Badge 
             variant={getPrioridadeBadgeVariant(auditoria.prioridade)}
-            className={getPrioridadeCustomClass(auditoria.prioridade)}
+            className={`text-xs py-0 h-5 ${getPrioridadeCustomClass(auditoria.prioridade)}`}
           >
             {capitalizeText(auditoria.prioridade)}
           </Badge>
-        </div>
-
-        <div className="flex flex-wrap gap-3 mt-3 text-sm text-muted-foreground">
           {auditoria.data_inicio && (
-            <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
-              <span>{new Date(auditoria.data_inicio).toLocaleDateString('pt-BR')}</span>
-            </div>
+            <Badge variant="outline" className="text-xs py-0 h-5">
+              <Calendar className="h-3 w-3 mr-1" />
+              {new Date(auditoria.data_inicio).toLocaleDateString('pt-BR')}
+            </Badge>
           )}
           {auditorNome && (
-            <div className="flex items-center gap-1">
-              <User className="h-4 w-4" />
-              <span>{auditorNome}</span>
-            </div>
+            <Badge variant="outline" className="text-xs py-0 h-5">
+              <User className="h-3 w-3 mr-1" />
+              {auditorNome}
+            </Badge>
           )}
         </div>
       </CardHeader>
 
-      <CardContent>
-        <div className="flex flex-wrap gap-2 mb-4">
+      <CardContent className="py-2 px-4">
+        <div className="flex flex-wrap gap-1.5 mb-2">
           <Badge 
             variant="secondary" 
-            className="cursor-pointer hover:bg-secondary/80"
+            className="cursor-pointer hover:bg-secondary/80 text-xs py-0 h-5"
             onClick={onOpenTrabalhos}
           >
             <ClipboardList className="h-3 w-3 mr-1" />
@@ -143,7 +142,7 @@ export function AuditoriaCardAccordion({
           </Badge>
           <Badge 
             variant="secondary" 
-            className="cursor-pointer hover:bg-secondary/80"
+            className="cursor-pointer hover:bg-secondary/80 text-xs py-0 h-5"
             onClick={onOpenAchados}
           >
             <AlertTriangle className="h-3 w-3 mr-1" />
@@ -151,7 +150,7 @@ export function AuditoriaCardAccordion({
           </Badge>
           <Badge 
             variant="secondary" 
-            className="cursor-pointer hover:bg-secondary/80"
+            className="cursor-pointer hover:bg-secondary/80 text-xs py-0 h-5"
             onClick={onOpenRecomendacoes}
           >
             <FileCheck className="h-3 w-3 mr-1" />
@@ -161,93 +160,80 @@ export function AuditoriaCardAccordion({
 
         <Accordion type="single" collapsible value={isExpanded ? "details" : ""} onValueChange={(value) => setIsExpanded(!!value)}>
           <AccordionItem value="details" className="border-none">
-            <AccordionTrigger className="py-2 hover:no-underline">
-              <span className="text-sm font-medium">
+            <AccordionTrigger className="py-1 hover:no-underline">
+              <span className="text-xs font-medium">
                 {isExpanded ? "Ocultar Detalhes" : "Ver Detalhes e Ações"}
               </span>
             </AccordionTrigger>
             <AccordionContent>
-              <div className="space-y-4 pt-4">
+              <div className="space-y-2 pt-2">
                 {/* Seção Trabalhos */}
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <ClipboardList className="h-4 w-4 text-blue-600" />
-                      <h4 className="font-semibold text-sm">Trabalhos de Auditoria</h4>
-                      <Badge variant="outline">{counts.trabalhos}</Badge>
+                <div className="border rounded-md p-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <ClipboardList className="h-3.5 w-3.5 text-blue-600" />
+                      <h4 className="font-semibold text-xs">Trabalhos de Auditoria</h4>
+                      <Badge variant="outline" className="text-xs py-0 h-4">{counts.trabalhos}</Badge>
                     </div>
-                    <Button size="sm" variant="outline" onClick={onOpenTrabalhos}>
+                    <Button size="sm" variant="outline" onClick={onOpenTrabalhos} className="h-6 text-xs px-2">
                       <Plus className="h-3 w-3 mr-1" />
                       Gerenciar
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] text-muted-foreground">
                     Checklists, testes e análises realizadas durante a auditoria
                   </p>
                 </div>
 
                 {/* Seção Achados */}
-                <div className="border rounded-lg p-4 border-l-4 border-l-orange-500">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-orange-600" />
-                      <h4 className="font-semibold text-sm">Achados de Auditoria</h4>
-                      <Badge variant="outline">{counts.achados}</Badge>
+                <div className="border rounded-md p-2.5 border-l-2 border-l-orange-500">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <AlertTriangle className="h-3.5 w-3.5 text-orange-600" />
+                      <h4 className="font-semibold text-xs">Achados de Auditoria</h4>
+                      <Badge variant="outline" className="text-xs py-0 h-4">{counts.achados}</Badge>
                     </div>
-                    <Button size="sm" variant="outline" onClick={onOpenAchados}>
+                    <Button size="sm" variant="outline" onClick={onOpenAchados} className="h-6 text-xs px-2">
                       <Plus className="h-3 w-3 mr-1" />
                       Gerenciar
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] text-muted-foreground">
                     Deficiências, não conformidades e oportunidades de melhoria identificadas
                   </p>
-                  {counts.achados > 0 && (
-                    <div className="mt-3 flex gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={onOpenRecomendacoes}
-                        className="text-xs"
-                      >
-                        <FileCheck className="h-3 w-3 mr-1" />
-                        Ver Recomendações ({counts.recomendacoes})
-                      </Button>
-                    </div>
-                  )}
                 </div>
 
                 {/* Seção Recomendações */}
-                <div className="border rounded-lg p-4 border-l-4 border-l-green-500">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <FileCheck className="h-4 w-4 text-green-600" />
-                      <h4 className="font-semibold text-sm">Recomendações</h4>
-                      <Badge variant="outline">{counts.recomendacoes}</Badge>
+                <div className="border rounded-md p-2.5 border-l-2 border-l-green-500">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <FileCheck className="h-3.5 w-3.5 text-green-600" />
+                      <h4 className="font-semibold text-xs">Recomendações</h4>
+                      <Badge variant="outline" className="text-xs py-0 h-4">{counts.recomendacoes}</Badge>
                     </div>
-                    <Button size="sm" variant="outline" onClick={onOpenRecomendacoes}>
+                    <Button size="sm" variant="outline" onClick={onOpenRecomendacoes} className="h-6 text-xs px-2">
                       <Plus className="h-3 w-3 mr-1" />
                       Gerenciar
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] text-muted-foreground">
                     Ações sugeridas para tratamento dos achados identificados
                   </p>
                 </div>
 
                 {/* Seção Evidências */}
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <ImageIcon className="h-4 w-4 text-purple-600" />
-                      <h4 className="font-semibold text-sm">Evidências</h4>
+                <div className="border rounded-md p-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <ImageIcon className="h-3.5 w-3.5 text-purple-600" />
+                      <h4 className="font-semibold text-xs">Evidências</h4>
                     </div>
-                    <Button size="sm" variant="outline" onClick={onOpenEvidencias}>
+                    <Button size="sm" variant="outline" onClick={onOpenEvidencias} className="h-6 text-xs px-2">
                       <Plus className="h-3 w-3 mr-1" />
                       Gerenciar
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] text-muted-foreground">
                     Documentos, imagens e arquivos que suportam os achados
                   </p>
                 </div>
