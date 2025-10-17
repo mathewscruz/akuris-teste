@@ -54,10 +54,10 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Aprovador não encontrado");
     }
 
-    // Buscar dados do documento e empresa
+    // Buscar dados do documento
     const { data: document, error: docError } = await supabase
       .from('documentos')
-      .select('nome, empresa:empresas(nome, logo_url)')
+      .select('nome, empresa_id')
       .eq('id', documento_id)
       .single();
 
@@ -66,8 +66,19 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Documento não encontrado");
     }
 
-    const companyName = document.empresa?.nome || "GovernAII";
-    const logoUrl = document.empresa?.logo_url || 'https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/public-assets/governaii-logo.png';
+    // Buscar dados da empresa separadamente
+    const { data: empresa, error: empresaError } = await supabase
+      .from('empresas')
+      .select('nome, logo_url')
+      .eq('id', document.empresa_id)
+      .single();
+
+    if (empresaError) {
+      console.error("Erro ao buscar empresa:", empresaError);
+    }
+
+    const companyName = empresa?.nome || "GovernAII";
+    const logoUrl = empresa?.logo_url || 'https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/public-assets/governaii-logo.png';
 
     const emailResponse = await resend.emails.send({
       from: `${companyName} <noreply@governaii.com.br>`,
