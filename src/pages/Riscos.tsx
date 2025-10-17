@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { capitalizeText } from '@/lib/text-utils';
-
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
@@ -42,6 +42,8 @@ interface Risco {
   nivel_risco_residual?: string;
   status: string;
   responsavel?: string;
+  responsavel_nome?: string;
+  responsavel_foto?: string;
   controles_existentes?: string;
   causas?: string;
   consequencias?: string;
@@ -110,8 +112,41 @@ export function Riscos() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      console.log('Riscos carregados:', data);
-      setRiscos(data || []);
+      
+      // Buscar nomes dos responsáveis
+      if (data && data.length > 0) {
+        const responsavelIds = data
+          .map(r => r.responsavel)
+          .filter(r => r && r.trim() !== '');
+        
+        if (responsavelIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, nome, foto_url')
+            .in('user_id', responsavelIds);
+          
+          const profileMap = new Map(
+            profiles?.map(p => [p.user_id, { nome: p.nome, foto_url: p.foto_url }]) || []
+          );
+          
+          const mappedData = data.map(risco => {
+            const profileData = (risco.responsavel && risco.responsavel.trim() !== '') 
+              ? profileMap.get(risco.responsavel) 
+              : null;
+            return {
+              ...risco,
+              responsavel_nome: profileData?.nome || null,
+              responsavel_foto: profileData?.foto_url || null
+            };
+          });
+          
+          setRiscos(mappedData);
+        } else {
+          setRiscos(data);
+        }
+      } else {
+        setRiscos(data || []);
+      }
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -387,7 +422,35 @@ export function Riscos() {
       key: 'responsavel',
       label: 'Responsável',
       className: undefined,
-      render: (value: string) => value || '-'
+      render: (value: string, risco: Risco) => {
+        if (risco.responsavel_nome) {
+          return (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Avatar className="h-8 w-8 cursor-pointer">
+                    {risco.responsavel_foto && (
+                      <AvatarImage src={risco.responsavel_foto} alt={risco.responsavel_nome} />
+                    )}
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {risco.responsavel_nome
+                        .split(' ')
+                        .map(n => n[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{risco.responsavel_nome}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        }
+        return '-';
+      }
     },
     {
       key: 'actions',
@@ -639,7 +702,7 @@ export function Riscos() {
                             className={column.className}
                           >
                             {column.render
-                              ? column.render(item[column.key as keyof typeof item], item)
+                              ? column.render(String(item[column.key as keyof typeof item] || ''), item)
                               : String(item[column.key as keyof typeof item] || '-')
                             }
                           </TableCell>
