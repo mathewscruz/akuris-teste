@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp, Edit, Trash2, Filter } from "lucide-react";
+import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp, Edit, Trash2, Filter, TestTube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -12,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ControleDialog from "@/components/controles/ControleDialog";
 import CategoriasDialog from "@/components/controles/CategoriasDialog";
-import TestesList from "@/components/controles/TestesList";
+import TestesDialog from "@/components/controles/TestesDialog";
 import ControlesVinculacaoDialog from "@/components/controles/ControlesVinculacaoDialog";
 import { RelatoriosDialog } from "@/components/controles/RelatoriosDialog";
 import { useControlesStats } from "@/hooks/useControlesStats";
@@ -60,11 +59,12 @@ interface Categoria {
 export default function Controles() {
   const [controleDialogOpen, setControleDialogOpen] = useState(false);
   const [categoriasDialogOpen, setCategoriasDialogOpen] = useState(false);
+  const [testesDialogOpen, setTestesDialogOpen] = useState(false);
+  const [vinculacaoDialogOpen, setVinculacaoDialogOpen] = useState(false);
+  const [relatoriosDialogOpen, setRelatoriosDialogOpen] = useState(false);
   const [editingControle, setEditingControle] = useState<Controle | null>(null);
   const [selectedControleForTests, setSelectedControleForTests] = useState<Controle | null>(null);
-  const [vinculacaoDialogOpen, setVinculacaoDialogOpen] = useState(false);
   const [selectedControleForVinculacao, setSelectedControleForVinculacao] = useState<Controle | null>(null);
-  const [relatoriosDialogOpen, setRelatoriosDialogOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; controleId: string }>({
     open: false,
     controleId: ''
@@ -282,11 +282,11 @@ export default function Controles() {
             size="sm"
             onClick={() => {
               setSelectedControleForTests(controle);
-              const tabsTrigger = document.querySelector('[value="testes"]') as HTMLElement;
-              if (tabsTrigger) tabsTrigger.click();
+              setTestesDialogOpen(true);
             }}
+            title="Gerenciar Testes"
           >
-            Testes
+            <TestTube className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
@@ -295,6 +295,7 @@ export default function Controles() {
               setSelectedControleForVinculacao(controle);
               setVinculacaoDialogOpen(true);
             }}
+            title="Gerenciar Vinculações"
           >
             <Link className="w-4 h-4" />
           </Button>
@@ -353,367 +354,296 @@ export default function Controles() {
         />
       </div>
 
-      <Tabs defaultValue="controles" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="controles">Controles</TabsTrigger>
-          <TabsTrigger value="testes" disabled={!selectedControleForTests}>
-            Testes {selectedControleForTests && `- ${selectedControleForTests.nome}`}
-          </TabsTrigger>
-          <TabsTrigger value="vinculacoes" disabled={!selectedControleForVinculacao}>
-            Vinculações {selectedControleForVinculacao && `- ${selectedControleForVinculacao.nome}`}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="controles" className="space-y-6">
-          <Card className="rounded-lg border overflow-hidden">
-            <CardContent className="p-0">
-              <div className="p-6 pb-4">
-                <div className="flex items-center justify-between gap-4 mb-4">
-                  <Input
-                    placeholder="Buscar controles..."
-                    className="max-w-sm"
-                  />
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setCategoriasDialogOpen(true)}
-                    >
-                      Categorias
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setShowFilters(!showFilters)}
-                    >
-                      <Filter className="mr-2 h-4 w-4" />
-                      Filtros
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setRelatoriosDialogOpen(true)}
-                    >
-                      <BarChart3 className="mr-2 h-4 w-4" />
-                      Relatórios
-                    </Button>
-                    <Button 
-                      size="sm"
-                      onClick={() => setControleDialogOpen(true)}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Novo Controle
-                    </Button>
-                  </div>
-                </div>
+      <Card className="rounded-lg border overflow-hidden">
+        <CardContent className="p-0">
+          <div className="p-6 pb-4">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <Input
+                placeholder="Buscar controles..."
+                className="max-w-sm"
+              />
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setCategoriasDialogOpen(true)}
+                >
+                  Categorias
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filtros
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setRelatoriosDialogOpen(true)}
+                >
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Relatórios
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={() => setControleDialogOpen(true)}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo Controle
+                </Button>
               </div>
-              {showFilters && (
-                <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos os Status</SelectItem>
-                      <SelectItem value="ativo">Ativo</SelectItem>
-                      <SelectItem value="inativo">Inativo</SelectItem>
-                      <SelectItem value="em_revisao">Em Revisão</SelectItem>
-                      <SelectItem value="descontinuado">Descontinuado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={tipoFilter} onValueChange={setTipoFilter}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos os Tipos</SelectItem>
-                      <SelectItem value="preventivo">Preventivo</SelectItem>
-                      <SelectItem value="detectivo">Detectivo</SelectItem>
-                      <SelectItem value="corretivo">Corretivo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={criticidadeFilter} onValueChange={setCriticidadeFilter}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Criticidade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todas as Criticidades</SelectItem>
-                      <SelectItem value="baixo">Baixo</SelectItem>
-                      <SelectItem value="medio">Médio</SelectItem>
-                      <SelectItem value="alto">Alto</SelectItem>
-                      <SelectItem value="critico">Crítico</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Criticidade</TableHead>
-                    <TableHead>Responsável</TableHead>
-                    <TableHead>Próxima Avaliação</TableHead>
-                    <TableHead>Ações</TableHead>
+            </div>
+          </div>
+          {showFilters && (
+            <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Status</SelectItem>
+                  <SelectItem value="ativo">Ativo</SelectItem>
+                  <SelectItem value="inativo">Inativo</SelectItem>
+                  <SelectItem value="em_revisao">Em Revisão</SelectItem>
+                  <SelectItem value="descontinuado">Descontinuado</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={tipoFilter} onValueChange={setTipoFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Tipos</SelectItem>
+                  <SelectItem value="preventivo">Preventivo</SelectItem>
+                  <SelectItem value="detectivo">Detectivo</SelectItem>
+                  <SelectItem value="corretivo">Corretivo</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={criticidadeFilter} onValueChange={setCriticidadeFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Criticidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todas as Criticidades</SelectItem>
+                  <SelectItem value="baixo">Baixo</SelectItem>
+                  <SelectItem value="medio">Médio</SelectItem>
+                  <SelectItem value="alto">Alto</SelectItem>
+                  <SelectItem value="critico">Crítico</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Categoria</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Criticidade</TableHead>
+                <TableHead>Responsável</TableHead>
+                <TableHead>Próxima Avaliação</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                [...Array(5)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    [...Array(5)].map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                        <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                      </TableRow>
-                    ))
-                  ) : controles.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="p-0">
-                        <EmptyState
-                          icon={<Shield className="h-12 w-12" />}
-                          title="Nenhum controle cadastrado"
-                          description="Comece criando seu primeiro controle interno"
-                          action={{
-                            label: "Criar Primeiro Controle",
-                            onClick: () => setControleDialogOpen(true)
+                ))
+              ) : controles.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="p-0">
+                    <EmptyState
+                      icon={<Shield className="h-12 w-12" />}
+                      title="Nenhum controle cadastrado"
+                      description="Comece criando seu primeiro controle interno"
+                      action={{
+                        label: "Criar Primeiro Controle",
+                        onClick: () => setControleDialogOpen(true)
+                      }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : (() => {
+                const filteredControles = controles.filter(controle => {
+                  const matchStatus = statusFilter === "todos" || controle.status === statusFilter;
+                  const matchTipo = tipoFilter === "todos" || controle.tipo === tipoFilter;
+                  const matchCriticidade = criticidadeFilter === "todos" || controle.criticidade === criticidadeFilter;
+                  
+                  return matchStatus && matchTipo && matchCriticidade;
+                });
+
+                const indexOfLastItem = currentPage * itemsPerPage;
+                const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+                const currentControles = filteredControles.slice(indexOfFirstItem, indexOfLastItem);
+                const totalPages = Math.ceil(filteredControles.length / itemsPerPage);
+
+                return (
+                  <>
+                    {currentControles.map((controle) => (
+                  <TableRow key={controle.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {getTipoIcon(controle.tipo)}
+                        <span className="font-medium">{controle.nome}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {controle.categoria ? (
+                        <Badge 
+                          variant="outline" 
+                          style={{ borderColor: controle.categoria.cor, color: controle.categoria.cor }}
+                        >
+                          {controle.categoria.nome}
+                        </Badge>
+                      ) : <span className="text-muted-foreground">-</span>}
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant="outline" 
+                        className={getControleTipoColor(controle.tipo)}
+                      >
+                        {capitalizeText(controle.tipo)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {getStatusBadge(controle.status)}
+                    </TableCell>
+                    <TableCell>
+                      {getCriticidadeBadge(controle.criticidade)}
+                    </TableCell>
+                    <TableCell>
+                      {controle.responsavel || <span className="text-muted-foreground">-</span>}
+                    </TableCell>
+                    <TableCell>
+                      {controle.proxima_avaliacao ? 
+                        new Date(controle.proxima_avaliacao).toLocaleDateString() : 
+                        <span className="text-muted-foreground">-</span>
+                      }
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(controle)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedControleForTests(controle);
+                            setTestesDialogOpen(true);
                           }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ) : (() => {
-                    // Aplicar filtros
-                    const filteredControles = controles.filter(controle => {
-                      const matchStatus = statusFilter === "todos" || controle.status === statusFilter;
-                      const matchTipo = tipoFilter === "todos" || controle.tipo === tipoFilter;
-                      const matchCriticidade = criticidadeFilter === "todos" || controle.criticidade === criticidadeFilter;
-                      
-                      return matchStatus && matchTipo && matchCriticidade;
-                    });
-
-                    // Calcular paginação
-                    const indexOfLastItem = currentPage * itemsPerPage;
-                    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-                    const currentControles = filteredControles.slice(indexOfFirstItem, indexOfLastItem);
-                    const totalPages = Math.ceil(filteredControles.length / itemsPerPage);
-
-                    return (
-                      <>
-                        {currentControles.map((controle) => (
-                      <TableRow key={controle.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {getTipoIcon(controle.tipo)}
-                            <span className="font-medium">{controle.nome}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {controle.categoria ? (
-                            <Badge 
-                              variant="outline" 
-                              style={{ borderColor: controle.categoria.cor, color: controle.categoria.cor }}
-                            >
-                              {controle.categoria.nome}
-                            </Badge>
-                          ) : <span className="text-muted-foreground">-</span>}
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant="outline" 
-                            className={getControleTipoColor(controle.tipo)}
-                          >
-                            {capitalizeText(controle.tipo)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(controle.status)}
-                        </TableCell>
-                        <TableCell>
-                          {getCriticidadeBadge(controle.criticidade)}
-                        </TableCell>
-                        <TableCell>
-                          {controle.responsavel || <span className="text-muted-foreground">-</span>}
-                        </TableCell>
-                        <TableCell>
-                          {controle.proxima_avaliacao ? 
-                            new Date(controle.proxima_avaliacao).toLocaleDateString() : 
-                            <span className="text-muted-foreground">-</span>
-                          }
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(controle)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedControleForTests(controle);
-                                const tabsTrigger = document.querySelector('[value="testes"]') as HTMLElement;
-                                if (tabsTrigger) tabsTrigger.click();
-                              }}
-                            >
-                              Testes
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedControleForVinculacao(controle);
-                                setVinculacaoDialogOpen(true);
-                              }}
-                            >
-                              <Link className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(controle.id)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    
-                    {/* Paginação */}
-                    {totalPages > 1 && (
-                      <TableRow>
-                        <TableCell colSpan={8}>
-                          <div className="flex items-center justify-between px-2 py-4">
-                            <div className="text-sm text-muted-foreground">
-                              Mostrando {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, filteredControles.length)} de {filteredControles.length} controles
-                            </div>
-                            <Pagination>
-                              <PaginationContent>
-                                <PaginationItem>
-                                  <PaginationPrevious 
-                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                  />
-                                </PaginationItem>
-                                
-                                {[...Array(totalPages)].map((_, index) => {
-                                  const pageNumber = index + 1;
-                                  
-                                  if (
-                                    pageNumber === 1 ||
-                                    pageNumber === totalPages ||
-                                    (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-                                  ) {
-                                    return (
-                                      <PaginationItem key={pageNumber}>
-                                        <PaginationLink
-                                          onClick={() => setCurrentPage(pageNumber)}
-                                          isActive={currentPage === pageNumber}
-                                          className="cursor-pointer"
-                                        >
-                                          {pageNumber}
-                                        </PaginationLink>
-                                      </PaginationItem>
-                                    );
-                                  } else if (
-                                    pageNumber === currentPage - 2 ||
-                                    pageNumber === currentPage + 2
-                                  ) {
-                                    return (
-                                      <PaginationItem key={pageNumber}>
-                                        <PaginationEllipsis />
-                                      </PaginationItem>
-                                    );
-                                  }
-                                  return null;
-                                })}
-                                
-                                <PaginationItem>
-                                  <PaginationNext 
-                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                  />
-                                </PaginationItem>
-                              </PaginationContent>
-                            </Pagination>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </>
-                );
-              })()}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="testes">
-          {selectedControleForTests ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedControleForTests(null)}
-                >
-                  ← Voltar aos Controles
-                </Button>
-              </div>
-              <TestesList 
-                controleId={selectedControleForTests.id} 
-                controleNome={selectedControleForTests.nome}
-              />
-            </div>
-          ) : (
-            <EmptyState
-              icon={<Shield className="h-12 w-12" />}
-              title="Selecione um controle"
-              description="Clique em 'Testes' em um controle para visualizar seu histórico de testes"
-            />
-          )}
-        </TabsContent>
-
-        <TabsContent value="vinculacoes">
-          {selectedControleForVinculacao ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedControleForVinculacao(null)}
-                >
-                  ← Voltar aos Controles
-                </Button>
-              </div>
-              <EmptyState
-                icon={<Link className="h-12 w-12" />}
-                title="Gerencie as Vinculações"
-                description="Vincule este controle a riscos e ativos para mapear sua cobertura"
-                action={{
-                  label: "Abrir Editor de Vinculações",
-                  onClick: () => setVinculacaoDialogOpen(true)
-                }}
-              />
-            </div>
-          ) : (
-            <EmptyState
-              icon={<Link className="h-12 w-12" />}
-              title="Selecione um controle"
-              description="Clique em 'Vincular' em um controle para gerenciar suas vinculações"
-            />
-          )}
-        </TabsContent>
-      </Tabs>
+                          title="Gerenciar Testes"
+                        >
+                          <TestTube className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedControleForVinculacao(controle);
+                            setVinculacaoDialogOpen(true);
+                          }}
+                          title="Gerenciar Vinculações"
+                        >
+                          <Link className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(controle.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                
+                {totalPages > 1 && (
+                  <TableRow>
+                    <TableCell colSpan={8}>
+                      <div className="flex items-center justify-between px-2 py-4">
+                        <div className="text-sm text-muted-foreground">
+                          Mostrando {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, filteredControles.length)} de {filteredControles.length} controles
+                        </div>
+                        <Pagination>
+                          <PaginationContent>
+                            <PaginationItem>
+                              <PaginationPrevious 
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                              />
+                            </PaginationItem>
+                            
+                            {[...Array(totalPages)].map((_, index) => {
+                              const pageNumber = index + 1;
+                              
+                              if (
+                                pageNumber === 1 ||
+                                pageNumber === totalPages ||
+                                (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                              ) {
+                                return (
+                                  <PaginationItem key={pageNumber}>
+                                    <PaginationLink
+                                      onClick={() => setCurrentPage(pageNumber)}
+                                      isActive={currentPage === pageNumber}
+                                      className="cursor-pointer"
+                                    >
+                                      {pageNumber}
+                                    </PaginationLink>
+                                  </PaginationItem>
+                                );
+                              } else if (
+                                pageNumber === currentPage - 2 ||
+                                pageNumber === currentPage + 2
+                              ) {
+                                return (
+                                  <PaginationItem key={pageNumber}>
+                                    <PaginationEllipsis />
+                                  </PaginationItem>
+                                );
+                              }
+                              return null;
+                            })}
+                            
+                            <PaginationItem>
+                              <PaginationNext 
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                              />
+                            </PaginationItem>
+                          </PaginationContent>
+                        </Pagination>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </>
+            );
+          })()}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <ControleDialog
         open={controleDialogOpen}
@@ -728,6 +658,16 @@ export default function Controles() {
       <CategoriasDialog
         open={categoriasDialogOpen}
         onOpenChange={setCategoriasDialogOpen}
+      />
+
+      <TestesDialog
+        open={testesDialogOpen}
+        onOpenChange={(open) => {
+          setTestesDialogOpen(open);
+          if (!open) setSelectedControleForTests(null);
+        }}
+        controleId={selectedControleForTests?.id}
+        controleNome={selectedControleForTests?.nome}
       />
 
       <ControlesVinculacaoDialog
