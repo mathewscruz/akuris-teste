@@ -18,20 +18,20 @@ interface CircularProgressProps {
 }
 
 const CircularProgress: React.FC<CircularProgressProps> = ({ percentage, color }) => {
-  const radius = 70;
+  const radius = 55;
   const circumference = Math.PI * radius; // Semicírculo
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   return (
     <svg 
-      width="180" 
-      height="100" 
-      viewBox="0 0 180 100" 
+      width="140" 
+      height="80" 
+      viewBox="0 0 140 80" 
       className="mx-auto"
     >
       {/* Background Track */}
       <path
-        d="M 20 90 A 70 70 0 0 1 160 90"
+        d="M 15 70 A 55 55 0 0 1 125 70"
         fill="none"
         stroke="hsl(var(--muted))"
         strokeWidth="12"
@@ -40,7 +40,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ percentage, color }
       
       {/* Progress Arc */}
       <path
-        d="M 20 90 A 70 70 0 0 1 160 90"
+        d="M 15 70 A 55 55 0 0 1 125 70"
         fill="none"
         stroke={color}
         strokeWidth="12"
@@ -103,13 +103,13 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
   if (loading || !stats) {
     return (
       <Card className="bg-card border border-border shadow-card">
-        <CardContent className="pt-8 pb-8">
-          <div className="space-y-6">
-            <Skeleton className="h-24 w-44 mx-auto rounded-full" />
-            <Skeleton className="h-4 w-16 mx-auto" />
-            <Skeleton className="h-16 w-32 mx-auto" />
-            <Skeleton className="h-4 w-20 mx-auto" />
-            <Skeleton className="h-10 w-40 mx-auto rounded-full" />
+        <CardContent className="pt-4 pb-4">
+          <div className="space-y-4">
+            <Skeleton className="h-20 w-32 mx-auto rounded-full" />
+            <Skeleton className="h-3 w-12 mx-auto" />
+            <Skeleton className="h-12 w-24 mx-auto" />
+            <Skeleton className="h-3 w-16 mx-auto" />
+            <Skeleton className="h-8 w-32 mx-auto rounded-full" />
           </div>
         </CardContent>
       </Card>
@@ -126,11 +126,11 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
   const classification = getScoreClassification(displayScore);
 
   const hasVariation = stats.variacao7dias !== null && stats.variacao7dias !== 0;
-  const isPositiveTrend = stats.variacao7dias && stats.variacao7dias > 0;
+  const isPositiveTrend = stats.variacao7dias && stats.variacao7dias < 0;
 
   return (
     <Card className="bg-card border border-border shadow-card">
-      <CardContent className="pt-8 pb-8">
+      <CardContent className="pt-4 pb-4">
         {/* Gráfico Circular */}
         <CircularProgress percentage={scorePercentage} color={scoreColor} />
 
@@ -138,31 +138,31 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
         {hasVariation && (
           <div
             className={cn(
-              "flex items-center justify-center gap-1 mt-3 text-sm font-medium",
+              "flex items-center justify-center gap-1 mt-2 text-sm font-medium",
               isPositiveTrend
                 ? "text-green-600 dark:text-green-400"
                 : "text-red-600 dark:text-red-400"
             )}
           >
             {isPositiveTrend ? (
-              <ArrowDown className="h-4 w-4" />
-            ) : (
               <ArrowUp className="h-4 w-4" />
+            ) : (
+              <ArrowDown className="h-4 w-4" />
             )}
-            <span>{Math.abs(stats.variacao7dias)}</span>
+            <span>{Math.abs(stats.variacao7dias)}%</span>
           </div>
         )}
 
         {/* Score Principal */}
-        <div className="text-center mt-4">
-          <div className="text-6xl font-bold text-foreground leading-none">
+        <div className="text-center mt-2">
+          <div className="text-4xl font-bold text-foreground leading-none">
             {displayScore}
           </div>
           <div className="text-sm text-muted-foreground mt-2">de 1000</div>
         </div>
 
         {/* Badge de Classificação */}
-        <div className="flex justify-center mt-6">
+        <div className="flex justify-center mt-4">
           <Badge
             variant="outline"
             className={cn(
