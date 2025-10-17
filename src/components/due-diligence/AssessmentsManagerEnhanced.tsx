@@ -5,13 +5,18 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Send, Clock, AlertTriangle, FileText, Eye, User, Edit2, Trash2, RefreshCw, Award, TrendingUp, Filter } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { StatCard } from '@/components/ui/stat-card';
+import { Plus, Send, Clock, AlertTriangle, FileText, Eye, User, Edit2, Trash2, RefreshCw, Award, TrendingUp, Filter, Settings, CheckCircle, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useDueDiligenceStats } from '@/hooks/useDueDiligenceStats';
 import { AssessmentDialog } from './AssessmentDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { ScoreVisualization } from './ScoreVisualization';
 import { AssessmentResponsesViewer } from './AssessmentResponsesViewer';
+import { ReportsSidebar } from './ReportsSidebar';
+import { IntegrationSuggestions } from './IntegrationSuggestions';
 
 interface Assessment {
   id: string;
@@ -144,7 +149,14 @@ function ReminderDialog({ assessment, open, onOpenChange, onSuccess }: ReminderD
   );
 }
 
-export function AssessmentsManagerEnhanced() {
+interface AssessmentsManagerEnhancedProps {
+  filter?: {
+    fornecedorId?: string;
+    fornecedorNome?: string;
+  } | null;
+}
+
+export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhancedProps = {}) {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [filteredAssessments, setFilteredAssessments] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,6 +197,7 @@ export function AssessmentsManagerEnhanced() {
     assessment: null
   });
   const { toast } = useToast();
+  const { data: stats, isLoading: statsLoading } = useDueDiligenceStats();
 
   useEffect(() => {
     fetchAssessments();
@@ -192,7 +205,34 @@ export function AssessmentsManagerEnhanced() {
 
   useEffect(() => {
     filterAssessments();
-  }, [assessments, searchTerm, statusFilter]); // Mantido apenas as dependências necessárias
+  }, [assessments, searchTerm, statusFilter, filter]); // Adicionado filter às dependências
+
+  // Aplicar filtro inicial quando filter prop mudar
+  useEffect(() => {
+    if (filter?.fornecedorNome) {
+      setSearchTerm(filter.fornecedorNome);
+    }
+  }, [filter]);
+
+  // Listener para criar nova assessment com fornecedor pré-selecionado
+  useEffect(() => {
+    const handleCreateAssessment = (event: CustomEvent) => {
+      setAssessmentDialog({ 
+        open: true, 
+        assessment: {
+          fornecedor_nome: event.detail.fornecedorNome,
+          fornecedor_id: event.detail.fornecedorId
+        } as any, 
+        mode: 'create' 
+      });
+    };
+    
+    window.addEventListener('createAssessment', handleCreateAssessment as EventListener);
+    
+    return () => {
+      window.removeEventListener('createAssessment', handleCreateAssessment as EventListener);
+    };
+  }, []);
 
   const fetchAssessments = async () => {
     try {
@@ -394,8 +434,83 @@ export function AssessmentsManagerEnhanced() {
     return <div className="text-center p-8">Carregando assessments...</div>;
   }
 
+  const calcularScoreMedio = () => {
+    const concluidas = assessments.filter(a => 
+      a.status === 'concluido' && a.score_final != null && a.score_final > 0
+    );
+    
+    if (concluidas.length === 0) return 0;
+    
+    return (concluidas.reduce((sum, a) => sum + ((a.score_final || 0) * 10), 0) / concluidas.length);
+  };
+
+  const handleScoreClick = async (assessment: Assessment) => {
+    try {
+      const { data: scoreData } = await supabase
+        .from('due_diligence_scores')
+        .select('*')
+        .eq('assessment_id', assessment.id)
+        .single();
+      
+      if (scoreData) {
+        setScoreDialog({
+          open: true,
+          assessment,
+          scoreData
+        });
+      } else {
+        toast({
+          title: "Score não encontrado",
+          description: "Não foi possível carregar os detalhes do score",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
-    <div>
+    <div className="space-y-6">
+      {/* StatCards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total de Avaliações"
+          value={assessments.length}
+          description="Avaliações criadas"
+          icon={<Users className="h-4 w-4" />}
+          loading={statsLoading}
+        />
+        <StatCard
+          title="Concluídas"
+          value={assessments.filter(a => a.status === 'concluido').length}
+          description={`${assessments.filter(a => a.status !== 'concluido').length} pendentes`}
+          icon={<CheckCircle className="h-4 w-4" />}
+          loading={statsLoading}
+          variant="success"
+        />
+        <StatCard
+          title="Expiradas"
+          value={assessments.filter(a => isExpired(a.data_expiracao) && a.status !== 'concluido').length}
+          description="Requerem atenção"
+          icon={<AlertTriangle className="h-4 w-4" />}
+          loading={statsLoading}
+          variant="destructive"
+        />
+        <StatCard
+          title="Score Médio"
+          value={`${calcularScoreMedio().toFixed(1)}%`}
+          description="Média das avaliações concluídas"
+          icon={<TrendingUp className="h-4 w-4" />}
+          loading={statsLoading}
+          variant={calcularScoreMedio() >= 80 ? 'success' : calcularScoreMedio() >= 60 ? 'warning' : 'destructive'}
+        />
+      </div>
+
       <Card className="rounded-lg border overflow-hidden">
       <CardContent className="p-0">
         <div className="p-6 pb-4">
@@ -408,6 +523,7 @@ export function AssessmentsManagerEnhanced() {
               />
             </div>
             <div className="flex gap-2">
+              <ReportsSidebar />
               <Button 
                 variant="outline" 
                 size="sm"
@@ -495,14 +611,21 @@ export function AssessmentsManagerEnhanced() {
                   <span className="text-muted-foreground">Score:</span>
                   <div className="flex items-center gap-2">
                     {assessment.score_final && assessment.score_final > 0 ? (
-                      <>
-                        <span className={`font-medium ${getScoreColor(assessment.score_final)}`}>
-                          {assessment.score_final.toFixed(1)}
-                        </span>
-                        <Badge variant={getScoreBadge(assessment.score_final).variant} className="text-xs">
+                      <button
+                        onClick={() => handleScoreClick(assessment)}
+                        className="hover:underline cursor-pointer flex items-center gap-2"
+                      >
+                        <Badge 
+                          variant={getScoreBadge(assessment.score_final).variant}
+                          className="transition-all hover:scale-105"
+                        >
+                          <Award className="h-3 w-3 mr-1" />
                           {getScoreBadge(assessment.score_final).text}
+                          <span className="ml-1 font-mono">
+                            {(assessment.score_final * 10).toFixed(1)}%
+                          </span>
                         </Badge>
-                      </>
+                      </button>
                     ) : assessment.status === 'concluido' ? (
                       <span className="text-sm text-muted-foreground">Calculando...</span>
                     ) : (
@@ -641,21 +764,88 @@ export function AssessmentsManagerEnhanced() {
         cancelText="Cancelar"
       />
 
-      {/* Dialog de Score */}
+      {/* Dialog de Score com Integrações */}
       <Dialog open={scoreDialog.open} onOpenChange={(open) => setScoreDialog({ open, assessment: null, scoreData: null })}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Award className="h-5 w-5" />
-              Resultado da Avaliação
+              Resultado da Avaliação - {scoreDialog.assessment?.fornecedor_nome}
             </DialogTitle>
           </DialogHeader>
           
-          {scoreDialog.assessment && (
-            <ScoreVisualizationWrapper assessment={scoreDialog.assessment} />
-          )}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              {scoreDialog.assessment && (
+                <ScoreVisualizationWrapper assessment={scoreDialog.assessment} />
+              )}
+            </div>
+            
+            <div className="lg:col-span-1">
+              {scoreDialog.assessment && scoreDialog.assessment.score_final && (
+                <IntegrationSuggestions 
+                  assessment={{
+                    id: scoreDialog.assessment.id,
+                    fornecedor_nome: scoreDialog.assessment.fornecedor_nome,
+                    score_final: scoreDialog.assessment.score_final
+                  }}
+                />
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
+
+      {/* Seção de Automações */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Automações Configuradas
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Regra 1 */}
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div>
+                <p className="font-medium">Criar Risco Automaticamente</p>
+                <p className="text-sm text-muted-foreground">
+                  Quando score &lt; 50%, criar risco no módulo de riscos
+                </p>
+              </div>
+              <Switch defaultChecked />
+            </div>
+            
+            {/* Regra 2 */}
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div>
+                <p className="font-medium">Solicitar Documentação</p>
+                <p className="text-sm text-muted-foreground">
+                  Quando score entre 50-70%, enviar email solicitando docs
+                </p>
+              </div>
+              <Switch />
+            </div>
+            
+            {/* Regra 3 */}
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div>
+                <p className="font-medium">Notificar Aprovação</p>
+                <p className="text-sm text-muted-foreground">
+                  Quando score &gt;= 80%, notificar time de compras
+                </p>
+              </div>
+              <Switch defaultChecked />
+            </div>
+            
+            <Button variant="outline" size="sm" className="w-full">
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Nova Regra
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Dialog de Respostas */}
       <AssessmentResponsesViewer

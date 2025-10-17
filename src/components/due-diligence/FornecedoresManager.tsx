@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit2, Trash2, Building, Mail, Phone, Filter } from 'lucide-react';
+import { Plus, Edit2, Trash2, Building, Mail, Phone, Filter, Eye } from 'lucide-react';
 
 interface Fornecedor {
   id: string;
@@ -391,22 +392,60 @@ export function FornecedoresManager() {
                   </div>
                 )}
                 
-                <div className="flex justify-end space-x-2 pt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleEdit(fornecedor)}
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => deleteMutation.mutate(fornecedor.id)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                <div className="space-y-2 pt-2">
+                  {/* Botões de Ação Cascata */}
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        const event = new CustomEvent('navigateToDueDiligence', {
+                          detail: { 
+                            tab: 'assessments', 
+                            filter: { fornecedorId: fornecedor.id, fornecedorNome: fornecedor.nome }
+                          }
+                        });
+                        window.dispatchEvent(event);
+                      }}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      Ver Avaliações
+                    </Button>
+                    
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        const event = new CustomEvent('createAssessment', {
+                          detail: { fornecedorId: fornecedor.id, fornecedorNome: fornecedor.nome }
+                        });
+                        window.dispatchEvent(event);
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Nova Avaliação
+                    </Button>
+                  </div>
+                  
+                  {/* Botões de Gerenciamento */}
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(fornecedor)}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => deleteMutation.mutate(fornecedor.id)}
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

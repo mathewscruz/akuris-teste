@@ -358,6 +358,22 @@ export function TemplatesManager() {
                     >
                       <FileText className="h-4 w-4" />
                     </Button>
+
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => {
+                        const event = new CustomEvent('createAssessmentFromTemplate', {
+                          detail: { templateId: template.id, templateNome: template.nome }
+                        });
+                        window.dispatchEvent(event);
+                      }}
+                      title="Usar este template para criar avaliação"
+                      className="bg-primary"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Usar Template
+                    </Button>
                     
                     <Button
                       variant="ghost"
