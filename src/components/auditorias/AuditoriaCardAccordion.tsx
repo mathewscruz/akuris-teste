@@ -77,170 +77,165 @@ export function AuditoriaCardAccordion({
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="py-3 px-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <h3 className="font-semibold text-base truncate">{auditoria.nome}</h3>
-            </div>
-            {auditoria.descricao && (
-              <p className="text-xs text-muted-foreground line-clamp-1">
-                {auditoria.descricao}
-              </p>
+    <Card className="hover:shadow-sm transition-shadow">
+      <CardContent className="p-3">
+        {/* Linha principal - tudo horizontal */}
+        <div className="flex items-center justify-between gap-3">
+          {/* Nome */}
+          <div className="flex items-center gap-2 min-w-0 flex-shrink-0" style={{ width: '200px' }}>
+            <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            <span className="font-medium text-sm truncate">{auditoria.nome}</span>
+          </div>
+
+          {/* Badges - todos na mesma linha */}
+          <div className="flex items-center gap-1.5 flex-1 flex-wrap">
+            <Badge variant="outline" className="text-[11px] py-0 h-5 px-2">
+              {capitalizeText(auditoria.tipo)}
+            </Badge>
+            <Badge 
+              variant={getStatusBadgeVariant(auditoria.status)}
+              className={`text-[11px] py-0 h-5 px-2 ${getStatusCustomClass(auditoria.status)}`}
+            >
+              {capitalizeText(auditoria.status.replace(/_/g, ' '))}
+            </Badge>
+            <Badge 
+              variant={getPrioridadeBadgeVariant(auditoria.prioridade)}
+              className={`text-[11px] py-0 h-5 px-2 ${getPrioridadeCustomClass(auditoria.prioridade)}`}
+            >
+              {capitalizeText(auditoria.prioridade)}
+            </Badge>
+            
+            {/* Contadores clicáveis */}
+            <Badge 
+              variant="secondary" 
+              className="cursor-pointer hover:bg-secondary/80 text-[11px] py-0 h-5 px-2"
+              onClick={onOpenTrabalhos}
+              title="Gerenciar Trabalhos"
+            >
+              <ClipboardList className="h-3 w-3 mr-1" />
+              {counts.trabalhos}
+            </Badge>
+            <Badge 
+              variant="secondary" 
+              className="cursor-pointer hover:bg-secondary/80 text-[11px] py-0 h-5 px-2"
+              onClick={onOpenAchados}
+              title="Gerenciar Achados"
+            >
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              {counts.achados}
+            </Badge>
+            <Badge 
+              variant="secondary" 
+              className="cursor-pointer hover:bg-secondary/80 text-[11px] py-0 h-5 px-2"
+              onClick={onOpenRecomendacoes}
+              title="Gerenciar Recomendações"
+            >
+              <FileCheck className="h-3 w-3 mr-1" />
+              {counts.recomendacoes}
+            </Badge>
+
+            {/* Data e Auditor */}
+            {auditoria.data_inicio && (
+              <Badge variant="outline" className="text-[11px] py-0 h-5 px-2">
+                <Calendar className="h-3 w-3 mr-1" />
+                {new Date(auditoria.data_inicio).toLocaleDateString('pt-BR')}
+              </Badge>
+            )}
+            {auditorNome && (
+              <Badge variant="outline" className="text-[11px] py-0 h-5 px-2">
+                <User className="h-3 w-3 mr-1" />
+                <span className="max-w-[100px] truncate">{auditorNome}</span>
+              </Badge>
             )}
           </div>
-          <div className="flex gap-1 flex-shrink-0">
-            <Button variant="ghost" size="sm" onClick={onEdit} className="h-7 w-7 p-0">
+
+          {/* Botões de ação */}
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onEdit} 
+              className="h-7 w-7 p-0"
+              title="Editar"
+            >
               <Edit className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={onDelete} className="h-7 w-7 p-0">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onDelete} 
+              className="h-7 w-7 p-0"
+              title="Excluir"
+            >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          <Badge variant="outline" className="text-xs py-0 h-5">{capitalizeText(auditoria.tipo)}</Badge>
-          <Badge 
-            variant={getStatusBadgeVariant(auditoria.status)}
-            className={`text-xs py-0 h-5 ${getStatusCustomClass(auditoria.status)}`}
-          >
-            {capitalizeText(auditoria.status.replace(/_/g, ' '))}
-          </Badge>
-          <Badge 
-            variant={getPrioridadeBadgeVariant(auditoria.prioridade)}
-            className={`text-xs py-0 h-5 ${getPrioridadeCustomClass(auditoria.prioridade)}`}
-          >
-            {capitalizeText(auditoria.prioridade)}
-          </Badge>
-          {auditoria.data_inicio && (
-            <Badge variant="outline" className="text-xs py-0 h-5">
-              <Calendar className="h-3 w-3 mr-1" />
-              {new Date(auditoria.data_inicio).toLocaleDateString('pt-BR')}
-            </Badge>
-          )}
-          {auditorNome && (
-            <Badge variant="outline" className="text-xs py-0 h-5">
-              <User className="h-3 w-3 mr-1" />
-              {auditorNome}
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-
-      <CardContent className="py-2 px-4">
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          <Badge 
-            variant="secondary" 
-            className="cursor-pointer hover:bg-secondary/80 text-xs py-0 h-5"
-            onClick={onOpenTrabalhos}
-          >
-            <ClipboardList className="h-3 w-3 mr-1" />
-            {counts.trabalhos} Trabalhos
-          </Badge>
-          <Badge 
-            variant="secondary" 
-            className="cursor-pointer hover:bg-secondary/80 text-xs py-0 h-5"
-            onClick={onOpenAchados}
-          >
-            <AlertTriangle className="h-3 w-3 mr-1" />
-            {counts.achados} Achados
-          </Badge>
-          <Badge 
-            variant="secondary" 
-            className="cursor-pointer hover:bg-secondary/80 text-xs py-0 h-5"
-            onClick={onOpenRecomendacoes}
-          >
-            <FileCheck className="h-3 w-3 mr-1" />
-            {counts.recomendacoes} Recomendações
-          </Badge>
-        </div>
-
-        <Accordion type="single" collapsible value={isExpanded ? "details" : ""} onValueChange={(value) => setIsExpanded(!!value)}>
-          <AccordionItem value="details" className="border-none">
-            <AccordionTrigger className="py-1 hover:no-underline">
-              <span className="text-xs font-medium">
-                {isExpanded ? "Ocultar Detalhes" : "Ver Detalhes e Ações"}
-              </span>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-2 pt-2">
-                {/* Seção Trabalhos */}
-                <div className="border rounded-md p-2.5">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <ClipboardList className="h-3.5 w-3.5 text-blue-600" />
-                      <h4 className="font-semibold text-xs">Trabalhos de Auditoria</h4>
-                      <Badge variant="outline" className="text-xs py-0 h-4">{counts.trabalhos}</Badge>
+        {/* Accordion discreto para detalhes */}
+        {(auditoria.descricao || counts.trabalhos > 0 || counts.achados > 0 || counts.recomendacoes > 0) && (
+          <Accordion type="single" collapsible value={isExpanded ? "details" : ""} onValueChange={(value) => setIsExpanded(!!value)} className="mt-2">
+            <AccordionItem value="details" className="border-none">
+              <AccordionTrigger className="py-1 px-0 hover:no-underline text-muted-foreground">
+                <span className="text-[11px]">
+                  {isExpanded ? "Ocultar" : "Ver"} detalhes
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-0">
+                <div className="space-y-1.5 text-xs">
+                  {auditoria.descricao && (
+                    <p className="text-muted-foreground text-[11px] leading-relaxed">
+                      {auditoria.descricao}
+                    </p>
+                  )}
+                  
+                  {/* Seções compactas */}
+                  <div className="grid grid-cols-2 gap-1.5 mt-2">
+                    <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer" onClick={onOpenTrabalhos}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <ClipboardList className="h-3 w-3 text-blue-600" />
+                          <span className="text-[11px] font-medium">Trabalhos</span>
+                        </div>
+                        <Badge variant="outline" className="text-[10px] py-0 h-4 px-1.5">{counts.trabalhos}</Badge>
+                      </div>
                     </div>
-                    <Button size="sm" variant="outline" onClick={onOpenTrabalhos} className="h-6 text-xs px-2">
-                      <Plus className="h-3 w-3 mr-1" />
-                      Gerenciar
-                    </Button>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    Checklists, testes e análises realizadas durante a auditoria
-                  </p>
-                </div>
 
-                {/* Seção Achados */}
-                <div className="border rounded-md p-2.5 border-l-2 border-l-orange-500">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <AlertTriangle className="h-3.5 w-3.5 text-orange-600" />
-                      <h4 className="font-semibold text-xs">Achados de Auditoria</h4>
-                      <Badge variant="outline" className="text-xs py-0 h-4">{counts.achados}</Badge>
+                    <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer border-l-2 border-l-orange-500" onClick={onOpenAchados}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3 text-orange-600" />
+                          <span className="text-[11px] font-medium">Achados</span>
+                        </div>
+                        <Badge variant="outline" className="text-[10px] py-0 h-4 px-1.5">{counts.achados}</Badge>
+                      </div>
                     </div>
-                    <Button size="sm" variant="outline" onClick={onOpenAchados} className="h-6 text-xs px-2">
-                      <Plus className="h-3 w-3 mr-1" />
-                      Gerenciar
-                    </Button>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    Deficiências, não conformidades e oportunidades de melhoria identificadas
-                  </p>
-                </div>
 
-                {/* Seção Recomendações */}
-                <div className="border rounded-md p-2.5 border-l-2 border-l-green-500">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <FileCheck className="h-3.5 w-3.5 text-green-600" />
-                      <h4 className="font-semibold text-xs">Recomendações</h4>
-                      <Badge variant="outline" className="text-xs py-0 h-4">{counts.recomendacoes}</Badge>
+                    <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer border-l-2 border-l-green-500" onClick={onOpenRecomendacoes}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <FileCheck className="h-3 w-3 text-green-600" />
+                          <span className="text-[11px] font-medium">Recomendações</span>
+                        </div>
+                        <Badge variant="outline" className="text-[10px] py-0 h-4 px-1.5">{counts.recomendacoes}</Badge>
+                      </div>
                     </div>
-                    <Button size="sm" variant="outline" onClick={onOpenRecomendacoes} className="h-6 text-xs px-2">
-                      <Plus className="h-3 w-3 mr-1" />
-                      Gerenciar
-                    </Button>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    Ações sugeridas para tratamento dos achados identificados
-                  </p>
-                </div>
 
-                {/* Seção Evidências */}
-                <div className="border rounded-md p-2.5">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <ImageIcon className="h-3.5 w-3.5 text-purple-600" />
-                      <h4 className="font-semibold text-xs">Evidências</h4>
+                    <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer" onClick={onOpenEvidencias}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <ImageIcon className="h-3 w-3 text-purple-600" />
+                          <span className="text-[11px] font-medium">Evidências</span>
+                        </div>
+                        <Plus className="h-3 w-3" />
+                      </div>
                     </div>
-                    <Button size="sm" variant="outline" onClick={onOpenEvidencias} className="h-6 text-xs px-2">
-                      <Plus className="h-3 w-3 mr-1" />
-                      Gerenciar
-                    </Button>
                   </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    Documentos, imagens e arquivos que suportam os achados
-                  </p>
                 </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        )}
       </CardContent>
     </Card>
   );

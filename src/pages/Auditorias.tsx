@@ -277,9 +277,9 @@ const Auditorias = () => {
           </div>
           
           {isLoading ? (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-64 bg-muted rounded-lg animate-pulse"></div>
+            <div className="space-y-1 px-4 pb-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-12 bg-muted rounded-lg animate-pulse"></div>
               ))}
             </div>
           ) : !auditorias || auditorias.length === 0 ? (
@@ -296,7 +296,7 @@ const Auditorias = () => {
               }}
             />
           ) : (
-            <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-1 px-4 pb-4">
               {auditorias.map((auditoria) => {
                 const counts = auditoriasCounts?.[auditoria.id] || { trabalhos: 0, achados: 0, recomendacoes: 0 };
                 const auditorResponsavel = usuarios?.find((u: any) => u.user_id === auditoria.auditor_responsavel);
