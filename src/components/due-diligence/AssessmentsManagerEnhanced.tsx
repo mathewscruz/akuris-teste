@@ -5,9 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
 import { StatCard } from '@/components/ui/stat-card';
-import { Plus, Send, Clock, AlertTriangle, FileText, Eye, User, Edit2, Trash2, RefreshCw, Award, TrendingUp, Filter, Settings, CheckCircle, Users } from 'lucide-react';
+import { Plus, Send, Clock, AlertTriangle, FileText, Eye, User, Edit2, Trash2, RefreshCw, Award, TrendingUp, Filter, CheckCircle, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDueDiligenceStats } from '@/hooks/useDueDiligenceStats';
@@ -795,57 +794,6 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Seção de Automações */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Automações Configuradas
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Regra 1 */}
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div>
-                <p className="font-medium">Criar Risco Automaticamente</p>
-                <p className="text-sm text-muted-foreground">
-                  Quando score &lt; 50%, criar risco no módulo de riscos
-                </p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-            
-            {/* Regra 2 */}
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div>
-                <p className="font-medium">Solicitar Documentação</p>
-                <p className="text-sm text-muted-foreground">
-                  Quando score entre 50-70%, enviar email solicitando docs
-                </p>
-              </div>
-              <Switch />
-            </div>
-            
-            {/* Regra 3 */}
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div>
-                <p className="font-medium">Notificar Aprovação</p>
-                <p className="text-sm text-muted-foreground">
-                  Quando score &gt;= 80%, notificar time de compras
-                </p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-            
-            <Button variant="outline" size="sm" className="w-full">
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Nova Regra
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Dialog de Respostas */}
       <AssessmentResponsesViewer

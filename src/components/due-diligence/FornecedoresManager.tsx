@@ -354,7 +354,7 @@ export function FornecedoresManager() {
           <p>Carregando fornecedores...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-3">
           {fornecedores
             .filter(f => f.status === 'ativo')
             .filter(f => 
@@ -365,40 +365,40 @@ export function FornecedoresManager() {
             )
             .map((fornecedor) => (
             <Card key={fornecedor.id}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Building className="w-5 h-5" />
-                  {fornecedor.nome}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {fornecedor.email && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="w-4 h-4" />
-                    {fornecedor.email}
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <Building className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-semibold truncate">{fornecedor.nome}</h3>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                          {fornecedor.email && (
+                            <span className="flex items-center gap-1">
+                              <Mail className="w-3 h-3" />
+                              {fornecedor.email}
+                            </span>
+                          )}
+                          {fornecedor.telefone && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="w-3 h-3" />
+                              {fornecedor.telefone}
+                            </span>
+                          )}
+                          {fornecedor.cnpj && (
+                            <span>CNPJ: {fornecedor.cnpj}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                )}
-                
-                {fornecedor.telefone && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Phone className="w-4 h-4" />
-                    {fornecedor.telefone}
-                  </div>
-                )}
-                
-                {fornecedor.cnpj && (
-                  <div className="text-sm text-muted-foreground">
-                    CNPJ: {fornecedor.cnpj}
-                  </div>
-                )}
-                
-                <div className="space-y-2 pt-2">
-                  {/* Botões de Ação Cascata */}
-                  <div className="flex gap-2">
+                  
+                  <div className="flex items-center gap-2 ml-4">
                     <Button
                       size="sm"
                       variant="outline"
-                      className="flex-1"
                       onClick={() => {
                         const event = new CustomEvent('navigateToDueDiligence', {
                           detail: { 
@@ -415,7 +415,6 @@ export function FornecedoresManager() {
                     
                     <Button
                       size="sm"
-                      className="flex-1"
                       onClick={() => {
                         const event = new CustomEvent('createAssessment', {
                           detail: { fornecedorId: fornecedor.id, fornecedorNome: fornecedor.nome }
@@ -426,20 +425,17 @@ export function FornecedoresManager() {
                       <Plus className="w-4 h-4 mr-1" />
                       Nova Avaliação
                     </Button>
-                  </div>
-                  
-                  {/* Botões de Gerenciamento */}
-                  <div className="flex justify-end space-x-2">
+                    
                     <Button
                       size="sm"
-                      variant="outline"
+                      variant="ghost"
                       onClick={() => handleEdit(fornecedor)}
                     >
                       <Edit2 className="w-4 h-4" />
                     </Button>
                     <Button
                       size="sm"
-                      variant="outline"
+                      variant="ghost"
                       onClick={() => deleteMutation.mutate(fornecedor.id)}
                       disabled={deleteMutation.isPending}
                     >

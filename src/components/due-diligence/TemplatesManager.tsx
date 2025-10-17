@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Edit, Copy, Trash2, FileText, Settings, Star, RefreshCw, Filter } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Plus, Edit, Copy, Trash2, FileText, Settings as SettingsIcon, Star, RefreshCw, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -402,14 +403,14 @@ export function TemplatesManager() {
                       <Copy className="h-4 w-4" />
                     </Button>
 
-                    <Button
+                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => toggleTemplateStatus(template)}
                       title="Alterar status"
                       disabled={template.padrao}
                     >
-                      <Settings className="h-4 w-4" />
+                      <SettingsIcon className="h-4 w-4" />
                     </Button>
 
                     <Button
@@ -474,6 +475,60 @@ export function TemplatesManager() {
         onConfirm={() => deleteDialog.template && handleDeleteTemplate(deleteDialog.template)}
       />
     </div>
+
+    {/* Seção de Automações */}
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <SettingsIcon className="h-4 w-4" />
+          Automações Configuradas
+        </CardTitle>
+        <CardDescription>
+          Configure ações automáticas baseadas nos resultados das avaliações
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {/* Regra 1 */}
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div>
+              <p className="font-medium">Criar Risco Automaticamente</p>
+              <p className="text-sm text-muted-foreground">
+                Quando score &lt; 50%, criar risco no módulo de riscos
+              </p>
+            </div>
+            <Switch defaultChecked />
+          </div>
+          
+          {/* Regra 2 */}
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div>
+              <p className="font-medium">Solicitar Documentação</p>
+              <p className="text-sm text-muted-foreground">
+                Quando score entre 50-70%, enviar email solicitando docs
+              </p>
+            </div>
+            <Switch />
+          </div>
+          
+          {/* Regra 3 */}
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div>
+              <p className="font-medium">Notificar Aprovação</p>
+              <p className="text-sm text-muted-foreground">
+                Quando score &gt;= 80%, notificar time de compras
+              </p>
+            </div>
+            <Switch defaultChecked />
+          </div>
+          
+          <Button variant="outline" size="sm" className="w-full">
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Nova Regra
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
     </div>
   );
 }
