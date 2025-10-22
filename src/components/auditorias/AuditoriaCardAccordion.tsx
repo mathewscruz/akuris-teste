@@ -14,19 +14,21 @@ import {
   Calendar,
   User,
   ChevronDown,
-  Plus
+  Plus,
+  Shield
 } from "lucide-react";
 import { capitalizeText } from "@/lib/text-utils";
 
 interface AuditoriaCardAccordionProps {
   auditoria: any;
-  counts: { trabalhos: number; achados: number; recomendacoes: number };
+  counts: { trabalhos: number; achados: number; recomendacoes: number; controles?: number };
   onEdit: () => void;
   onDelete: () => void;
   onOpenTrabalhos: () => void;
   onOpenAchados: () => void;
   onOpenRecomendacoes: () => void;
   onOpenEvidencias: () => void;
+  onOpenControles: () => void;
   auditorNome?: string;
 }
 
@@ -72,6 +74,7 @@ export function AuditoriaCardAccordion({
   onOpenAchados,
   onOpenRecomendacoes,
   onOpenEvidencias,
+  onOpenControles,
   auditorNome
 }: AuditoriaCardAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -132,6 +135,15 @@ export function AuditoriaCardAccordion({
             >
               <FileCheck className="h-3 w-3 mr-1" />
               {counts.recomendacoes}
+            </Badge>
+            <Badge 
+              variant="secondary" 
+              className="cursor-pointer hover:bg-secondary/80 text-[11px] py-0 h-5 px-2"
+              onClick={onOpenControles}
+              title="Gerenciar Controles"
+            >
+              <Shield className="h-3 w-3 mr-1" />
+              {counts.controles || 0}
             </Badge>
 
             {/* Data e Auditor */}

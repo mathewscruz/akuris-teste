@@ -18,6 +18,7 @@ import TrabalhosDialog from "@/components/auditorias/TrabalhosDialog";
 import AchadosDialog from "@/components/auditorias/AchadosDialog";
 import RecomendacoesDialog from "@/components/auditorias/RecomendacoesDialog";
 import EvidenciasDialog from "@/components/auditorias/EvidenciasDialog";
+import ControlesAuditoriaDialog from "@/components/auditorias/ControlesAuditoriaDialog";
 import { AuditoriaCardAccordion } from "@/components/auditorias/AuditoriaCardAccordion";
 
 const Auditorias = () => {
@@ -32,6 +33,7 @@ const Auditorias = () => {
   const [showAchadosDialog, setShowAchadosDialog] = useState(false);
   const [showRecomendacoesDialog, setShowRecomendacoesDialog] = useState(false);
   const [showEvidenciasDialog, setShowEvidenciasDialog] = useState(false);
+  const [showControlesDialog, setShowControlesDialog] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
   const { data: usuarios } = useUsuariosEmpresa();
@@ -95,10 +97,16 @@ const Auditorias = () => {
           .select('*, auditoria_achados!inner(auditoria_id)', { count: 'exact', head: true })
           .eq('auditoria_achados.auditoria_id', auditoria.id);
         
+        const controlesRes = await supabase
+          .from('controles_auditorias')
+          .select('id', { count: 'exact', head: true })
+          .eq('auditoria_id', auditoria.id);
+        
         counts[auditoria.id] = {
           trabalhos: trabalhosRes.count ?? 0,
           achados: achadosRes.count ?? 0,
           recomendacoes: recomendacoesRes.count ?? 0,
+          controles: controlesRes.count ?? 0,
         };
       }
       
@@ -154,6 +162,11 @@ const Auditorias = () => {
   const handleOpenEvidencias = (auditoria: any) => {
     setSelectedAuditoria(auditoria);
     setShowEvidenciasDialog(true);
+  };
+
+  const handleOpenControles = (auditoria: any) => {
+    setSelectedAuditoria(auditoria);
+    setShowControlesDialog(true);
   };
 
   // Detectar se veio com itemId do dashboard
@@ -298,7 +311,7 @@ const Auditorias = () => {
           ) : (
             <div className="space-y-1 px-4 pb-4">
               {auditorias.map((auditoria) => {
-                const counts = auditoriasCounts?.[auditoria.id] || { trabalhos: 0, achados: 0, recomendacoes: 0 };
+                const counts = auditoriasCounts?.[auditoria.id] || { trabalhos: 0, achados: 0, recomendacoes: 0, controles: 0 };
                 const auditorResponsavel = usuarios?.find((u: any) => u.user_id === auditoria.auditor_responsavel);
                 
                 return (
@@ -312,6 +325,7 @@ const Auditorias = () => {
                     onOpenAchados={() => handleOpenAchados(auditoria)}
                     onOpenRecomendacoes={() => handleOpenRecomendacoes(auditoria)}
                     onOpenEvidencias={() => handleOpenEvidencias(auditoria)}
+                    onOpenControles={() => handleOpenControles(auditoria)}
                     auditorNome={auditorResponsavel?.nome}
                   />
                 );
@@ -352,6 +366,12 @@ const Auditorias = () => {
       <EvidenciasDialog
         open={showEvidenciasDialog}
         onOpenChange={setShowEvidenciasDialog}
+        auditoria={selectedAuditoria}
+      />
+
+      <ControlesAuditoriaDialog
+        open={showControlesDialog}
+        onOpenChange={setShowControlesDialog}
         auditoria={selectedAuditoria}
       />
     </div>
