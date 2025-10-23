@@ -731,8 +731,27 @@ export default function Assessment() {
         {/* Perguntas */}
         <Card className="mb-8 shadow-lg border-border bg-card animate-fade-in">
           <CardHeader className="bg-card border-b border-border">
-            <CardTitle className="text-xl flex items-center space-x-2">
-              <FileText className="w-5 h-5 text-primary" />
+            <CardTitle className="text-xl flex items-center space-x-3">
+              {assessment.empresa.logo_url && !logoError ? (
+                <div className="relative flex-shrink-0">
+                  {logoLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    </div>
+                  )}
+                  <img
+                    src={assessment.empresa.logo_url}
+                    alt={`Logo ${assessment.empresa.nome}`}
+                    className={`h-8 w-auto object-contain ${logoLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
+                    onLoad={handleLogoLoad}
+                    onError={handleLogoError}
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-8 w-8 bg-gradient-to-br from-muted to-muted/80 rounded-lg flex-shrink-0">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                </div>
+              )}
               <span>Questionário</span>
             </CardTitle>
           </CardHeader>
