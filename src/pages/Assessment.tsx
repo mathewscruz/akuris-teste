@@ -256,7 +256,7 @@ export default function Assessment() {
           { method: 'GET' }
         ).catch(error => {
           assessmentLogger.error('Erro ao carregar perguntas:', error);
-          return [];
+          throw error; // Re-throw para ser capturado no try/catch externo
         }),
         supabaseRequest(
           `due_diligence_responses?select=question_id,resposta,pontuacao,evidencia,justificativa,arquivo_url&assessment_id=eq.${assessment.id}`,
@@ -266,6 +266,12 @@ export default function Assessment() {
           return [];
         })
       ]);
+
+      // Validar se perguntas foram carregadas
+      if (!questionsData || questionsData.length === 0) {
+        assessmentLogger.error('Nenhuma pergunta encontrada para o template');
+        throw new Error('Este questionário não possui perguntas configuradas. Por favor, entre em contato com o remetente.');
+      }
 
       // Montar respostas em objeto
       const responsesMap: Record<string, any> = {};

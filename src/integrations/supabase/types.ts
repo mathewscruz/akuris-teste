@@ -22,7 +22,7 @@ export type Database = {
           hostname: string
           id: string
           installed_at: string | null
-          ip_address: unknown | null
+          ip_address: unknown
           last_heartbeat: string | null
           mac_address: string | null
           operating_system: string | null
@@ -37,7 +37,7 @@ export type Database = {
           hostname: string
           id?: string
           installed_at?: string | null
-          ip_address?: unknown | null
+          ip_address?: unknown
           last_heartbeat?: string | null
           mac_address?: string | null
           operating_system?: string | null
@@ -52,7 +52,7 @@ export type Database = {
           hostname?: string
           id?: string
           installed_at?: string | null
-          ip_address?: unknown | null
+          ip_address?: unknown
           last_heartbeat?: string | null
           mac_address?: string | null
           operating_system?: string | null
@@ -244,7 +244,7 @@ export type Database = {
           created_at: string | null
           empresa_id: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           new_values: Json | null
           old_values: Json | null
           record_id: string
@@ -258,7 +258,7 @@ export type Database = {
           created_at?: string | null
           empresa_id: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           record_id: string
@@ -272,7 +272,7 @@ export type Database = {
           created_at?: string | null
           empresa_id?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           record_id?: string
@@ -699,7 +699,7 @@ export type Database = {
           data_acao: string | null
           detalhes_alteracao: Json | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           user_agent: string | null
           usuario_id: string | null
         }
@@ -709,7 +709,7 @@ export type Database = {
           data_acao?: string | null
           detalhes_alteracao?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           usuario_id?: string | null
         }
@@ -719,7 +719,7 @@ export type Database = {
           data_acao?: string | null
           detalhes_alteracao?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           usuario_id?: string | null
         }
@@ -1619,7 +1619,7 @@ export type Database = {
           empresa_id: string
           gravidade: string | null
           id: string
-          ip_origem: unknown | null
+          ip_origem: unknown
           nome_denunciante: string | null
           parecer_final: string | null
           politica_aceita: boolean | null
@@ -1643,7 +1643,7 @@ export type Database = {
           empresa_id: string
           gravidade?: string | null
           id?: string
-          ip_origem?: unknown | null
+          ip_origem?: unknown
           nome_denunciante?: string | null
           parecer_final?: string | null
           politica_aceita?: boolean | null
@@ -1667,7 +1667,7 @@ export type Database = {
           empresa_id?: string
           gravidade?: string | null
           id?: string
-          ip_origem?: unknown | null
+          ip_origem?: unknown
           nome_denunciante?: string | null
           parecer_final?: string | null
           politica_aceita?: boolean | null
@@ -4264,10 +4264,7 @@ export type Database = {
         Args: { dados_id: string }
         Returns: boolean
       }
-      debug_user_context: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      debug_user_context: { Args: never; Returns: Json }
       denuncia_pertence_empresa: {
         Args: { denuncia_id: string }
         Returns: boolean
@@ -4280,46 +4277,19 @@ export type Database = {
         Args: { evaluation_id: string }
         Returns: boolean
       }
-      generate_temp_password: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      gerar_protocolo_denuncia: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      gerar_token_publico: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_empresa_by_slug: {
-        Args: { empresa_slug: string }
-        Returns: string
-      }
-      get_user_empresa_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_temp_password: { Args: never; Returns: string }
+      gerar_protocolo_denuncia: { Args: never; Returns: string }
+      gerar_token_publico: { Args: never; Returns: string }
+      get_empresa_by_slug: { Args: { empresa_slug: string }; Returns: string }
+      get_user_empresa_id: { Args: never; Returns: string }
       incidente_pertence_empresa: {
         Args: { incidente_id: string }
         Returns: boolean
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_admin_or_super_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_super_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      matriz_pertence_empresa: {
-        Args: { matriz_id: string }
-        Returns: boolean
-      }
+      is_admin: { Args: never; Returns: boolean }
+      is_admin_or_super_admin: { Args: never; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
+      matriz_pertence_empresa: { Args: { matriz_id: string }; Returns: boolean }
       popular_ativos_demo: {
         Args: { p_empresa_id: string; p_user_id: string }
         Returns: number
@@ -4332,10 +4302,7 @@ export type Database = {
         Args: { p_empresa_id: string; p_user_id: string }
         Returns: number
       }
-      popular_dados_demonstracao: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      popular_dados_demonstracao: { Args: never; Returns: Json }
       popular_dados_demonstracao_direto: {
         Args: { p_empresa_id: string; p_user_id: string }
         Returns: Json
@@ -4356,14 +4323,8 @@ export type Database = {
         Args: { requirement_id: string }
         Returns: boolean
       }
-      risco_pertence_empresa: {
-        Args: { risco_id: string }
-        Returns: boolean
-      }
-      ropa_pertence_empresa: {
-        Args: { ropa_id: string }
-        Returns: boolean
-      }
+      risco_pertence_empresa: { Args: { risco_id: string }; Returns: boolean }
+      ropa_pertence_empresa: { Args: { ropa_id: string }; Returns: boolean }
     }
     Enums: {
       user_role: "super_admin" | "admin" | "user" | "readonly"
