@@ -4281,6 +4281,14 @@ export type Database = {
       gerar_protocolo_denuncia: { Args: never; Returns: string }
       gerar_token_publico: { Args: never; Returns: string }
       get_empresa_by_slug: { Args: { empresa_slug: string }; Returns: string }
+      get_profiles_by_text_ids: {
+        Args: { text_ids: string[] }
+        Returns: {
+          foto_url: string
+          nome: string
+          user_id: string
+        }[]
+      }
       get_user_empresa_id: { Args: never; Returns: string }
       incidente_pertence_empresa: {
         Args: { incidente_id: string }

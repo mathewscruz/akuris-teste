@@ -123,7 +123,9 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
   }, []);
 
   useEffect(() => {
-    if (risco) {
+    if (risco && matrizes.length > 0) {
+      console.log('📝 Carregando dados do risco para edição:', risco);
+      
       form.reset({
         nome: risco.nome || '',
         descricao: risco.descricao || '',
@@ -143,12 +145,27 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
         ativos_vinculados: []
       });
 
+      // Forçar seleção da matriz após reset do form
+      if (risco.matriz_id) {
+        const matriz = matrizes.find(m => m.id === risco.matriz_id);
+        if (matriz && matriz.configuracao && matriz.configuracao[0]) {
+          console.log('✅ Matriz carregada automaticamente:', matriz.nome);
+          setSelectedMatriz({
+            ...matriz,
+            configuracao: {
+              ...matriz.configuracao[0],
+              metodo_calculo: matriz.configuracao[0].metodo_calculo || 'multiplicacao'
+            }
+          } as any);
+        }
+      }
+
       if (risco.id) {
         fetchAnexosAceite(risco.id);
         fetchAtivosVinculados(risco.id);
       }
     }
-  }, [risco]);
+  }, [risco, matrizes]);
 
   useEffect(() => {
     if (watchMatrizId) {
@@ -266,8 +283,21 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
   );
 
   const onSubmit = async (data: RiscoForm) => {
+    console.log('🚀 onSubmit chamado com dados:', data);
+    
     if (!profile?.empresa_id) {
       toast.error('Erro: Empresa não identificada');
+      return;
+    }
+    
+    // Validar campos obrigatórios
+    if (!data.matriz_id) {
+      toast.error('Erro: Matriz de risco é obrigatória');
+      return;
+    }
+    
+    if (!selectedMatriz) {
+      toast.error('Erro: Configuração da matriz não carregada');
       return;
     }
 
@@ -363,7 +393,8 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
       toast.success(risco?.id ? 'Risco atualizado com sucesso!' : 'Risco cadastrado com sucesso!');
       onSuccess();
     } catch (error: any) {
-      toast.error('Erro ao salvar risco: ' + error.message);
+      console.error('❌ Erro ao salvar risco:', error);
+      toast.error('Erro ao salvar risco: ' + (error.message || 'Erro desconhecido'));
     } finally {
       setLoading(false);
     }

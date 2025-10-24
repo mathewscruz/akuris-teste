@@ -114,9 +114,17 @@ export function Riscos() {
 
       if (error) throw error;
       
-      // Buscar nomes dos responsáveis
+      // Normalizar categoria (pode vir como array do Supabase)
       if (data && data.length > 0) {
-        const responsavelIds = data
+        const normalizedData = data.map(risco => ({
+          ...risco,
+          categoria: Array.isArray(risco.categoria) && risco.categoria.length > 0 
+            ? risco.categoria[0] 
+            : risco.categoria
+        }));
+
+        // Buscar nomes dos responsáveis
+        const responsavelIds = normalizedData
           .map(r => r.responsavel)
           .filter(r => r && r.trim() !== '');
         
@@ -130,7 +138,7 @@ export function Riscos() {
             profiles?.map(p => [p.user_id, { nome: p.nome, foto_url: p.foto_url }]) || []
           );
           
-          const mappedData = data.map(risco => {
+          const mappedData = normalizedData.map(risco => {
             const profileData = (risco.responsavel && risco.responsavel.trim() !== '') 
               ? profileMap.get(risco.responsavel) 
               : null;
@@ -143,7 +151,7 @@ export function Riscos() {
           
           setRiscos(mappedData);
         } else {
-          setRiscos(data);
+          setRiscos(normalizedData);
         }
       } else {
         setRiscos(data || []);

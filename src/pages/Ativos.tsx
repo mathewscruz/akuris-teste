@@ -184,34 +184,38 @@ const Ativos = () => {
           .filter(p => p && p.trim() !== ''); // Excluir null, undefined e strings vazias
         
         if (proprietarioIds.length > 0) {
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('user_id, nome, foto_url')
-            .in('user_id', proprietarioIds);
-          
-          console.log('Profiles fetched:', profiles);
-          
-          const profileMap = new Map(
-            profiles?.map(p => [p.user_id, { nome: p.nome, foto_url: p.foto_url }]) || []
-          );
-          
-          const mappedData = data.map(ativo => {
-            const profileData = (ativo.proprietario && ativo.proprietario.trim() !== '') 
-              ? profileMap.get(ativo.proprietario) 
-              : null;
+          // Usar função RPC para buscar profiles (resolve incompatibilidade TEXT vs UUID)
+          const { data: profiles, error: profilesError } = await supabase
+            .rpc('get_profiles_by_text_ids', { text_ids: proprietarioIds });
+
+          if (profilesError) {
+            console.error('Erro ao buscar profiles:', profilesError);
+            setAtivos(data);
+          } else {
+            console.log('Profiles fetched via RPC:', profiles);
             
-            console.log('Ativo:', ativo.nome, 'Profile data:', profileData);
+            const profileMap = new Map(
+              profiles?.map((p: any) => [p.user_id.toString(), { nome: p.nome, foto_url: p.foto_url }]) || []
+            );
             
-            return {
-              ...ativo,
-              proprietario_nome: profileData?.nome || null,
-              proprietario_avatar: profileData?.foto_url || null
-            };
-          });
-          
-          console.log('Mapped data:', mappedData);
-          
-          setAtivos(mappedData);
+            const mappedData = data.map(ativo => {
+              const profileData = (ativo.proprietario && ativo.proprietario.trim() !== '') 
+                ? profileMap.get(ativo.proprietario) 
+                : null;
+              
+              console.log('Ativo:', ativo.nome, 'Profile data:', profileData);
+              
+              return {
+                ...ativo,
+                proprietario_nome: profileData?.nome || null,
+                proprietario_avatar: profileData?.foto_url || null
+              };
+            });
+            
+            console.log('Mapped data:', mappedData);
+            
+            setAtivos(mappedData);
+          }
         } else {
           setAtivos(data);
         }
