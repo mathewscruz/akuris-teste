@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { FileText, Upload, User, Save, CheckCircle2, XCircle, AlertTriangle, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, Upload, User, CheckCircle2, XCircle, AlertTriangle, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EvidenceDialog } from './EvidenceDialog';
 import { AssignmentDialog } from './AssignmentDialog';
 import { AreaResponsavelInlineSelect } from './AreaResponsavelInlineSelect';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   Pagination,
   PaginationContent,
@@ -63,11 +64,13 @@ export const AssessmentEvaluationView = ({
   const [selectedRequirement, setSelectedRequirement] = useState<string | null>(null);
   const [isEvidenceDialogOpen, setIsEvidenceDialogOpen] = useState(false);
   const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const { toast } = useToast();
+
+  // Debounce das avaliações para salvar automaticamente
+  const debouncedEvaluations = useDebounce(evaluations, 1000);
 
   const { data: requirementsData, loading: loadingRequirements } = useOptimizedQuery(
     async () => {
@@ -121,6 +124,44 @@ export const AssessmentEvaluationView = ({
     }
   }, [existingEvaluations]);
 
+  // Salvar automaticamente quando as avaliações mudarem (com debounce)
+  useEffect(() => {
+    const saveEvaluations = async () => {
+      // Não salvar se não houver avaliações ou se for o estado inicial
+      if (Object.keys(debouncedEvaluations).length === 0) return;
+      
+      try {
+        const evaluationsToSave = Object.values(debouncedEvaluations)
+          .filter(evaluation => evaluation.status !== 'nao_avaliado')
+          .map(evaluation => ({
+            assessment_id: assessmentId,
+            requirement_id: evaluation.requirement_id,
+            status: evaluation.status,
+            observacoes: evaluation.observacoes,
+            responsavel_id: evaluation.responsavel_id,
+            data_avaliacao: evaluation.data_avaliacao
+          }));
+
+        if (evaluationsToSave.length === 0) return;
+
+        const { error } = await supabase
+          .from('gap_analysis_evaluations')
+          .upsert(evaluationsToSave, {
+            onConflict: 'assessment_id,requirement_id'
+          });
+
+        if (error) throw error;
+
+        // Chamar callback de salvamento para atualizar stats
+        onSave?.();
+      } catch (error) {
+        console.error('Erro ao salvar avaliações automaticamente:', error);
+      }
+    };
+
+    saveEvaluations();
+  }, [debouncedEvaluations, assessmentId, onSave]);
+
   const handleStatusChange = (requirementId: string, status: string) => {
     setEvaluations(prev => ({
       ...prev,
@@ -134,7 +175,8 @@ export const AssessmentEvaluationView = ({
     }));
   };
 
-  const handleAreaChange = (requirementId: string, area: string) => {
+  const handleAreaChange = async (requirementId: string, area: string) => {
+    // Atualizar estado local
     setRequirements(prev => 
       prev.map(req => 
         req.id === requirementId 
@@ -142,44 +184,22 @@ export const AssessmentEvaluationView = ({
           : req
       )
     );
-  };
 
-  const handleSave = async () => {
-    setIsSaving(true);
+    // Salvar automaticamente no banco
     try {
-      const evaluationsToSave = Object.values(evaluations).map(evaluation => ({
-        assessment_id: assessmentId,
-        requirement_id: evaluation.requirement_id,
-        status: evaluation.status,
-        observacoes: evaluation.observacoes,
-        responsavel_id: evaluation.responsavel_id,
-        data_avaliacao: evaluation.data_avaliacao
-      }));
-
-      // Upsert evaluations
       const { error } = await supabase
-        .from('gap_analysis_evaluations')
-        .upsert(evaluationsToSave, {
-          onConflict: 'assessment_id,requirement_id'
-        });
+        .from('gap_analysis_requirements')
+        .update({ area_responsavel: area })
+        .eq('id', requirementId);
 
       if (error) throw error;
-
-      toast({
-        title: "Avaliação salva",
-        description: "Todas as avaliações foram salvas com sucesso.",
-      });
-
-      onSave?.();
     } catch (error) {
-      console.error('Erro ao salvar avaliações:', error);
+      console.error('Erro ao salvar área responsável:', error);
       toast({
         title: "Erro ao salvar",
-        description: "Ocorreu um erro ao salvar as avaliações.",
+        description: "Não foi possível atualizar a área responsável.",
         variant: "destructive",
       });
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -311,22 +331,20 @@ export const AssessmentEvaluationView = ({
         </Card>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">Avaliação: {assessmentName}</h2>
-              <p className="text-muted-foreground">
-                Framework: {frameworkName} • {totalItems} requisitos
+          <div>
+            <h2 className="text-2xl font-bold">Avaliação: {assessmentName}</h2>
+            <p className="text-muted-foreground">
+              Framework: {frameworkName} • {totalItems} requisitos
+            </p>
+            {totalPages > 1 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Mostrando {startIndex + 1}-{Math.min(endIndex, totalItems)} de {totalItems} requisitos (Página {currentPage} de {totalPages})
               </p>
-              {totalPages > 1 && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Mostrando {startIndex + 1}-{Math.min(endIndex, totalItems)} de {totalItems} requisitos (Página {currentPage} de {totalPages})
-                </p>
-              )}
-            </div>
-            <Button onClick={handleSave} disabled={isSaving}>
-              <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Salvando...' : 'Salvar Avaliação'}
-            </Button>
+            )}
+            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-2">
+              <CheckCircle2 className="h-3 w-3 text-green-600" />
+              Salvamento automático ativado
+            </p>
           </div>
 
           <div className="rounded-lg border overflow-visible">
