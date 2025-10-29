@@ -400,7 +400,7 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
             </div>
 
             <div>
-              <Label htmlFor="proxima_avaliacao">Próxima Avaliação</Label>
+              <Label htmlFor="proxima_avaliacao">Vencimento da Avaliação</Label>
               <Input
                 id="proxima_avaliacao"
                 type="date"

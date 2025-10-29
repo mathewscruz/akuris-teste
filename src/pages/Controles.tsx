@@ -394,10 +394,7 @@ export default function Controles() {
       label: 'Nome',
       sortable: true,
       render: (value: any, controle: Controle) => (
-        <div className="flex items-center gap-2">
-          {getTipoIcon(controle.tipo)}
-          <span className="font-medium">{controle.nome}</span>
-        </div>
+        <span className="font-medium">{controle.nome}</span>
       )
     },
     {
