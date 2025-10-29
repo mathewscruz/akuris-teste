@@ -474,7 +474,7 @@ export default function Controles() {
     },
     {
       key: 'proxima_avaliacao' as keyof Controle,
-      label: 'Próxima Avaliação',
+      label: 'Vencimento da Avaliação',
       sortable: true,
       render: (value: any, controle: Controle) => controle.proxima_avaliacao ? 
         new Date(controle.proxima_avaliacao).toLocaleDateString() : 
@@ -546,10 +546,10 @@ export default function Controles() {
           loading={isLoading}
         />
         <StatCard
-          title="Críticos & Altos"
-          value={(stats?.criticos || 0) + (stats?.altos || 0)}
-          description={`${stats?.criticos || 0} críticos, ${stats?.altos || 0} altos`}
-          icon={<AlertTriangle className="h-4 w-4" />}
+          title="Vencimento Próximo"
+          value={stats?.vencendoAvaliacao || 0}
+          description="Próximo 1 mês"
+          icon={<Clock className="h-4 w-4" />}
           variant="warning"
           loading={isLoading}
         />
