@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
 
 const sistemaSchema = z.object({
   nome_sistema: z.string().min(1, 'Nome do sistema é obrigatório'),
@@ -33,6 +34,7 @@ interface SistemaDialogProps {
 
 export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogProps) {
   const { toast } = useToast();
+  const { empresaId, loading: loadingEmpresa } = useEmpresaId();
   
   const form = useForm<SistemaFormData>({
     resolver: zodResolver(sistemaSchema),
@@ -50,8 +52,13 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
 
   const onSubmit = async (data: SistemaFormData) => {
     try {
+      if (!empresaId) {
+        throw new Error('Empresa não encontrada');
+      }
+
       const payload = {
         ...data,
+        empresa_id: empresaId,
         responsavel_sistema: data.responsavel_sistema || null,
         url_sistema: data.url_sistema || null,
         categoria: data.categoria || null,

@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
 
 const contaSchema = z.object({
   usuario_beneficiario: z.string().min(1, 'Nome do usuário é obrigatório'),
@@ -47,6 +48,7 @@ interface ContaDialogProps {
 export default function ContaDialog({ open, onClose, conta, sistemas }: ContaDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { empresaId, loading: loadingEmpresa } = useEmpresaId();
   
   const form = useForm<ContaFormData>({
     resolver: zodResolver(contaSchema),
@@ -66,8 +68,28 @@ export default function ContaDialog({ open, onClose, conta, sistemas }: ContaDia
 
   const onSubmit = async (data: ContaFormData) => {
     try {
+      if (!empresaId) {
+        throw new Error('Empresa não encontrada');
+      }
+
+      // Validar se o sistema pertence à empresa
+      const { data: sistema, error: sistemaError } = await supabase
+        .from('sistemas_privilegiados')
+        .select('empresa_id')
+        .eq('id', data.sistema_id)
+        .single();
+
+      if (sistemaError || !sistema) {
+        throw new Error('Sistema não encontrado');
+      }
+
+      if (sistema.empresa_id !== empresaId) {
+        throw new Error('Sistema não pertence à sua empresa');
+      }
+
       const payload = {
         ...data,
+        empresa_id: empresaId,
         email_beneficiario: data.email_beneficiario || null,
         observacoes: data.observacoes || null,
         created_by: user?.id,
