@@ -8,6 +8,8 @@ import { AssessmentDialog } from '@/components/gap-analysis/AssessmentDialog';
 import { RequirementsManager } from '@/components/gap-analysis/RequirementsManager';
 import { AssessmentEvaluationView } from '@/components/gap-analysis/AssessmentEvaluationView';
 import { AssessmentsList } from '@/components/gap-analysis/AssessmentsList';
+import { AdherenceAssessmentView } from '@/components/gap-analysis/adherence/AdherenceAssessmentView';
+import { AdherenceResultView } from '@/components/gap-analysis/adherence/AdherenceResultView';
 import { FrameworkTabsView } from '@/components/gap-analysis/FrameworkTabsView';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { StatCard } from '@/components/ui/stat-card';
@@ -41,7 +43,8 @@ export default function GapAnalysis() {
   const [isAssessmentDialogOpen, setIsAssessmentDialogOpen] = useState(false);
   const [selectedFramework, setSelectedFramework] = useState<Framework | null>(null);
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'requirements' | 'evaluation' | 'assessments'>('dashboard');
+  const [selectedAdherenceAssessment, setSelectedAdherenceAssessment] = useState<any>(null);
+  const [currentView, setCurrentView] = useState<'dashboard' | 'requirements' | 'evaluation' | 'assessments' | 'adherence' | 'adherence-result'>('dashboard');
 
   const { data: stats, loading: statsLoading, refetch: refetchStats } = useGapAnalysisStats();
 
@@ -186,6 +189,31 @@ export default function GapAnalysis() {
     );
   }
 
+  if (currentView === 'adherence') {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        {renderBackButton()}
+        <AdherenceAssessmentView
+          onViewResult={(assessment) => {
+            setSelectedAdherenceAssessment(assessment);
+            setCurrentView('adherence-result');
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (currentView === 'adherence-result' && selectedAdherenceAssessment) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <AdherenceResultView
+          assessment={selectedAdherenceAssessment}
+          onBack={() => setCurrentView('adherence')}
+        />
+      </div>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <div className="space-y-6">
@@ -236,6 +264,14 @@ export default function GapAnalysis() {
 
       {/* Framework Tabs View */}
       <FrameworkTabsView onCreateFramework={() => setIsFrameworkDialogOpen(true)} />
+
+      {/* Botão Avaliação de Aderência */}
+      <div className="flex justify-center">
+        <Button onClick={() => setCurrentView('adherence')} variant="outline" size="lg">
+          <FileText className="mr-2 h-4 w-4" />
+          Avaliação de Aderência com IA
+        </Button>
+      </div>
 
 
       {/* Dialogs */}

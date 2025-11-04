@@ -2865,6 +2865,160 @@ export type Database = {
         }
         Relationships: []
       }
+      gap_analysis_adherence_assessments: {
+        Row: {
+          analise_detalhada: string | null
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          documento_id: string
+          documento_nome: string | null
+          documento_tipo: string | null
+          empresa_id: string
+          framework_id: string
+          framework_nome: string | null
+          framework_versao: string | null
+          gaps_identificados: Json | null
+          id: string
+          metadados_analise: Json | null
+          nome_analise: string
+          percentual_conformidade: number | null
+          pontos_fortes: Json | null
+          pontos_melhoria: Json | null
+          recomendacoes: Json | null
+          resultado_geral: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          analise_detalhada?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          documento_id: string
+          documento_nome?: string | null
+          documento_tipo?: string | null
+          empresa_id: string
+          framework_id: string
+          framework_nome?: string | null
+          framework_versao?: string | null
+          gaps_identificados?: Json | null
+          id?: string
+          metadados_analise?: Json | null
+          nome_analise: string
+          percentual_conformidade?: number | null
+          pontos_fortes?: Json | null
+          pontos_melhoria?: Json | null
+          recomendacoes?: Json | null
+          resultado_geral?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          analise_detalhada?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          documento_id?: string
+          documento_nome?: string | null
+          documento_tipo?: string | null
+          empresa_id?: string
+          framework_id?: string
+          framework_nome?: string | null
+          framework_versao?: string | null
+          gaps_identificados?: Json | null
+          id?: string
+          metadados_analise?: Json | null
+          nome_analise?: string
+          percentual_conformidade?: number | null
+          pontos_fortes?: Json | null
+          pontos_melhoria?: Json | null
+          recomendacoes?: Json | null
+          resultado_geral?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gap_analysis_adherence_assessments_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gap_analysis_adherence_assessments_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gap_analysis_adherence_assessments_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gap_analysis_adherence_details: {
+        Row: {
+          assessment_id: string
+          created_at: string
+          evidencias_encontradas: string | null
+          gaps_especificos: string | null
+          id: string
+          observacoes_ia: string | null
+          requirement_id: string
+          requisito_codigo: string | null
+          requisito_titulo: string | null
+          score_conformidade: number | null
+          status_aderencia: string
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string
+          evidencias_encontradas?: string | null
+          gaps_especificos?: string | null
+          id?: string
+          observacoes_ia?: string | null
+          requirement_id: string
+          requisito_codigo?: string | null
+          requisito_titulo?: string | null
+          score_conformidade?: number | null
+          status_aderencia: string
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string
+          evidencias_encontradas?: string | null
+          gaps_especificos?: string | null
+          id?: string
+          observacoes_ia?: string | null
+          requirement_id?: string
+          requisito_codigo?: string | null
+          requisito_titulo?: string | null
+          score_conformidade?: number | null
+          status_aderencia?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gap_analysis_adherence_details_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_adherence_assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gap_analysis_adherence_details_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gap_analysis_assessments: {
         Row: {
           created_at: string
