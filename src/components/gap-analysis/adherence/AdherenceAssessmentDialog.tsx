@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
-import { Loader2, FileText, Shield } from 'lucide-react';
+import { Loader2, FileText, Shield, Upload, X } from 'lucide-react';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 
 interface AdherenceAssessmentDialogProps {
@@ -21,11 +21,11 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
   const { toast } = useToast();
   const { empresaId, loading: loadingEmpresa } = useEmpresaId();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     nome_analise: '',
     descricao: '',
-    framework_id: '',
-    documento_id: ''
+    framework_id: ''
   });
 
   // Buscar frameworks disponíveis
@@ -43,30 +43,51 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
     { cacheKey: 'frameworks-for-adherence', cacheDuration: 60000 }
   );
 
-  // Buscar documentos disponíveis (políticas e procedimentos)
-  const { data: documentos, loading: loadingDocumentos } = useOptimizedQuery(
-    async () => {
-      const { data, error } = await supabase
-        .from('documentos')
-        .select('id, nome, tipo, arquivo_nome')
-        .in('tipo', ['politica', 'procedimento', 'documento', 'norma'])
-        .not('arquivo_url', 'is', null)
-        .order('nome');
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar tipo de arquivo (PDF, DOCX, DOC, TXT)
+      const allowedTypes = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/msword',
+        'text/plain'
+      ];
       
-      if (error) throw error;
-      return { data, error: null };
-    },
-    [],
-    { cacheKey: 'documents-for-adherence', cacheDuration: 60000 }
-  );
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Tipo de arquivo inválido",
+          description: "Por favor, envie apenas arquivos PDF, DOCX, DOC ou TXT.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Validar tamanho (máximo 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "Arquivo muito grande",
+          description: "O arquivo deve ter no máximo 10MB.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setUploadedFile(file);
+    }
+  };
+
+  const removeFile = () => {
+    setUploadedFile(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.nome_analise || !formData.framework_id || !formData.documento_id) {
+    if (!formData.nome_analise || !formData.framework_id || !uploadedFile) {
       toast({
         title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos obrigatórios.",
+        description: "Por favor, preencha todos os campos e faça upload do documento.",
         variant: "destructive"
       });
       return;
@@ -77,9 +98,23 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Buscar informações do framework e documento para cache
+      // Buscar informações do framework para cache
       const framework = frameworks?.find(f => f.id === formData.framework_id);
-      const documento = documentos?.find(d => d.id === formData.documento_id);
+
+      // Upload do arquivo para o storage
+      const fileExt = uploadedFile.name.split('.').pop();
+      const fileName = `${empresaId}/${Date.now()}_${uploadedFile.name}`;
+      
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from('adherence-documents')
+        .upload(fileName, uploadedFile);
+
+      if (uploadError) throw uploadError;
+
+      // Obter URL pública do arquivo
+      const { data: { publicUrl } } = supabase.storage
+        .from('adherence-documents')
+        .getPublicUrl(fileName);
 
       // Criar registro inicial com status "processando"
       const { data: assessment, error: insertError } = await supabase
@@ -87,14 +122,19 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
         .insert([{
           empresa_id: empresaId,
           framework_id: formData.framework_id,
-          documento_id: formData.documento_id,
+          documento_id: null, // Não vinculado a documento do sistema
           nome_analise: formData.nome_analise,
           descricao: formData.descricao || null,
           status: 'processando',
           framework_nome: framework?.nome,
           framework_versao: framework?.versao,
-          documento_nome: documento?.nome,
-          documento_tipo: documento?.tipo,
+          documento_nome: uploadedFile.name,
+          documento_tipo: fileExt,
+          metadados_analise: {
+            arquivo_storage: fileName,
+            arquivo_url: publicUrl,
+            arquivo_tamanho: uploadedFile.size
+          },
           created_by: user?.id
         }])
         .select()
@@ -107,12 +147,20 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
         body: {
           assessmentId: assessment.id,
           frameworkId: formData.framework_id,
-          documentId: formData.documento_id,
+          storageFileName: fileName,
           empresaId
         }
       });
 
-      if (functionError) throw functionError;
+      if (functionError) {
+        // Se a função falhar, atualizar status para erro
+        await supabase
+          .from('gap_analysis_adherence_assessments')
+          .update({ status: 'erro', metadados_analise: { erro: functionError.message } })
+          .eq('id', assessment.id);
+        
+        throw functionError;
+      }
 
       toast({
         title: "Análise iniciada",
@@ -122,9 +170,9 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
       setFormData({
         nome_analise: '',
         descricao: '',
-        framework_id: '',
-        documento_id: ''
+        framework_id: ''
       });
+      setUploadedFile(null);
 
       onSuccess();
       onOpenChange(false);
@@ -203,33 +251,49 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
           </div>
 
           <div>
-            <Label htmlFor="documento_id">Documento *</Label>
-            <Select
-              value={formData.documento_id}
-              onValueChange={(value) => setFormData({ ...formData, documento_id: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o documento" />
-              </SelectTrigger>
-              <SelectContent>
-                {loadingDocumentos ? (
-                  <SelectItem value="loading" disabled>Carregando...</SelectItem>
-                ) : documentos && documentos.length > 0 ? (
-                  documentos.map((doc: any) => (
-                    <SelectItem key={doc.id} value={doc.id}>
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        {doc.nome} <span className="text-xs text-muted-foreground">({doc.tipo})</span>
-                      </div>
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="none" disabled>Nenhum documento com arquivo anexado</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground mt-1">
-              Apenas documentos com arquivos anexados podem ser analisados
+            <Label htmlFor="documento">Documento *</Label>
+            <div className="mt-2">
+              {!uploadedFile ? (
+                <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                  <input
+                    type="file"
+                    id="documento"
+                    accept=".pdf,.docx,.doc,.txt"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <label htmlFor="documento" className="cursor-pointer">
+                    <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm font-medium">Clique para fazer upload</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      PDF, DOCX, DOC ou TXT (máx. 10MB)
+                    </p>
+                  </label>
+                </div>
+              ) : (
+                <div className="border rounded-lg p-4 flex items-center justify-between bg-muted/50">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-8 w-8 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">{uploadedFile.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={removeFile}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Faça upload da política, procedimento ou documento que deseja avaliar
             </p>
           </div>
 
@@ -237,7 +301,7 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting || loadingFrameworks || loadingDocumentos}>
+            <Button type="submit" disabled={isSubmitting || loadingFrameworks || !uploadedFile}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Iniciar Análise
             </Button>

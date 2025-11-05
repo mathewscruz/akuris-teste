@@ -12,52 +12,70 @@ serve(async (req) => {
   }
 
   try {
-    const { assessmentId, frameworkId, documentId, empresaId } = await req.json();
+    const { assessmentId, frameworkId, storageFileName, empresaId } = await req.json();
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!;
 
+    if (!openaiApiKey) {
+      throw new Error('OPENAI_API_KEY não configurada');
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    console.log('Starting adherence analysis:', { assessmentId, frameworkId, storageFileName });
+
     // 1. Buscar dados do framework e requisitos
-    const { data: framework } = await supabase
+    const { data: framework, error: frameworkError } = await supabase
       .from('gap_analysis_frameworks')
       .select('*')
       .eq('id', frameworkId)
       .single();
 
-    const { data: requirements } = await supabase
+    if (frameworkError || !framework) {
+      throw new Error(`Framework não encontrado: ${frameworkError?.message}`);
+    }
+
+    const { data: requirements, error: reqError } = await supabase
       .from('gap_analysis_requirements')
       .select('*')
       .eq('framework_id', frameworkId)
       .order('ordem');
 
-    // 2. Buscar documento
-    const { data: documento } = await supabase
-      .from('documentos')
-      .select('*')
-      .eq('id', documentId)
-      .single();
-
-    if (!documento?.arquivo_url) {
-      throw new Error('Documento não possui arquivo anexado');
+    if (reqError) {
+      throw new Error(`Erro ao buscar requisitos: ${reqError.message}`);
     }
 
-    // 3. Baixar conteúdo do documento do storage
-    const bucket = 'documentos';
-    const filePath = documento.arquivo_url.split(`${bucket}/`)[1];
-    
-    const { data: fileData } = await supabase.storage
-      .from(bucket)
-      .download(filePath);
-
-    if (!fileData) {
-      throw new Error('Não foi possível baixar o documento');
+    if (!requirements || requirements.length === 0) {
+      throw new Error('Framework não possui requisitos cadastrados');
     }
 
-    // 4. Extrair texto do documento (simplificado - você pode melhorar isso)
-    const documentText = await fileData.text();
+    console.log(`Framework: ${framework.nome}, Requirements: ${requirements.length}`);
+
+    // 2. Baixar arquivo do storage
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from('adherence-documents')
+      .download(storageFileName);
+
+    if (downloadError || !fileData) {
+      throw new Error(`Erro ao baixar documento: ${downloadError?.message}`);
+    }
+
+    console.log('Document downloaded, size:', fileData.size);
+
+    // 3. Extrair texto do documento
+    let documentText = '';
+    try {
+      documentText = await fileData.text();
+      console.log('Document text extracted, length:', documentText.length);
+    } catch (e) {
+      throw new Error('Não foi possível extrair texto do documento. Verifique se é um arquivo de texto válido.');
+    }
+
+    if (!documentText || documentText.trim().length < 100) {
+      throw new Error('Documento não contém texto suficiente para análise');
+    }
 
     // 5. Montar prompt para IA
     const requirementsList = requirements?.map(r => 
@@ -95,6 +113,7 @@ Realize uma análise detalhada e retorne um JSON válido com:
 Seja específico, cite trechos do documento quando possível, e forneça orientações práticas.`;
 
     // 6. Chamar OpenAI API
+    console.log('Calling OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -102,30 +121,50 @@ Seja específico, cite trechos do documento quando possível, e forneça orienta
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-2025-08-07',
         messages: [
           {
             role: 'system',
-            content: 'Você é um especialista em auditoria e conformidade regulatória. Sempre responda com JSON válido.'
+            content: 'Você é um auditor especializado em conformidade regulatória. Analise documentos comparando-os com frameworks regulatórios. Sempre responda com JSON válido e estruturado.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.3,
+        max_completion_tokens: 4000,
         response_format: { type: 'json_object' }
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error:', response.status, errorText);
+      throw new Error(`OpenAI API error (${response.status}): ${errorText}`);
     }
 
     const aiResponse = await response.json();
-    const analysisResult = JSON.parse(aiResponse.choices[0].message.content);
+    console.log('OpenAI response received');
+    
+    if (!aiResponse.choices?.[0]?.message?.content) {
+      throw new Error('Resposta da IA inválida');
+    }
+
+    let analysisResult;
+    try {
+      analysisResult = JSON.parse(aiResponse.choices[0].message.content);
+      console.log('Analysis result parsed:', {
+        resultado_geral: analysisResult.resultado_geral,
+        percentual: analysisResult.percentual_conformidade,
+        requisitos: analysisResult.requisitos_detalhados?.length
+      });
+    } catch (e) {
+      console.error('Failed to parse AI response:', aiResponse.choices[0].message.content);
+      throw new Error('Erro ao processar resposta da IA');
+    }
 
     // 7. Salvar resultado completo na tabela de assessments
+    console.log('Saving assessment results...');
     const { error: updateError } = await supabase
       .from('gap_analysis_adherence_assessments')
       .update({
@@ -137,7 +176,7 @@ Seja específico, cite trechos do documento quando possível, e forneça orienta
         recomendacoes: analysisResult.recomendacoes || [],
         analise_detalhada: analysisResult.analise_detalhada,
         metadados_analise: {
-          modelo_usado: 'gpt-4o-mini',
+          modelo_usado: 'gpt-5-2025-08-07',
           tempo_processamento: Date.now(),
           total_requisitos: requirements?.length || 0,
           documento_tamanho: documentText.length
@@ -146,21 +185,30 @@ Seja específico, cite trechos do documento quando possível, e forneça orienta
       })
       .eq('id', assessmentId);
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error('Error updating assessment:', updateError);
+      throw updateError;
+    }
+
+    console.log('Assessment updated successfully');
 
     // 8. Salvar detalhes por requisito
-    if (analysisResult.requisitos_detalhados) {
-      const detailsToInsert = analysisResult.requisitos_detalhados.map((req: any) => ({
-        assessment_id: assessmentId,
-        requirement_id: req.requirement_id,
-        requisito_codigo: requirements?.find(r => r.id === req.requirement_id)?.codigo,
-        requisito_titulo: requirements?.find(r => r.id === req.requirement_id)?.titulo,
-        status_aderencia: req.status_aderencia,
-        evidencias_encontradas: req.evidencias_encontradas,
-        gaps_especificos: req.gaps_especificos,
-        score_conformidade: req.score_conformidade,
-        observacoes_ia: req.observacoes_ia
-      }));
+    if (analysisResult.requisitos_detalhados && analysisResult.requisitos_detalhados.length > 0) {
+      console.log('Saving requirement details...');
+      const detailsToInsert = analysisResult.requisitos_detalhados.map((req: any) => {
+        const requirement = requirements?.find(r => r.id === req.requirement_id);
+        return {
+          assessment_id: assessmentId,
+          requirement_id: req.requirement_id,
+          requisito_codigo: requirement?.codigo || '',
+          requisito_titulo: requirement?.titulo || '',
+          status_aderencia: req.status_aderencia,
+          evidencias_encontradas: req.evidencias_encontradas,
+          gaps_especificos: req.gaps_especificos,
+          score_conformidade: req.score_conformidade,
+          observacoes_ia: req.observacoes_ia
+        };
+      });
 
       const { error: detailsError } = await supabase
         .from('gap_analysis_adherence_details')
@@ -168,6 +216,8 @@ Seja específico, cite trechos do documento quando possível, e forneça orienta
 
       if (detailsError) {
         console.error('Error inserting details:', detailsError);
+      } else {
+        console.log(`Saved ${detailsToInsert.length} requirement details`);
       }
     }
 
@@ -185,22 +235,35 @@ Seja específico, cite trechos do documento quando possível, e forneça orienta
 
   } catch (error: any) {
     console.error('Error in analyze-document-adherence:', error);
+    console.error('Error stack:', error.stack);
     
     // Tentar atualizar o assessment com erro
     try {
-      const { assessmentId } = await req.json();
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-      const supabase = createClient(supabaseUrl, supabaseKey);
+      const body = await req.clone().json();
+      const { assessmentId } = body;
       
-      await supabase
-        .from('gap_analysis_adherence_assessments')
-        .update({
-          status: 'erro',
-          metadados_analise: { erro: error.message }
-        })
-        .eq('id', assessmentId);
-    } catch {}
+      if (assessmentId) {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        await supabase
+          .from('gap_analysis_adherence_assessments')
+          .update({
+            status: 'erro',
+            metadados_analise: { 
+              erro: error.message,
+              erro_detalhes: error.stack,
+              timestamp_erro: new Date().toISOString()
+            }
+          })
+          .eq('id', assessmentId);
+          
+        console.log('Assessment marked as erro');
+      }
+    } catch (updateErr) {
+      console.error('Failed to update assessment with error status:', updateErr);
+    }
 
     return new Response(
       JSON.stringify({ error: error.message }),
