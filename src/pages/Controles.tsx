@@ -298,7 +298,7 @@ export default function Controles() {
     return (
       <Badge 
         variant={getStatusBadgeVariant(status)} 
-        className={getStatusCustomClass(status)}
+        className={`${getStatusCustomClass(status)} whitespace-nowrap`}
       >
         {capitalizeText(displayText)}
       </Badge>

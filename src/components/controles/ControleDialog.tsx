@@ -12,6 +12,20 @@ import { UserSelect } from "@/components/riscos/UserSelect";
 import { RiscoSelect } from "@/components/controles/RiscoSelect";
 import { AuditoriasMultiSelect } from "@/components/controles/AuditoriasMultiSelect";
 
+// Função para converter data do input para formato date-only sem timezone
+const formatDateForDatabase = (dateString: string): string | null => {
+  if (!dateString) return null;
+  // Garante que a data seja salva como date-only sem conversão de timezone
+  return dateString;
+};
+
+// Função para converter data do banco para o input
+const formatDateForInput = (dateString: string | null): string => {
+  if (!dateString) return '';
+  // Remove qualquer informação de timezone e retorna apenas YYYY-MM-DD
+  return dateString.split('T')[0];
+};
+
 interface Controle {
   id: string;
   nome: string;
@@ -96,8 +110,8 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
             frequencia: controle.frequencia || "",
             status: controle.status || "ativo",
             criticidade: controle.criticidade || "medio",
-            data_implementacao: controle.data_implementacao || "",
-            proxima_avaliacao: controle.proxima_avaliacao || "",
+            data_implementacao: formatDateForInput(controle.data_implementacao),
+            proxima_avaliacao: formatDateForInput(controle.proxima_avaliacao),
             auditorias_ids: auditoriasIds
           });
         }
@@ -143,8 +157,8 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
         frequencia: data.frequencia,
         status: data.status,
         criticidade: data.criticidade,
-        data_implementacao: data.data_implementacao || null,
-        proxima_avaliacao: data.proxima_avaliacao || null,
+        data_implementacao: formatDateForDatabase(data.data_implementacao),
+        proxima_avaliacao: formatDateForDatabase(data.proxima_avaliacao),
         empresa_id: profile.empresa_id
       };
 
