@@ -996,7 +996,15 @@ export type Database = {
           updated_at?: string | null
           usuario_beneficiario?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_contas_privilegiadas_sistema"
+            columns: ["sistema_id"]
+            isOneToOne: false
+            referencedRelation: "sistemas_privilegiados"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contrato_aditivos: {
         Row: {
