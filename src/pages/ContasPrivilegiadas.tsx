@@ -1,11 +1,8 @@
-import React, { useState } from 'react';
-import { Plus, Users, Shield, AlertTriangle, CheckCircle, Clock, Edit, BarChart3, TrendingUp, Search, Filter, Trash2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, Users, Shield, AlertTriangle, CheckCircle, Clock, Edit, BarChart3, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -13,7 +10,8 @@ import ContaDialog from '@/components/contas-privilegiadas/ContaDialog';
 import SistemaDialog from '@/components/contas-privilegiadas/SistemaDialog';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
-import { EmptyState } from '@/components/ui/empty-state';
+import { DataTable } from '@/components/ui/data-table';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface ContaPrivilegiada {
   id: string;
@@ -50,12 +48,27 @@ export default function ContasPrivilegiadas() {
   const [showSistemaDialog, setShowSistemaDialog] = useState(false);
   const [selectedConta, setSelectedConta] = useState<ContaPrivilegiada | null>(null);
   const [selectedSistema, setSelectedSistema] = useState<SistemaPrivilegiado | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const [searchContasTerm, setSearchContasTerm] = useState('');
+  const [searchSistemasTerm, setSearchSistemasTerm] = useState('');
+  const [statusContaFilter, setStatusContaFilter] = useState('todos');
+  const [nivelFilter, setNivelFilter] = useState('todos');
+  const [statusSistemaFilter, setStatusSistemaFilter] = useState('todos');
+  const [tipoSistemaFilter, setTipoSistemaFilter] = useState('todos');
+  const [criticidadeSistemaFilter, setCriticidadeSistemaFilter] = useState('todos');
+  const [sortContasField, setSortContasField] = useState('usuario_beneficiario');
+  const [sortContasDirection, setSortContasDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortSistemasField, setSortSistemasField] = useState('nome_sistema');
+  const [sortSistemasDirection, setSortSistemasDirection] = useState<'asc' | 'desc'>('asc');
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    open: boolean;
+    id: string;
+    nome: string;
+    tipo: 'conta' | 'sistema';
+  }>({ open: false, id: '', nome: '', tipo: 'conta' });
   const { toast } = useToast();
 
   // Buscar contas privilegiadas
-  const { data: contas = [], refetch: refetchContas } = useQuery({
+  const { data: contas = [], refetch: refetchContas, isLoading: loadingContas } = useQuery({
     queryKey: ['contas-privilegiadas'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -76,7 +89,7 @@ export default function ContasPrivilegiadas() {
   });
 
   // Buscar sistemas privilegiados
-  const { data: sistemas = [], refetch: refetchSistemas } = useQuery({
+  const { data: sistemas = [], refetch: refetchSistemas, isLoading: loadingSistemas } = useQuery({
     queryKey: ['sistemas-privilegiados'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -125,30 +138,8 @@ export default function ContasPrivilegiadas() {
     refetchSistemas();
   };
 
-  const handleDeleteConta = async (contaId: string, usuarioNome: string) => {
-    if (!confirm(`Tem certeza que deseja excluir a conta de "${usuarioNome}"? Esta ação não pode ser desfeita.`)) {
-      return;
-    }
-
-    const { error } = await supabase
-      .from('contas_privilegiadas' as any)
-      .delete()
-      .eq('id', contaId);
-
-    if (error) {
-      toast({
-        title: "Erro ao excluir conta",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Conta excluída",
-      description: `A conta de "${usuarioNome}" foi excluída com sucesso.`,
-    });
-    refetchContas();
+  const handleDeleteConta = (contaId: string, usuarioNome: string) => {
+    setDeleteConfirm({ open: true, id: contaId, nome: usuarioNome, tipo: 'conta' });
   };
 
   const handleDeleteSistema = async (sistemaId: string, sistemaNome: string) => {
@@ -167,29 +158,55 @@ export default function ContasPrivilegiadas() {
       return;
     }
 
-    if (!confirm(`Tem certeza que deseja excluir o sistema "${sistemaNome}"? Esta ação não pode ser desfeita.`)) {
-      return;
-    }
+    setDeleteConfirm({ open: true, id: sistemaId, nome: sistemaNome, tipo: 'sistema' });
+  };
 
-    const { error } = await supabase
-      .from('sistemas_privilegiados' as any)
-      .delete()
-      .eq('id', sistemaId);
+  const confirmDelete = async () => {
+    const { id, tipo } = deleteConfirm;
 
-    if (error) {
+    if (tipo === 'conta') {
+      const { error } = await supabase
+        .from('contas_privilegiadas' as any)
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        toast({
+          title: "Erro ao excluir conta",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
       toast({
-        title: "Erro ao excluir sistema",
-        description: error.message,
-        variant: "destructive",
+        title: "Conta excluída",
+        description: `A conta foi excluída com sucesso.`,
       });
-      return;
+      refetchContas();
+    } else {
+      const { error } = await supabase
+        .from('sistemas_privilegiados' as any)
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        toast({
+          title: "Erro ao excluir sistema",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Sistema excluído",
+        description: `O sistema foi excluído com sucesso.`,
+      });
+      refetchSistemas();
     }
 
-    toast({
-      title: "Sistema excluído",
-      description: `O sistema "${sistemaNome}" foi excluído com sucesso.`,
-    });
-    refetchSistemas();
+    setDeleteConfirm({ open: false, id: '', nome: '', tipo: 'conta' });
   };
 
   const handleRelatorios = () => {
@@ -240,301 +257,310 @@ export default function ContasPrivilegiadas() {
     return text.charAt(0).toUpperCase() + text.slice(1);
   };
 
-  // Filtrar contas e sistemas baseado na busca
-  const filteredContas = contas.filter(conta => 
-    searchTerm === '' || 
-    conta.usuario_beneficiario.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conta.email_beneficiario?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conta.sistemas_privilegiados?.nome_sistema.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filtrar e ordenar contas
+  const filteredAndSortedContas = useMemo(() => {
+    let filtered = contas.filter(conta => {
+      const matchesSearch = searchContasTerm === '' || 
+        conta.usuario_beneficiario.toLowerCase().includes(searchContasTerm.toLowerCase()) ||
+        conta.email_beneficiario?.toLowerCase().includes(searchContasTerm.toLowerCase()) ||
+        conta.sistemas_privilegiados?.nome_sistema.toLowerCase().includes(searchContasTerm.toLowerCase());
+      
+      const matchesStatus = statusContaFilter === 'todos' || conta.status === statusContaFilter;
+      const matchesNivel = nivelFilter === 'todos' || conta.nivel_privilegio === nivelFilter;
 
-  const filteredSistemas = sistemas.filter(sistema => 
-    searchTerm === '' || 
-    sistema.nome_sistema.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sistema.tipo_sistema.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sistema.responsavel_sistema?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      return matchesSearch && matchesStatus && matchesNivel;
+    });
 
-  // Componente para tabela de contas
-  const ContasTable = () => (
-    <Card className="rounded-lg border overflow-hidden">
-      <CardContent className="p-0">
-        <div className="p-6 pb-4">
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar contas..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleRelatorios}
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Relatórios
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
-              </Button>
-              <Button 
-                size="sm"
-                onClick={() => setShowContaDialog(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Conta
-              </Button>
-            </div>
-          </div>
-          
-          {showFilters && (
-            <div className="bg-muted/50 rounded-lg p-4 mb-4">
-              <p className="text-sm text-muted-foreground">Filtros serão implementados em breve</p>
-            </div>
+    // Ordenar
+    filtered.sort((a, b) => {
+      let aValue = a[sortContasField as keyof ContaPrivilegiada];
+      let bValue = b[sortContasField as keyof ContaPrivilegiada];
+
+      if (sortContasField === 'sistema') {
+        aValue = a.sistemas_privilegiados?.nome_sistema || '';
+        bValue = b.sistemas_privilegiados?.nome_sistema || '';
+      }
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortContasDirection === 'asc' 
+          ? aValue.localeCompare(bValue) 
+          : bValue.localeCompare(aValue);
+      }
+
+      if (aValue < bValue) return sortContasDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortContasDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [contas, searchContasTerm, statusContaFilter, nivelFilter, sortContasField, sortContasDirection]);
+
+  // Filtrar e ordenar sistemas
+  const filteredAndSortedSistemas = useMemo(() => {
+    let filtered = sistemas.filter(sistema => {
+      const matchesSearch = searchSistemasTerm === '' || 
+        sistema.nome_sistema.toLowerCase().includes(searchSistemasTerm.toLowerCase()) ||
+        sistema.tipo_sistema.toLowerCase().includes(searchSistemasTerm.toLowerCase()) ||
+        sistema.responsavel_sistema?.toLowerCase().includes(searchSistemasTerm.toLowerCase());
+      
+      const matchesStatus = statusSistemaFilter === 'todos' || (sistema.ativo ? 'ativo' : 'inativo') === statusSistemaFilter;
+      const matchesTipo = tipoSistemaFilter === 'todos' || sistema.tipo_sistema === tipoSistemaFilter;
+      const matchesCriticidade = criticidadeSistemaFilter === 'todos' || sistema.criticidade === criticidadeSistemaFilter;
+
+      return matchesSearch && matchesStatus && matchesTipo && matchesCriticidade;
+    });
+
+    // Ordenar
+    filtered.sort((a, b) => {
+      const aValue = a[sortSistemasField as keyof SistemaPrivilegiado];
+      const bValue = b[sortSistemasField as keyof SistemaPrivilegiado];
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortSistemasDirection === 'asc' 
+          ? aValue.localeCompare(bValue) 
+          : bValue.localeCompare(aValue);
+      }
+
+      if (aValue < bValue) return sortSistemasDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortSistemasDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [sistemas, searchSistemasTerm, statusSistemaFilter, tipoSistemaFilter, criticidadeSistemaFilter, sortSistemasField, sortSistemasDirection]);
+
+  // Configuração das colunas para DataTable de Contas
+  const contasColumns = [
+    {
+      key: 'usuario_beneficiario',
+      label: 'Usuário',
+      sortable: true,
+      render: (_: any, conta: ContaPrivilegiada) => (
+        <div>
+          <div className="font-medium">{conta.usuario_beneficiario}</div>
+          {conta.email_beneficiario && (
+            <div className="text-sm text-muted-foreground">{conta.email_beneficiario}</div>
           )}
         </div>
-        
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Usuário</TableHead>
-              <TableHead>Sistema</TableHead>
-              <TableHead>Tipo de Acesso</TableHead>
-              <TableHead>Nível</TableHead>
-              <TableHead>Data Expiração</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredContas.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="p-0">
-                  <EmptyState
-                    icon={<Users className="h-8 w-8" />}
-                    title={searchTerm ? "Nenhuma conta encontrada" : "Nenhuma conta cadastrada"}
-                    description={
-                      searchTerm 
-                        ? "Tente ajustar os termos de busca ou limpe os filtros para ver todas as contas."
-                        : "Comece cadastrando um sistema privilegiado e depois adicione contas de acesso para monitorar e controlar acessos privilegiados aos sistemas críticos da sua empresa."
-                    }
-                    action={
-                      !searchTerm 
-                        ? {
-                            label: "Cadastrar Primeiro Sistema",
-                            onClick: () => setShowSistemaDialog(true),
-                            variant: "default"
-                          }
-                        : undefined
-                    }
-                  />
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredContas.map((conta) => (
-                <TableRow key={conta.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{conta.usuario_beneficiario}</div>
-                      {conta.email_beneficiario && (
-                        <div className="text-sm text-muted-foreground">{conta.email_beneficiario}</div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{conta.sistemas_privilegiados?.nome_sistema}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {capitalizeText(conta.sistemas_privilegiados?.tipo_sistema || '')}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{capitalizeText(conta.tipo_acesso)}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={conta.nivel_privilegio === 'critico' ? 'destructive' : 'secondary'}>
-                      {capitalizeText(conta.nivel_privilegio)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(conta.data_expiracao).toLocaleDateString('pt-BR')}
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(conta.status)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditConta(conta)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteConta(conta.id, conta.usuario_beneficiario)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  );
-
-  // Componente para tabela de sistemas
-  const SistemasTable = () => (
-    <Card className="rounded-lg border overflow-hidden">
-      <CardContent className="p-0">
-        <div className="p-6 pb-4">
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar sistemas..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
-              </Button>
-              <Button 
-                size="sm"
-                onClick={() => setShowSistemaDialog(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Sistema
-              </Button>
-            </div>
+      )
+    },
+    {
+      key: 'sistema',
+      label: 'Sistema',
+      sortable: true,
+      render: (_: any, conta: ContaPrivilegiada) => (
+        <div>
+          <div className="font-medium">{conta.sistemas_privilegiados?.nome_sistema}</div>
+          <div className="text-sm text-muted-foreground">
+            {capitalizeText(conta.sistemas_privilegiados?.tipo_sistema || '')}
           </div>
-          
-          {showFilters && (
-            <div className="bg-muted/50 rounded-lg p-4 mb-4">
-              <p className="text-sm text-muted-foreground">Filtros serão implementados em breve</p>
-            </div>
-          )}
         </div>
-        
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome do Sistema</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Criticidade</TableHead>
-              <TableHead>Responsável</TableHead>
-              <TableHead>URL</TableHead>
-              <TableHead>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredSistemas.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="p-0">
-                  <EmptyState
-                    icon={<Shield className="h-8 w-8" />}
-                    title={searchTerm ? "Nenhum sistema encontrado" : "Nenhum sistema cadastrado"}
-                    description={
-                      searchTerm 
-                        ? "Tente ajustar os termos de busca para encontrar os sistemas."
-                        : "Cadastre os sistemas que possuem contas privilegiadas para começar a gerenciar os acessos críticos da sua organização de forma centralizada."
-                    }
-                    action={
-                      !searchTerm 
-                        ? {
-                            label: "Cadastrar Primeiro Sistema",
-                            onClick: () => setShowSistemaDialog(true),
-                            variant: "default"
-                          }
-                        : undefined
-                    }
-                  />
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredSistemas.map((sistema) => (
-                <TableRow key={sistema.id}>
-                  <TableCell>
-                    <div className="font-medium">{sistema.nome_sistema}</div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{capitalizeText(sistema.tipo_sistema)}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {getCriticidadeBadge(sistema.criticidade)}
-                  </TableCell>
-                  <TableCell>
-                    {sistema.responsavel_sistema || '-'}
-                  </TableCell>
-                  <TableCell>
-                    {sistema.url_sistema ? (
-                      <a 
-                        href={sistema.url_sistema} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        Acessar
-                      </a>
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditSistema(sistema)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteSistema(sistema.id, sistema.nome_sistema)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  );
+      )
+    },
+    {
+      key: 'tipo_acesso',
+      label: 'Tipo de Acesso',
+      sortable: true,
+      render: (_: any, conta: ContaPrivilegiada) => (
+        <Badge variant="secondary">{capitalizeText(conta.tipo_acesso)}</Badge>
+      )
+    },
+    {
+      key: 'nivel_privilegio',
+      label: 'Nível',
+      sortable: true,
+      render: (_: any, conta: ContaPrivilegiada) => (
+        <Badge variant={conta.nivel_privilegio === 'critico' ? 'destructive' : 'secondary'}>
+          {capitalizeText(conta.nivel_privilegio)}
+        </Badge>
+      )
+    },
+    {
+      key: 'data_expiracao',
+      label: 'Data Expiração',
+      sortable: true,
+      render: (_: any, conta: ContaPrivilegiada) => (
+        new Date(conta.data_expiracao).toLocaleDateString('pt-BR')
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_: any, conta: ContaPrivilegiada) => getStatusBadge(conta.status)
+    },
+    {
+      key: 'acoes',
+      label: 'Ações',
+      render: (_: any, conta: ContaPrivilegiada) => (
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEditConta(conta)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDeleteConta(conta.id, conta.usuario_beneficiario)}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  // Configuração das colunas para DataTable de Sistemas
+  const sistemasColumns = [
+    {
+      key: 'nome_sistema',
+      label: 'Nome do Sistema',
+      sortable: true,
+      render: (_: any, sistema: SistemaPrivilegiado) => (
+        <div className="font-medium">{sistema.nome_sistema}</div>
+      )
+    },
+    {
+      key: 'tipo_sistema',
+      label: 'Tipo',
+      sortable: true,
+      render: (_: any, sistema: SistemaPrivilegiado) => (
+        <Badge variant="outline">{capitalizeText(sistema.tipo_sistema)}</Badge>
+      )
+    },
+    {
+      key: 'criticidade',
+      label: 'Criticidade',
+      sortable: true,
+      render: (_: any, sistema: SistemaPrivilegiado) => getCriticidadeBadge(sistema.criticidade)
+    },
+    {
+      key: 'responsavel_sistema',
+      label: 'Responsável',
+      sortable: true,
+      render: (_: any, sistema: SistemaPrivilegiado) => sistema.responsavel_sistema || '-'
+    },
+    {
+      key: 'url_sistema',
+      label: 'URL',
+      render: (_: any, sistema: SistemaPrivilegiado) => (
+        sistema.url_sistema ? (
+          <a 
+            href={sistema.url_sistema} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            Acessar
+          </a>
+        ) : '-'
+      )
+    },
+    {
+      key: 'acoes',
+      label: 'Ações',
+      render: (_: any, sistema: SistemaPrivilegiado) => (
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEditSistema(sistema)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDeleteSistema(sistema.id, sistema.nome_sistema)}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  // Filtros para contas
+  const contasFilters = [
+    {
+      key: 'status',
+      label: 'Status',
+      value: statusContaFilter,
+      onChange: setStatusContaFilter,
+      options: [
+        { value: 'todos', label: 'Todos os status' },
+        { value: 'ativo', label: 'Ativo' },
+        { value: 'expirado', label: 'Expirado' },
+        { value: 'pendente_aprovacao', label: 'Pendente' },
+        { value: 'revogado', label: 'Revogado' },
+      ]
+    },
+    {
+      key: 'nivel',
+      label: 'Nível de Privilégio',
+      value: nivelFilter,
+      onChange: setNivelFilter,
+      options: [
+        { value: 'todos', label: 'Todos os níveis' },
+        { value: 'critico', label: 'Crítico' },
+        { value: 'alto', label: 'Alto' },
+        { value: 'medio', label: 'Médio' },
+        { value: 'baixo', label: 'Baixo' },
+      ]
+    }
+  ];
+
+  // Filtros para sistemas
+  const sistemasFilters = [
+    {
+      key: 'status',
+      label: 'Status',
+      value: statusSistemaFilter,
+      onChange: setStatusSistemaFilter,
+      options: [
+        { value: 'todos', label: 'Todos' },
+        { value: 'ativo', label: 'Ativo' },
+        { value: 'inativo', label: 'Inativo' },
+      ]
+    },
+    {
+      key: 'tipo',
+      label: 'Tipo',
+      value: tipoSistemaFilter,
+      onChange: setTipoSistemaFilter,
+      options: [
+        { value: 'todos', label: 'Todos os tipos' },
+        { value: 'erp', label: 'ERP' },
+        { value: 'banco_dados', label: 'Banco de Dados' },
+        { value: 'servidor', label: 'Servidor' },
+        { value: 'aplicacao', label: 'Aplicação' },
+        { value: 'nuvem', label: 'Nuvem' },
+        { value: 'outro', label: 'Outro' },
+      ]
+    },
+    {
+      key: 'criticidade',
+      label: 'Criticidade',
+      value: criticidadeSistemaFilter,
+      onChange: setCriticidadeSistemaFilter,
+      options: [
+        { value: 'todos', label: 'Todas' },
+        { value: 'critico', label: 'Crítico' },
+        { value: 'alto', label: 'Alto' },
+        { value: 'medio', label: 'Médio' },
+        { value: 'baixo', label: 'Baixo' },
+      ]
+    }
+  ];
 
   return (
     <div className="space-y-6">
-        <PageHeader
+      <PageHeader
         title="Contas Privilegiadas"
         description="Gerencie e monitore acessos privilegiados aos sistemas críticos"
       />
@@ -586,25 +612,117 @@ export default function ContasPrivilegiadas() {
         </TabsList>
 
         <TabsContent value="contas" className="space-y-6">
-          <ContasTable />
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={handleRelatorios}>
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Relatórios
+            </Button>
+            <Button size="sm" onClick={() => setShowContaDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Conta
+            </Button>
+          </div>
+
+          <DataTable
+            data={filteredAndSortedContas}
+            columns={contasColumns}
+            loading={loadingContas}
+            searchable
+            searchPlaceholder="Buscar contas..."
+            searchValue={searchContasTerm}
+            onSearchChange={setSearchContasTerm}
+            filters={contasFilters}
+            sortField={sortContasField}
+            sortDirection={sortContasDirection}
+            onSort={(field) => {
+              if (sortContasField === field) {
+                setSortContasDirection(sortContasDirection === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortContasField(field);
+                setSortContasDirection('asc');
+              }
+            }}
+            emptyState={{
+              icon: <Users className="h-8 w-8" />,
+              title: searchContasTerm ? "Nenhuma conta encontrada" : "Nenhuma conta cadastrada",
+              description: searchContasTerm 
+                ? "Tente ajustar os termos de busca ou limpe os filtros."
+                : "Comece cadastrando um sistema privilegiado e depois adicione contas de acesso.",
+              action: !searchContasTerm ? {
+                label: "Cadastrar Sistema",
+                onClick: () => setShowSistemaDialog(true)
+              } : undefined
+            }}
+            onRefresh={refetchContas}
+          />
         </TabsContent>
 
         <TabsContent value="sistemas" className="space-y-6">
-          <SistemasTable />
+          <div className="flex justify-end">
+            <Button size="sm" onClick={() => setShowSistemaDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Sistema
+            </Button>
+          </div>
+
+          <DataTable
+            data={filteredAndSortedSistemas}
+            columns={sistemasColumns}
+            loading={loadingSistemas}
+            searchable
+            searchPlaceholder="Buscar sistemas..."
+            searchValue={searchSistemasTerm}
+            onSearchChange={setSearchSistemasTerm}
+            filters={sistemasFilters}
+            sortField={sortSistemasField}
+            sortDirection={sortSistemasDirection}
+            onSort={(field) => {
+              if (sortSistemasField === field) {
+                setSortSistemasDirection(sortSistemasDirection === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortSistemasField(field);
+                setSortSistemasDirection('asc');
+              }
+            }}
+            emptyState={{
+              icon: <Shield className="h-8 w-8" />,
+              title: searchSistemasTerm ? "Nenhum sistema encontrado" : "Nenhum sistema cadastrado",
+              description: searchSistemasTerm 
+                ? "Tente ajustar os termos de busca."
+                : "Cadastre os sistemas que possuem contas privilegiadas.",
+              action: !searchSistemasTerm ? {
+                label: "Cadastrar Primeiro Sistema",
+                onClick: () => setShowSistemaDialog(true)
+              } : undefined
+            }}
+            onRefresh={refetchSistemas}
+          />
         </TabsContent>
       </Tabs>
 
+      {/* Diálogos */}
       <ContaDialog
         open={showContaDialog}
-        onClose={handleCloseContaDialog}
         conta={selectedConta}
         sistemas={sistemas}
+        onClose={handleCloseContaDialog}
       />
 
       <SistemaDialog
         open={showSistemaDialog}
-        onClose={handleCloseSistemaDialog}
         sistema={selectedSistema}
+        onClose={handleCloseSistemaDialog}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+        title={`Excluir ${deleteConfirm.tipo === 'conta' ? 'Conta' : 'Sistema'}`}
+        description={`Tem certeza que deseja excluir "${deleteConfirm.nome}"? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+        onConfirm={confirmDelete}
       />
     </div>
   );
