@@ -160,6 +160,29 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
         </div>
       </Card>
 
+      {/* Informações do Documento */}
+      {(assessment.metadados_analise as any)?.documento_tipo && (
+        <Card className="p-6 bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground">Tipo Identificado:</span>
+              <p className="font-semibold mt-1">{(assessment.metadados_analise as any).documento_tipo}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Escopo:</span>
+              <p className="font-semibold mt-1">{(assessment.metadados_analise as any).documento_escopo}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Requisitos Analisados:</span>
+              <p className="font-semibold mt-1">
+                {(assessment.metadados_analise as any).total_requisitos_relevantes || details?.length || 0} de {(assessment.metadados_analise as any).total_requisitos || 0}
+                <span className="text-xs text-muted-foreground ml-1">(apenas relevantes)</span>
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Resumo Executivo */}
       <Card className="p-6">
         <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">

@@ -189,6 +189,13 @@ export function AdherenceAssessmentView({ onViewResult }: AdherenceAssessmentVie
                       </div>
                     </div>
 
+                    {assessment.status === 'processando' && (
+                      <div className="flex items-center gap-2 text-blue-600 text-sm">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Identificando requisitos relevantes e analisando... (1-2 minutos)</span>
+                      </div>
+                    )}
+
                     {assessment.status === 'concluido' && (
                       <div className="flex items-center gap-4">
                         <div className="flex-1">

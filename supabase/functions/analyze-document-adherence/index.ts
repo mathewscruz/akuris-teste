@@ -92,37 +92,76 @@ serve(async (req) => {
       throw new Error('Documento não contém texto suficiente para análise (mínimo 100 caracteres)');
     }
 
-    // 5. Montar prompt para IA - otimizado para reduzir tamanho
-    const requirementsList = requirements?.map(r => 
-      `${r.codigo || 'N/A'}: ${r.titulo}`
+    // 5. Montar prompt inteligente para IA - identifica requisitos relevantes
+    const requirementsList = requirements?.map((r, idx) => 
+      `${idx + 1}. [ID:${r.id}] ${r.codigo || 'N/A'} - ${r.titulo}`
     ).join('\n');
 
-    const prompt = `Analise o documento contra o framework ${framework.nome} ${framework.versao}.
+    const documentName = storageFileName.split('/').pop()?.replace('.txt', '') || 'Documento';
 
-DOCUMENTO (primeiros 12000 caracteres):
-${documentText.substring(0, 12000)}${documentText.length > 12000 ? '...' : ''}
+    const prompt = `Você é um auditor de conformidade especializado. Analise o documento fornecido contra o framework ${framework.nome} ${framework.versao}.
 
-REQUISITOS (${requirements.length} total):
+ETAPA 1: IDENTIFICAÇÃO
+Primeiro, identifique quais requisitos do framework são RELEVANTES e APLICÁVEIS ao documento fornecido.
+- Considere o tipo de documento (política, procedimento, formulário, etc)
+- Considere o escopo do documento (backup, acesso, incidentes, etc)
+- Ignore requisitos claramente não relacionados ao documento
+
+DOCUMENTO:
+Nome: ${documentName}
+Conteúdo (primeiros 15000 caracteres):
+${documentText.substring(0, 15000)}${documentText.length > 15000 ? '\n\n[...documento continua...]' : ''}
+
+REQUISITOS DO FRAMEWORK (${requirements.length} total):
 ${requirementsList}
 
-Retorne JSON com:
+ETAPA 2: ANÁLISE PROFUNDA
+Para APENAS os requisitos relevantes identificados, analise:
+- O que a norma exige nesse requisito
+- O que o documento apresenta
+- Se está conforme, não conforme ou parcialmente conforme
+- Evidências encontradas
+- Gaps específicos
+- Score de conformidade (0-10)
+
+IMPORTANTE:
+- Retorne APENAS os requisitos que você identificou como relevantes
+- NÃO retorne requisitos não aplicáveis ou irrelevantes
+- Seja específico nas evidências e gaps
+- Foque na qualidade da análise, não na quantidade
+
+FORMATO DE RESPOSTA (JSON):
 {
+  "documento_tipo_identificado": "tipo do documento (ex: política, procedimento)",
+  "documento_escopo_identificado": "escopo/tema principal",
+  "total_requisitos_relevantes": número,
   "resultado_geral": "conforme"|"nao_conforme"|"parcial",
   "percentual_conformidade": 0-100,
-  "pontos_fortes": [{"titulo":"","descricao":""}],
-  "pontos_melhoria": [{"titulo":"","descricao":"","prioridade":"alta|media|baixa"}],
-  "requisitos_detalhados": [
+  "pontos_fortes": [
+    {"titulo": "resumo do ponto forte", "descricao": "detalhamento"}
+  ],
+  "pontos_melhoria": [
+    {"titulo": "resumo da melhoria", "descricao": "detalhamento", "prioridade": "alta|media|baixa"}
+  ],
+  "requisitos_analisados": [
     {
-      "requirement_id": "uuid do requisito",
-      "status_aderencia": "conforme|nao_conforme|parcial|nao_aplicavel",
-      "evidencias_encontradas": "texto curto",
-      "gaps_especificos": "texto curto",
+      "requirement_id": "uuid do requisito (ID entre colchetes acima)",
+      "requisito_codigo": "código do requisito",
+      "status_aderencia": "conforme"|"nao_conforme"|"parcial"|"nao_aplicavel",
+      "evidencias_encontradas": "citações específicas do documento que atendem o requisito",
+      "gaps_especificos": "o que falta ou está inadequado",
       "score_conformidade": 0-10,
-      "observacoes_ia": "texto curto"
+      "observacoes_ia": "análise detalhada comparando norma vs documento",
+      "justificativa_relevancia": "por que este requisito é relevante para este documento"
     }
   ],
-  "recomendacoes": ["ação1","ação2"],
-  "analise_detalhada": "resumo markdown (máx 500 palavras)"
+  "requisitos_nao_aplicaveis": [
+    "lista de IDs dos requisitos que você identificou como NÃO aplicáveis a este documento"
+  ],
+  "recomendacoes": [
+    "ações específicas e práticas para melhorar a conformidade"
+  ],
+  "analise_detalhada": "resumo executivo em markdown explicando: tipo do documento, requisitos relevantes identificados, pontos fortes encontrados, principais gaps, e próximos passos recomendados (máximo 400 palavras)"
 }`;
 
     // 6. Chamar OpenAI API com tokens suficientes
@@ -145,7 +184,7 @@ Retorne JSON com:
             content: prompt
           }
         ],
-        max_completion_tokens: 12000, // Tokens suficientes para análise completa
+        max_completion_tokens: 8000, // Reduzido - análise focada em requisitos relevantes
         response_format: { type: 'json_object' }
       }),
     });
@@ -199,7 +238,11 @@ Retorne JSON com:
           modelo_usado: 'gpt-5-mini-2025-08-07',
           tempo_processamento: Date.now(),
           total_requisitos: requirements?.length || 0,
-          documento_tamanho: documentText.length
+          total_requisitos_relevantes: analysisResult.total_requisitos_relevantes || 0,
+          documento_tamanho: documentText.length,
+          documento_tipo: analysisResult.documento_tipo_identificado || null,
+          documento_escopo: analysisResult.documento_escopo_identificado || null,
+          requisitos_nao_aplicaveis: analysisResult.requisitos_nao_aplicaveis || []
         },
         updated_at: new Date().toISOString()
       })
@@ -212,21 +255,22 @@ Retorne JSON com:
 
     console.log('Assessment updated successfully');
 
-    // 8. Salvar detalhes por requisito
-    if (analysisResult.requisitos_detalhados && analysisResult.requisitos_detalhados.length > 0) {
+    // 8. Salvar detalhes por requisito (agora requisitos_analisados)
+    if (analysisResult.requisitos_analisados && analysisResult.requisitos_analisados.length > 0) {
       console.log('Saving requirement details...');
-      const detailsToInsert = analysisResult.requisitos_detalhados.map((req: any) => {
+      const detailsToInsert = analysisResult.requisitos_analisados.map((req: any) => {
         const requirement = requirements?.find(r => r.id === req.requirement_id);
         return {
           assessment_id: assessmentId,
           requirement_id: req.requirement_id,
-          requisito_codigo: requirement?.codigo || '',
+          requisito_codigo: requirement?.codigo || req.requisito_codigo || '',
           requisito_titulo: requirement?.titulo || '',
           status_aderencia: req.status_aderencia,
           evidencias_encontradas: req.evidencias_encontradas,
           gaps_especificos: req.gaps_especificos,
           score_conformidade: req.score_conformidade,
-          observacoes_ia: req.observacoes_ia
+          observacoes_ia: req.observacoes_ia,
+          justificativa_relevancia: req.justificativa_relevancia || null
         };
       });
 
