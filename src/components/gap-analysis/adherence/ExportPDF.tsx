@@ -6,68 +6,156 @@ import { ptBR } from 'date-fns/locale';
 export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?: any[]) {
   const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
   const pageWidth = pdf.internal.pageSize.getWidth();
-  const marginX = 40;
-  const marginY = 40;
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const marginX = 50;
+  const marginY = 50;
+  const contentWidth = pageWidth - 2 * marginX;
   let y = marginY;
+
+  // Cores Executivas (tons neutros e profissionais)
+  const colors = {
+    primary: [31, 41, 55] as [number, number, number],      // Cinza escuro
+    secondary: [107, 114, 128] as [number, number, number], // Cinza médio
+    light: [156, 163, 175] as [number, number, number],     // Cinza claro
+    success: [75, 85, 99] as [number, number, number],      // Cinza escuro (substitui verde)
+    warning: [107, 114, 128] as [number, number, number],   // Cinza médio (substitui amarelo)
+    error: [75, 85, 99] as [number, number, number],        // Cinza escuro (substitui vermelho)
+    border: [229, 231, 235] as [number, number, number],    // Cinza muito claro
+    highlight: [243, 244, 246] as [number, number, number], // Background cinza suave
+  };
 
   // Helper para adicionar nova página se necessário
   const checkAddPage = (requiredSpace: number) => {
-    if (y + requiredSpace > pdf.internal.pageSize.getHeight() - marginY) {
+    if (y + requiredSpace > pageHeight - marginY - 30) {
       pdf.addPage();
       y = marginY;
+      return true;
     }
+    return false;
+  };
+
+  // Helper para adicionar box destacado
+  const addBox = (height: number, bgColor: [number, number, number]) => {
+    pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
+    pdf.rect(marginX, y, contentWidth, height, 'F');
   };
 
   // Helper para adicionar texto com quebra de linha
-  const addText = (text: string, fontSize: number, isBold = false, color: [number, number, number] = [0, 0, 0]) => {
+  const addText = (
+    text: string, 
+    fontSize: number, 
+    isBold = false, 
+    color: [number, number, number] = colors.primary,
+    indent = 0
+  ) => {
     pdf.setFontSize(fontSize);
     pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
     pdf.setTextColor(color[0], color[1], color[2]);
-    const lines = pdf.splitTextToSize(text, pageWidth - 2 * marginX);
+    const lines = pdf.splitTextToSize(text, contentWidth - indent);
     
     lines.forEach((line: string) => {
-      checkAddPage(fontSize + 5);
-      pdf.text(line, marginX, y);
-      y += fontSize + 5;
+      checkAddPage(fontSize + 8);
+      pdf.text(line, marginX + indent, y);
+      y += fontSize + 8;
     });
   };
 
+  // Helper para adicionar seção com título
+  const addSection = (title: string, spacing = 25) => {
+    checkAddPage(60);
+    y += spacing;
+    pdf.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
+    pdf.setLineWidth(2);
+    pdf.line(marginX, y, marginX + 60, y);
+    y += 15;
+    addText(title, 14, true, colors.primary);
+    y += 5;
+  };
+
+  // ========== CAPA EXECUTIVA ==========
+  // Background da capa
+  pdf.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+  pdf.rect(0, 0, pageWidth, 200, 'F');
+  
   // Título Principal
-  addText('RELATÓRIO DE AVALIAÇÃO DE ADERÊNCIA', 20, true, [31, 41, 55]);
-  y += 10;
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFontSize(24);
+  pdf.setFont('helvetica', 'bold');
+  const titleY = 100;
+  pdf.text('RELATÓRIO DE AVALIAÇÃO', pageWidth / 2, titleY, { align: 'center' });
+  pdf.text('DE ADERÊNCIA', pageWidth / 2, titleY + 30, { align: 'center' });
+  
+  y = 250;
 
-  // Informações Gerais
-  addText(`Nome: ${assessment.nome_analise}`, 14, true);
-  addText(`Framework: ${assessment.framework_nome} ${assessment.framework_versao || ''}`, 12);
-  addText(`Documento: ${assessment.documento_nome}`, 12);
-  addText(`Data: ${format(new Date(assessment.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}`, 12);
+  // Box com informações gerais
+  const boxHeight = 120;
+  checkAddPage(boxHeight + 40);
+  pdf.setFillColor(colors.highlight[0], colors.highlight[1], colors.highlight[2]);
+  pdf.rect(marginX, y, contentWidth, boxHeight, 'F');
+  pdf.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
+  pdf.setLineWidth(1);
+  pdf.rect(marginX, y, contentWidth, boxHeight, 'S');
+  
+  y += 25;
+  pdf.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+  pdf.setFontSize(16);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text(assessment.nome_analise, marginX + 20, y);
+  
+  y += 25;
+  pdf.setFontSize(11);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+  pdf.text(`Framework: ${assessment.framework_nome} ${assessment.framework_versao || ''}`, marginX + 20, y);
+  
   y += 20;
-
-  // Linha separadora
-  pdf.setDrawColor(200, 200, 200);
-  pdf.line(marginX, y, pageWidth - marginX, y);
+  pdf.text(`Documento Analisado: ${assessment.documento_nome}`, marginX + 20, y);
+  
   y += 20;
+  pdf.text(
+    `Data da Análise: ${format(new Date(assessment.created_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`,
+    marginX + 20,
+    y
+  );
+  
+  y += boxHeight - 65 + 30;
 
-  // Resultado Geral
-  checkAddPage(80);
+  // ========== RESULTADO GERAL (DESTAQUE) ==========
+  addSection('SUMÁRIO EXECUTIVO', 30);
+  
   const resultLabel = assessment.resultado_geral === 'conforme' 
     ? 'CONFORME' 
     : assessment.resultado_geral === 'nao_conforme' 
     ? 'NÃO CONFORME' 
     : 'PARCIALMENTE CONFORME';
+
+  // Box destacado para o resultado
+  const resultBoxHeight = 90;
+  checkAddPage(resultBoxHeight + 20);
+  pdf.setFillColor(colors.highlight[0], colors.highlight[1], colors.highlight[2]);
+  pdf.rect(marginX, y, contentWidth, resultBoxHeight, 'F');
+  pdf.setDrawColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+  pdf.setLineWidth(2);
+  pdf.rect(marginX, y, contentWidth, resultBoxHeight, 'S');
   
-  const resultColor: [number, number, number] = assessment.resultado_geral === 'conforme' 
-    ? [34, 197, 94] 
-    : assessment.resultado_geral === 'nao_conforme' 
-    ? [239, 68, 68] 
-    : [234, 179, 8];
+  y += 30;
+  pdf.setFontSize(12);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+  pdf.text('Resultado da Avaliação:', marginX + 20, y);
+  
+  y += 25;
+  pdf.setFontSize(20);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+  pdf.text(resultLabel, marginX + 20, y);
+  
+  pdf.setFontSize(32);
+  pdf.text(`${assessment.percentual_conformidade}%`, contentWidth + marginX - 80, y);
+  
+  y += resultBoxHeight - 55 + 20;
 
-  addText('RESULTADO GERAL', 16, true);
-  addText(resultLabel, 24, true, resultColor);
-  addText(`Percentual de Conformidade: ${assessment.percentual_conformidade}%`, 14, true);
-  y += 20;
-
-  // Distribuição
+  // Distribuição de Requisitos
   if (details && details.length > 0) {
     const distribuicao = {
       conforme: details.filter((d: any) => d.status_aderencia === 'conforme').length,
@@ -76,120 +164,302 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
       nao_aplicavel: details.filter((d: any) => d.status_aderencia === 'nao_aplicavel').length,
     };
 
-    addText('RESUMO EXECUTIVO', 16, true);
-    addText(`Conforme: ${distribuicao.conforme} requisitos`, 12, false, [34, 197, 94]);
-    addText(`Parcial: ${distribuicao.parcial} requisitos`, 12, false, [234, 179, 8]);
-    addText(`Não Conforme: ${distribuicao.nao_conforme} requisitos`, 12, false, [239, 68, 68]);
-    addText(`Não Aplicável: ${distribuicao.nao_aplicavel} requisitos`, 12, false, [156, 163, 175]);
-    y += 20;
+    y += 15;
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+    pdf.text('Distribuição dos Requisitos Analisados:', marginX, y);
+    y += 25;
+
+    // Grid de estatísticas
+    const statBoxWidth = (contentWidth - 30) / 4;
+    const statBoxHeight = 70;
+    const stats = [
+      { label: 'Conforme', value: distribuicao.conforme, color: colors.success },
+      { label: 'Parcial', value: distribuicao.parcial, color: colors.warning },
+      { label: 'Não Conforme', value: distribuicao.nao_conforme, color: colors.error },
+      { label: 'Não Aplicável', value: distribuicao.nao_aplicavel, color: colors.light },
+    ];
+
+    stats.forEach((stat, index) => {
+      const x = marginX + (statBoxWidth + 10) * index;
+      
+      pdf.setFillColor(colors.highlight[0], colors.highlight[1], colors.highlight[2]);
+      pdf.rect(x, y, statBoxWidth, statBoxHeight, 'F');
+      pdf.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
+      pdf.setLineWidth(1);
+      pdf.rect(x, y, statBoxWidth, statBoxHeight, 'S');
+      
+      pdf.setFontSize(24);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(stat.color[0], stat.color[1], stat.color[2]);
+      pdf.text(stat.value.toString(), x + statBoxWidth / 2, y + 35, { align: 'center' });
+      
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+      pdf.text(stat.label, x + statBoxWidth / 2, y + 55, { align: 'center' });
+    });
+    
+    y += statBoxHeight + 30;
   }
 
-  // Pontos Fortes
+  // ========== PONTOS FORTES ==========
   if (assessment.pontos_fortes && assessment.pontos_fortes.length > 0) {
-    checkAddPage(60);
-    addText(`PONTOS FORTES (${assessment.pontos_fortes.length})`, 16, true, [34, 197, 94]);
-    y += 5;
+    addSection(`PONTOS FORTES (${assessment.pontos_fortes.length})`);
     
     assessment.pontos_fortes.forEach((ponto: PontoForte, index: number) => {
-      checkAddPage(50);
-      addText(`${index + 1}. ${ponto.titulo}`, 12, true);
-      addText(ponto.descricao, 10);
-      y += 10;
+      checkAddPage(70);
+      
+      // Box para cada ponto
+      pdf.setFillColor(colors.highlight[0], colors.highlight[1], colors.highlight[2]);
+      const boxStartY = y;
+      const boxHeight = 60;
+      pdf.rect(marginX, boxStartY, contentWidth, boxHeight, 'F');
+      pdf.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
+      pdf.setLineWidth(0.5);
+      pdf.rect(marginX, boxStartY, contentWidth, boxHeight, 'S');
+      
+      y += 20;
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+      pdf.text(`${index + 1}. ${ponto.titulo}`, marginX + 15, y);
+      
+      y += 18;
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+      const descLines = pdf.splitTextToSize(ponto.descricao, contentWidth - 30);
+      descLines.slice(0, 2).forEach((line: string) => {
+        pdf.text(line, marginX + 15, y);
+        y += 12;
+      });
+      
+      y = boxStartY + boxHeight + 10;
     });
     y += 10;
   }
 
-  // Pontos de Melhoria
+  // ========== PONTOS DE MELHORIA ==========
   if (assessment.pontos_melhoria && assessment.pontos_melhoria.length > 0) {
-    checkAddPage(60);
-    addText(`PONTOS DE MELHORIA (${assessment.pontos_melhoria.length})`, 16, true, [234, 179, 8]);
-    y += 5;
+    addSection(`PONTOS DE MELHORIA (${assessment.pontos_melhoria.length})`);
     
     assessment.pontos_melhoria.forEach((ponto: PontoMelhoria, index: number) => {
-      checkAddPage(50);
-      const prioridadeColor: [number, number, number] = ponto.prioridade === 'alta' 
-        ? [239, 68, 68] 
-        : ponto.prioridade === 'media' 
-        ? [234, 179, 8] 
-        : [156, 163, 175];
+      checkAddPage(75);
       
-      addText(`${index + 1}. ${ponto.titulo} [Prioridade: ${ponto.prioridade.toUpperCase()}]`, 12, true, prioridadeColor);
-      addText(ponto.descricao, 10);
-      y += 10;
+      const prioridadeColor: [number, number, number] = 
+        ponto.prioridade === 'alta' ? colors.primary :
+        ponto.prioridade === 'media' ? colors.secondary :
+        colors.light;
+      
+      // Box para cada ponto
+      pdf.setFillColor(colors.highlight[0], colors.highlight[1], colors.highlight[2]);
+      const boxStartY = y;
+      const boxHeight = 65;
+      pdf.rect(marginX, boxStartY, contentWidth, boxHeight, 'F');
+      pdf.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
+      pdf.setLineWidth(0.5);
+      pdf.rect(marginX, boxStartY, contentWidth, boxHeight, 'S');
+      
+      // Barra lateral de prioridade
+      pdf.setFillColor(prioridadeColor[0], prioridadeColor[1], prioridadeColor[2]);
+      pdf.rect(marginX, boxStartY, 4, boxHeight, 'F');
+      
+      y += 20;
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+      pdf.text(`${index + 1}. ${ponto.titulo}`, marginX + 15, y);
+      
+      // Badge de prioridade
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(prioridadeColor[0], prioridadeColor[1], prioridadeColor[2]);
+      pdf.text(`[${ponto.prioridade.toUpperCase()}]`, contentWidth + marginX - 60, y);
+      
+      y += 18;
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+      const descLines = pdf.splitTextToSize(ponto.descricao, contentWidth - 30);
+      descLines.slice(0, 2).forEach((line: string) => {
+        pdf.text(line, marginX + 15, y);
+        y += 12;
+      });
+      
+      y = boxStartY + boxHeight + 10;
     });
     y += 10;
   }
 
-  // Recomendações
+  // ========== RECOMENDAÇÕES ==========
   if (assessment.recomendacoes && assessment.recomendacoes.length > 0) {
-    checkAddPage(60);
-    addText('RECOMENDAÇÕES', 16, true, [59, 130, 246]);
-    y += 5;
+    addSection('RECOMENDAÇÕES');
     
     assessment.recomendacoes.forEach((rec: string, index: number) => {
-      checkAddPage(40);
-      addText(`${index + 1}. ${rec}`, 10);
-      y += 5;
+      checkAddPage(35);
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+      
+      // Bullet point
+      pdf.setFillColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+      pdf.circle(marginX + 5, y - 3, 2, 'F');
+      
+      const lines = pdf.splitTextToSize(rec, contentWidth - 20);
+      lines.forEach((line: string) => {
+        pdf.text(line, marginX + 15, y);
+        y += 14;
+      });
+      
+      y += 8;
     });
     y += 10;
   }
 
-  // Análise Detalhada
+  // ========== ANÁLISE DETALHADA ==========
   if (assessment.analise_detalhada) {
     pdf.addPage();
     y = marginY;
-    addText('ANÁLISE DETALHADA', 16, true);
-    y += 5;
-    addText(assessment.analise_detalhada, 10);
+    addSection('ANÁLISE DETALHADA COMPLETA', 0);
+    y += 10;
+    
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+    const lines = pdf.splitTextToSize(assessment.analise_detalhada, contentWidth);
+    lines.forEach((line: string) => {
+      checkAddPage(12);
+      pdf.text(line, marginX, y);
+      y += 12;
+    });
+    y += 20;
   }
 
-  // Análise por Requisito
+  // ========== ANÁLISE POR REQUISITO ==========
   if (details && details.length > 0) {
     pdf.addPage();
     y = marginY;
-    addText('ANÁLISE DETALHADA POR REQUISITO', 16, true);
-    y += 10;
+    addSection('ANÁLISE DETALHADA POR REQUISITO', 0);
+    y += 15;
 
-    details.forEach((detail: any) => {
-      checkAddPage(80);
+    details.forEach((detail: any, idx: number) => {
+      checkAddPage(110);
       
-      const statusColor: [number, number, number] = detail.status_aderencia === 'conforme' 
-        ? [34, 197, 94] 
-        : detail.status_aderencia === 'nao_conforme' 
-        ? [239, 68, 68] 
-        : detail.status_aderencia === 'parcial'
-        ? [234, 179, 8]
-        : [156, 163, 175];
+      const statusColor: [number, number, number] = 
+        detail.status_aderencia === 'conforme' ? colors.success :
+        detail.status_aderencia === 'nao_conforme' ? colors.error :
+        detail.status_aderencia === 'parcial' ? colors.warning :
+        colors.light;
 
-      addText(`${detail.requisito_codigo} - ${detail.requisito_titulo}`, 12, true);
-      addText(`Status: ${detail.status_aderencia.toUpperCase()}`, 10, false, statusColor);
+      // Box para cada requisito
+      const boxStartY = y;
+      const boxHeight = 95;
+      pdf.setFillColor(colors.highlight[0], colors.highlight[1], colors.highlight[2]);
+      pdf.rect(marginX, boxStartY, contentWidth, boxHeight, 'F');
+      pdf.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
+      pdf.setLineWidth(0.5);
+      pdf.rect(marginX, boxStartY, contentWidth, boxHeight, 'S');
       
+      // Barra lateral de status
+      pdf.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
+      pdf.rect(marginX, boxStartY, 3, boxHeight, 'F');
+      
+      y += 18;
+      
+      // Código e título
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+      pdf.text(`${detail.requisito_codigo}`, marginX + 12, y);
+      
+      pdf.setFont('helvetica', 'normal');
+      const titleLines = pdf.splitTextToSize(detail.requisito_titulo, contentWidth - 100);
+      pdf.text(titleLines[0], marginX + 80, y);
+      
+      // Status badge
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+      const statusText = detail.status_aderencia.toUpperCase().replace('_', ' ');
+      pdf.text(statusText, contentWidth + marginX - 80, y);
+      
+      y += 18;
+      
+      // Score
       if (detail.score_conformidade !== null) {
-        addText(`Score: ${detail.score_conformidade}/10`, 10, true);
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+        pdf.text(`Score: ${detail.score_conformidade}/10`, marginX + 12, y);
+        y += 15;
       }
       
+      // Evidências
       if (detail.evidencias_encontradas) {
-        addText('Evidências: ' + detail.evidencias_encontradas, 9);
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+        pdf.text('Evidências:', marginX + 12, y);
+        y += 12;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+        const evidLines = pdf.splitTextToSize(detail.evidencias_encontradas, contentWidth - 30);
+        pdf.text(evidLines.slice(0, 1)[0], marginX + 12, y);
+        y += 12;
       }
       
+      // Gaps
       if (detail.gaps_especificos) {
-        addText('Gaps: ' + detail.gaps_especificos, 9);
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+        pdf.text('Gaps:', marginX + 12, y);
+        y += 12;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+        const gapLines = pdf.splitTextToSize(detail.gaps_especificos, contentWidth - 30);
+        pdf.text(gapLines.slice(0, 1)[0], marginX + 12, y);
       }
       
-      y += 15;
+      y = boxStartY + boxHeight + 12;
     });
   }
 
-  // Rodapé em todas as páginas
+  // ========== RODAPÉ EM TODAS AS PÁGINAS ==========
   const totalPages = pdf.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     pdf.setPage(i);
-    pdf.setFontSize(8);
-    pdf.setTextColor(156, 163, 175);
+    
+    // Linha superior do rodapé
+    pdf.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
+    pdf.setLineWidth(0.5);
+    pdf.line(marginX, pageHeight - 35, pageWidth - marginX, pageHeight - 35);
+    
+    // Texto do rodapé
+    pdf.setFontSize(7);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(colors.light[0], colors.light[1], colors.light[2]);
     pdf.text(
-      `Página ${i} de ${totalPages} | Gerado em ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`,
+      `Página ${i} de ${totalPages}`,
       marginX,
-      pdf.internal.pageSize.getHeight() - 20
+      pageHeight - 20
+    );
+    pdf.text(
+      `Gerado em ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`,
+      pageWidth - marginX,
+      pageHeight - 20,
+      { align: 'right' }
+    );
+    
+    // Nome do relatório no centro
+    pdf.text(
+      'Relatório de Avaliação de Aderência',
+      pageWidth / 2,
+      pageHeight - 20,
+      { align: 'center' }
     );
   }
 
