@@ -134,18 +134,18 @@ Retorne JSON com:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-5-mini-2025-08-07', // Modelo mais eficiente para tarefas bem definidas
         messages: [
           {
             role: 'system',
-            content: 'Você é um auditor de conformidade. Retorne sempre JSON válido e estruturado, seja conciso.'
+            content: 'Você é um auditor de conformidade especializado. Analise documentos contra frameworks regulatórios e retorne sempre JSON válido e estruturado. Seja objetivo e preciso.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_completion_tokens: 8000, // Aumentado para dar espaço ao reasoning + resposta
+        max_completion_tokens: 12000, // Tokens suficientes para análise completa
         response_format: { type: 'json_object' }
       }),
     });
@@ -196,7 +196,7 @@ Retorne JSON com:
         recomendacoes: analysisResult.recomendacoes || [],
         analise_detalhada: analysisResult.analise_detalhada,
         metadados_analise: {
-          modelo_usado: 'gpt-5-2025-08-07',
+          modelo_usado: 'gpt-5-mini-2025-08-07',
           tempo_processamento: Date.now(),
           total_requisitos: requirements?.length || 0,
           documento_tamanho: documentText.length
