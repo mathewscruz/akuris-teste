@@ -184,7 +184,7 @@ FORMATO DE RESPOSTA (JSON):
             content: prompt
           }
         ],
-        max_completion_tokens: 8000, // Suficiente para análise focada
+        max_completion_tokens: 16000, // Tokens suficientes para análise completa sem truncamento
         response_format: { type: 'json_object' }
       }),
     });
@@ -214,28 +214,35 @@ FORMATO DE RESPOSTA (JSON):
       finishReason: aiResponse.choices?.[0]?.finish_reason
     }));
     
+    // Verificar se resposta foi truncada ANTES de verificar conteúdo
+    if (aiResponse.choices?.[0]?.finish_reason === 'length') {
+      console.error('Response truncated - finish_reason: length. Aumentando tokens pode resolver.');
+      throw new Error('Análise muito extensa - resposta truncada. Documento pode ser muito complexo ou ter muitos requisitos aplicáveis.');
+    }
+    
     if (!aiResponse.choices?.[0]?.message?.content) {
       console.error('Invalid AI response structure:', JSON.stringify(aiResponse, null, 2));
-      
-      // Mensagem específica se foi por limite de tokens
-      if (aiResponse.choices?.[0]?.finish_reason === 'length') {
-        throw new Error('Resposta incompleta - documento muito extenso. Tente com um documento menor ou mais específico.');
-      }
-      
       throw new Error('Resposta da IA inválida - estrutura de resposta não contém conteúdo');
     }
 
     let analysisResult;
     try {
-      analysisResult = JSON.parse(aiResponse.choices[0].message.content);
-      console.log('Analysis result parsed:', {
+      const content = aiResponse.choices[0].message.content;
+      analysisResult = JSON.parse(content);
+      console.log('Analysis result parsed successfully:', {
         resultado_geral: analysisResult.resultado_geral,
         percentual: analysisResult.percentual_conformidade,
-        requisitos: analysisResult.requisitos_detalhados?.length
+        requisitos_analisados: analysisResult.requisitos_analisados?.length || 0,
+        documento_tipo: analysisResult.documento_tipo_identificado,
+        documento_escopo: analysisResult.documento_escopo_identificado
       });
     } catch (e) {
-      console.error('Failed to parse AI response:', aiResponse.choices[0].message.content);
-      throw new Error('Erro ao processar resposta da IA');
+      const content = aiResponse.choices[0].message.content;
+      console.error('Failed to parse AI response. Content length:', content?.length);
+      console.error('Content preview (first 500 chars):', content?.substring(0, 500));
+      console.error('Content end (last 200 chars):', content?.substring(content.length - 200));
+      console.error('Parse error:', e);
+      throw new Error('Erro ao processar resposta da IA - JSON inválido ou incompleto. Tente com um documento mais simples.');
     }
 
     // 7. Salvar resultado completo na tabela de assessments
