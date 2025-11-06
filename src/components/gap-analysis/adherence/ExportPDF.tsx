@@ -39,18 +39,18 @@ export async function exportAssessmentToPDF(
   };
 
   // Helper para adicionar seção com título
-  const addSection = (title: string, spacing = 25) => {
-    checkAddPage(60);
+  const addSection = (title: string, spacing = 20) => {
+    checkAddPage(50);
     y += spacing;
     pdf.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
     pdf.setLineWidth(2);
     pdf.line(marginX, y, marginX + 60, y);
-    y += 15;
+    y += 12;
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
     pdf.text(title, marginX, y);
-    y += 20;
+    y += 15;
   };
 
   // Helper para carregar e adicionar logo
@@ -91,16 +91,16 @@ export async function exportAssessmentToPDF(
 
   // ========== CAPA EXECUTIVA ==========
   pdf.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-  pdf.rect(0, y, pageWidth, 200 - (y - marginY), 'F');
+  pdf.rect(0, y, pageWidth, 180 - (y - marginY), 'F');
   
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(24);
   pdf.setFont('helvetica', 'bold');
-  const titleY = y + 60;
+  const titleY = y + 50;
   pdf.text('RELATÓRIO DE AVALIAÇÃO', pageWidth / 2, titleY, { align: 'center' });
   pdf.text('DE ADERÊNCIA', pageWidth / 2, titleY + 30, { align: 'center' });
   
-  y = 250;
+  y = 230;
 
   // Box com informações gerais
   const boxHeight = 120;
@@ -133,10 +133,10 @@ export async function exportAssessmentToPDF(
     y
   );
   
-  y += boxHeight - 65 + 30;
+  y += boxHeight - 65 + 20;
 
   // ========== RESULTADO GERAL ==========
-  addSection('SUMÁRIO EXECUTIVO', 30);
+  addSection('SUMÁRIO EXECUTIVO', 20);
   
   const resultLabel = assessment.resultado_geral === 'conforme' 
     ? 'CONFORME' 
@@ -325,7 +325,7 @@ export async function exportAssessmentToPDF(
       
       y += 8;
     });
-    y += 10;
+    y += 5;
   }
 
   // ========== ANÁLISE DETALHADA ==========
