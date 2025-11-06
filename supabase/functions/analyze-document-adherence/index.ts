@@ -99,20 +99,47 @@ serve(async (req) => {
 
     const documentName = storageFileName.split('/').pop()?.replace('.txt', '') || 'Documento';
 
-    const prompt = `Analise este documento de política/procedimento contra os requisitos do framework ${framework.nome}.
+    const prompt = `Você DEVE retornar APENAS JSON válido no formato especificado.
 
-DOCUMENTO (${documentText.length} chars total, primeiros 10000):
-${documentText.substring(0, 10000)}
+DOCUMENTO ANALISADO (primeiros 12000 chars):
+${documentText.substring(0, 12000)}${documentText.length > 12000 ? '\n\n[... documento continua ...]' : ''}
 
-REQUISITOS DO FRAMEWORK (primeiros 40 de ${requirements.length}):
-${requirements.slice(0, 40).map((r, i) => `${i+1}. ID:${r.id} | Código:${r.codigo} | Título:${r.titulo}`).join('\n')}
+REQUISITOS ${framework.nome} (primeiros 40):
+${requirements.slice(0, 40).map((r, i) => `${i+1}. ID:${r.id} | ${r.codigo}: ${r.titulo}`).join('\n')}
 
-INSTRUÇÕES:
-1. Identifique quais requisitos são RELEVANTES para este documento
-2. Para cada requisito relevante, analise: status, evidências (40 chars), gaps (35 chars), observações (60 chars)
-3. Retorne no formato JSON especificado
+TAREFA: Identifique requisitos RELEVANTES e analise conformidade.
 
-IMPORTANTE: Seja CONCISO - limite rigoroso de caracteres por campo.`;
+FORMATO JSON OBRIGATÓRIO:
+{
+  "documento_tipo_identificado": "string (ex: politica, procedimento)",
+  "documento_escopo_identificado": "string (max 50 chars)",
+  "total_requisitos_relevantes": número,
+  "resultado_geral": "conforme"|"nao_conforme"|"parcial",
+  "percentual_conformidade": 0-100,
+  "pontos_fortes": [
+    {"titulo": "max 50 chars", "descricao": "max 100 chars"}
+  ],
+  "pontos_melhoria": [
+    {"titulo": "max 50 chars", "descricao": "max 100 chars", "prioridade": "alta|media|baixa"}
+  ],
+  "requisitos_analisados": [
+    {
+      "requirement_id": "UUID do requisito",
+      "requisito_codigo": "código",
+      "status_aderencia": "conforme"|"nao_conforme"|"parcial"|"nao_aplicavel",
+      "evidencias_encontradas": "max 80 chars",
+      "gaps_especificos": "max 70 chars",
+      "score_conformidade": 0-10,
+      "observacoes_ia": "max 120 chars",
+      "justificativa_relevancia": "max 70 chars"
+    }
+  ],
+  "requisitos_nao_aplicaveis": ["array de IDs"],
+  "recomendacoes": ["max 120 chars cada"],
+  "analise_detalhada": "resumo executivo (max 400 palavras)"
+}
+
+CRÍTICO: Retorne APENAS o JSON, sem prefixos, sufixos ou markdown.`;
 
     // 6. Chamar Lovable AI Gateway com Gemini 2.5 Flash
     console.log('Calling Lovable AI Gateway...');
@@ -123,84 +150,16 @@ IMPORTANTE: Seja CONCISO - limite rigoroso de caracteres por campo.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite',
+        model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: 'Você é auditor de conformidade. Analise documentos e retorne JSON estruturado.' },
+          { 
+            role: 'system', 
+            content: 'Você é auditor de conformidade. Retorne APENAS JSON válido, sem texto adicional. Siga rigorosamente o schema fornecido.'
+          },
           { role: 'user', content: prompt }
         ],
-        max_completion_tokens: 8000,
-        response_format: { type: 'json_object' },
-        tools: [{
-          type: 'function',
-          function: {
-            name: 'analisar_conformidade',
-            description: 'Retorna análise de conformidade estruturada',
-            parameters: {
-              type: 'object',
-              properties: {
-                documento_tipo_identificado: { type: 'string', maxLength: 30 },
-                documento_escopo_identificado: { type: 'string', maxLength: 50 },
-                total_requisitos_relevantes: { type: 'integer' },
-                resultado_geral: { type: 'string', enum: ['conforme', 'nao_conforme', 'parcial'] },
-                percentual_conformidade: { type: 'integer', minimum: 0, maximum: 100 },
-                pontos_fortes: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      titulo: { type: 'string', maxLength: 50 },
-                      descricao: { type: 'string', maxLength: 100 }
-                    },
-                    required: ['titulo', 'descricao']
-                  },
-                  maxItems: 5
-                },
-                pontos_melhoria: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      titulo: { type: 'string', maxLength: 50 },
-                      descricao: { type: 'string', maxLength: 100 },
-                      prioridade: { type: 'string', enum: ['alta', 'media', 'baixa'] }
-                    },
-                    required: ['titulo', 'descricao', 'prioridade']
-                  },
-                  maxItems: 5
-                },
-                requisitos_analisados: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      requirement_id: { type: 'string' },
-                      requisito_codigo: { type: 'string' },
-                      status_aderencia: { type: 'string', enum: ['conforme', 'nao_conforme', 'parcial', 'nao_aplicavel'] },
-                      evidencias_encontradas: { type: 'string', maxLength: 100 },
-                      gaps_especificos: { type: 'string', maxLength: 80 },
-                      score_conformidade: { type: 'integer', minimum: 0, maximum: 10 },
-                      observacoes_ia: { type: 'string', maxLength: 150 },
-                      justificativa_relevancia: { type: 'string', maxLength: 80 }
-                    },
-                    required: ['requirement_id', 'requisito_codigo', 'status_aderencia', 'score_conformidade']
-                  }
-                },
-                requisitos_nao_aplicaveis: {
-                  type: 'array',
-                  items: { type: 'string' }
-                },
-                recomendacoes: {
-                  type: 'array',
-                  items: { type: 'string', maxLength: 150 },
-                  maxItems: 5
-                },
-                analise_detalhada: { type: 'string', maxLength: 2000 }
-              },
-              required: ['documento_tipo_identificado', 'resultado_geral', 'percentual_conformidade', 'requisitos_analisados']
-            }
-          }
-        }],
-        tool_choice: { type: 'function', function: { name: 'analisar_conformidade' } }
+        max_completion_tokens: 12000,
+        response_format: { type: 'json_object' }
       }),
     });
 
@@ -246,31 +205,23 @@ IMPORTANTE: Seja CONCISO - limite rigoroso de caracteres por campo.`;
 
     let analysisResult;
     try {
-      const aiResponseData = aiResponse.choices[0].message;
+      const content = aiResponse.choices[0].message.content;
       
-      // Extrair resultado do tool call
-      let content: string;
-      if (aiResponseData.tool_calls && aiResponseData.tool_calls[0]) {
-        // Tool calling retornou estrutura
-        content = aiResponseData.tool_calls[0].function.arguments;
-        console.log('Tool call response - arguments length:', content.length);
-      } else if (aiResponseData.content) {
-        // Fallback para resposta direta
-        content = aiResponseData.content;
-        console.log('Direct response length:', content.length);
-      } else {
-        throw new Error('Resposta da IA sem conteúdo');
+      if (!content) {
+        throw new Error('Resposta da IA vazia');
       }
+      
+      console.log('AI response length:', content.length);
       
       // Parse JSON
       analysisResult = JSON.parse(content);
       
       // Validar estrutura mínima
       if (!analysisResult.resultado_geral || !analysisResult.requisitos_analisados) {
-        throw new Error('Estrutura JSON incompleta - faltam campos obrigatórios');
+        throw new Error('JSON sem campos obrigatórios');
       }
       
-      // TRUNCAR CAMPOS - garantir limites
+      // Truncar campos automaticamente
       if (analysisResult.requisitos_analisados) {
         analysisResult.requisitos_analisados = analysisResult.requisitos_analisados.map((req: any) => ({
           ...req,
@@ -281,17 +232,16 @@ IMPORTANTE: Seja CONCISO - limite rigoroso de caracteres por campo.`;
         }));
       }
       
-      console.log('Analysis parsed:', {
+      console.log('Parsed:', {
         resultado: analysisResult.resultado_geral,
         percentual: analysisResult.percentual_conformidade,
         requisitos: analysisResult.requisitos_analisados?.length || 0
       });
     } catch (e) {
-      console.error('Parse failed:', e);
-      const rawContent = aiResponse.choices[0]?.message?.content || 
-                         aiResponse.choices[0]?.message?.tool_calls?.[0]?.function?.arguments || '';
-      console.error('Content preview:', rawContent.substring(0, 500));
-      throw new Error('Erro ao processar resposta da IA. JSON inválido ou incompleto.');
+      console.error('Parse error:', e);
+      const content = aiResponse.choices[0]?.message?.content || '';
+      console.error('Content preview:', content.substring(0, 500));
+      throw new Error('JSON inválido retornado pela IA');
     }
 
     // 7. Salvar resultado completo na tabela de assessments
@@ -307,7 +257,7 @@ IMPORTANTE: Seja CONCISO - limite rigoroso de caracteres por campo.`;
         recomendacoes: analysisResult.recomendacoes || [],
         analise_detalhada: analysisResult.analise_detalhada,
         metadados_analise: {
-          modelo_usado: 'google/gemini-2.5-flash-lite',
+          modelo_usado: 'google/gemini-2.5-flash',
           tempo_processamento: Date.now(),
           total_requisitos: requirements?.length || 0,
           total_requisitos_relevantes: analysisResult.total_requisitos_relevantes || 0,
