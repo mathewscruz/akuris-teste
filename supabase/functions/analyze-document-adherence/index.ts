@@ -20,10 +20,10 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!;
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
 
-    if (!openaiApiKey) {
-      throw new Error('OPENAI_API_KEY não configurada');
+    if (!lovableApiKey) {
+      throw new Error('LOVABLE_API_KEY não configurada');
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -164,16 +164,16 @@ FORMATO DE RESPOSTA (JSON):
   "analise_detalhada": "resumo executivo em markdown explicando: tipo do documento, requisitos relevantes identificados, pontos fortes encontrados, principais gaps, e próximos passos recomendados (máximo 400 palavras)"
 }`;
 
-    // 6. Chamar OpenAI API com tokens suficientes
-    console.log('Calling OpenAI API...');
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // 6. Chamar Lovable AI Gateway com Gemini 2.5 Flash
+    console.log('Calling Lovable AI Gateway...');
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-mini-2025-08-07', // Modelo mais eficiente para tarefas bem definidas
+        model: 'google/gemini-2.5-flash', // Modelo padrão do Lovable AI - rápido e eficiente
         messages: [
           {
             role: 'system',
@@ -184,28 +184,44 @@ FORMATO DE RESPOSTA (JSON):
             content: prompt
           }
         ],
-        max_completion_tokens: 8000, // Reduzido - análise focada em requisitos relevantes
+        max_completion_tokens: 8000, // Suficiente para análise focada
         response_format: { type: 'json_object' }
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', response.status, errorText);
-      throw new Error(`OpenAI API error (${response.status}): ${errorText}`);
+      console.error('Lovable AI Gateway error:', response.status, errorText);
+      
+      // Tratamento específico para erros de rate limit e pagamento
+      if (response.status === 429) {
+        throw new Error('Limite de requisições excedido. Aguarde alguns minutos e tente novamente.');
+      }
+      if (response.status === 402) {
+        throw new Error('Créditos do Lovable AI esgotados. Adicione créditos em Settings > Workspace > Usage.');
+      }
+      
+      throw new Error(`Erro na API (${response.status}): ${errorText}`);
     }
 
     const aiResponse = await response.json();
-    console.log('OpenAI response received:', JSON.stringify({
+    console.log('Lovable AI response received:', JSON.stringify({
       hasChoices: !!aiResponse.choices,
       choicesLength: aiResponse.choices?.length,
       hasMessage: !!aiResponse.choices?.[0]?.message,
       hasContent: !!aiResponse.choices?.[0]?.message?.content,
-      contentLength: aiResponse.choices?.[0]?.message?.content?.length
+      contentLength: aiResponse.choices?.[0]?.message?.content?.length,
+      finishReason: aiResponse.choices?.[0]?.finish_reason
     }));
     
     if (!aiResponse.choices?.[0]?.message?.content) {
       console.error('Invalid AI response structure:', JSON.stringify(aiResponse, null, 2));
+      
+      // Mensagem específica se foi por limite de tokens
+      if (aiResponse.choices?.[0]?.finish_reason === 'length') {
+        throw new Error('Resposta incompleta - documento muito extenso. Tente com um documento menor ou mais específico.');
+      }
+      
       throw new Error('Resposta da IA inválida - estrutura de resposta não contém conteúdo');
     }
 
@@ -235,7 +251,7 @@ FORMATO DE RESPOSTA (JSON):
         recomendacoes: analysisResult.recomendacoes || [],
         analise_detalhada: analysisResult.analise_detalhada,
         metadados_analise: {
-          modelo_usado: 'gpt-5-mini-2025-08-07',
+          modelo_usado: 'google/gemini-2.5-flash',
           tempo_processamento: Date.now(),
           total_requisitos: requirements?.length || 0,
           total_requisitos_relevantes: analysisResult.total_requisitos_relevantes || 0,
