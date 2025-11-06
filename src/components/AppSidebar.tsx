@@ -57,7 +57,7 @@ const menuItems = [
     subItems: [
       { title: 'Ativos', url: '/ativos', icon: Server, moduleName: 'ativos' },
       { title: 'Licenças', url: '/ativos/licencas', icon: FileKey, moduleName: 'ativos' },
-      { title: 'Chaves Criptográficas', url: '/ativos/chaves', icon: KeyRound, moduleName: 'ativos' },
+      { title: 'Chaves', url: '/ativos/chaves', icon: KeyRound, moduleName: 'ativos' },
     ],
   },
   {
