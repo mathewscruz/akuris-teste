@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { Plus, Database, Users, FileText, AlertTriangle, Filter, Eye } from "lucide-react";
+import { Plus, Database, Users, FileText, AlertTriangle, Filter, Eye, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DataTable } from "@/components/ui/data-table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,7 @@ import { DadosPessoaisDialog } from "@/components/dados/DadosPessoaisDialog";
 import { DadosPessoaisCard } from "@/components/dados/DadosPessoaisCard";
 import { MapeamentoDialog } from "@/components/dados/MapeamentoDialog";
 import { RopaWizard } from "@/components/dados/RopaWizard";
+import { RopaDialog } from "@/components/dados/RopaDialog";
 import { SolicitacaoTitularDialog } from "@/components/dados/SolicitacaoTitularDialog";
 import { StatCard } from "@/components/ui/stat-card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -36,6 +37,7 @@ export default function Dados() {
   const [showDadosDialog, setShowDadosDialog] = useState(false);
   const [showMapeamentoDialog, setShowMapeamentoDialog] = useState(false);
   const [showRopaWizard, setShowRopaWizard] = useState(false);
+  const [showRopaDialog, setShowRopaDialog] = useState(false);
   const [showSolicitacaoDialog, setShowSolicitacaoDialog] = useState(false);
   const [selectedDado, setSelectedDado] = useState<any>(null);
   const [selectedRopa, setSelectedRopa] = useState<any>(null);
@@ -49,6 +51,20 @@ export default function Dados() {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // States for ROPA tab DataTable
+  const [searchRopaTerm, setSearchRopaTerm] = useState("");
+  const [statusRopaFilter, setStatusRopaFilter] = useState("todos");
+  const [baseLegalFilter, setBaseLegalFilter] = useState("todos");
+  const [sortRopaField, setSortRopaField] = useState<string>("");
+  const [sortRopaDirection, setSortRopaDirection] = useState<"asc" | "desc">("asc");
+  
+  // States for Solicitações tab DataTable
+  const [searchSolicitacoesTerm, setSearchSolicitacoesTerm] = useState("");
+  const [statusSolicitacoesFilter, setStatusSolicitacoesFilter] = useState("todos");
+  const [tipoSolicitacaoFilter, setTipoSolicitacaoFilter] = useState("todos");
+  const [sortSolicitacoesField, setSortSolicitacoesField] = useState<string>("");
+  const [sortSolicitacoesDirection, setSortSolicitacoesDirection] = useState<"asc" | "desc">("asc");
   
   const { toast } = useToast();
 
@@ -106,6 +122,179 @@ export default function Dados() {
     };
     return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
   };
+
+  // ROPA DataTable columns
+  const ropaColumns = [
+    {
+      key: 'nome_tratamento',
+      label: 'Nome do Tratamento',
+      sortable: true,
+      render: (value: string) => <span className="font-medium">{value}</span>
+    },
+    {
+      key: 'base_legal',
+      label: 'Base Legal',
+      sortable: true,
+      render: (value: string) => <Badge variant="outline">{value}</Badge>
+    },
+    {
+      key: 'categoria_titulares',
+      label: 'Categoria Titulares',
+      sortable: true,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (value: string) => getStatusBadge(value)
+    },
+    {
+      key: 'actions',
+      label: 'Ações',
+      render: (value: any, ropa: any) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedRopa(ropa);
+              setShowRopaDialog(true);
+            }}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDelete(ropa.id, 'ropa')}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  const ropaFilters = [
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select' as const,
+      options: [
+        { value: 'ativo', label: 'Ativo' },
+        { value: 'inativo', label: 'Inativo' },
+        { value: 'revisao', label: 'Em Revisão' }
+      ],
+      value: statusRopaFilter,
+      onChange: setStatusRopaFilter
+    },
+    {
+      key: 'base_legal',
+      label: 'Base Legal',
+      type: 'select' as const,
+      options: [
+        { value: 'consentimento', label: 'Consentimento' },
+        { value: 'legitimo_interesse', label: 'Legítimo Interesse' },
+        { value: 'execucao_contrato', label: 'Execução de Contrato' },
+        { value: 'cumprimento_obrigacao', label: 'Cumprimento de Obrigação Legal' }
+      ],
+      value: baseLegalFilter,
+      onChange: setBaseLegalFilter
+    }
+  ];
+
+  // Solicitações DataTable columns
+  const solicitacoesColumns = [
+    {
+      key: 'tipo_solicitacao',
+      label: 'Tipo',
+      sortable: true,
+      render: (value: string) => <Badge variant="outline">{value}</Badge>
+    },
+    {
+      key: 'dados_titular',
+      label: 'Titular',
+      render: (value: string) => {
+        try {
+          const titular = JSON.parse(value);
+          return titular.nome || '-';
+        } catch {
+          return '-';
+        }
+      }
+    },
+    {
+      key: 'canal_solicitacao',
+      label: 'Canal',
+      sortable: true,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (value: string) => getStatusBadge(value)
+    },
+    {
+      key: 'prazo_resposta',
+      label: 'Prazo',
+      sortable: true,
+      render: (value: string) => formatDateOnly(value)
+    },
+    {
+      key: 'actions',
+      label: 'Ações',
+      render: (value: any, solicitacao: any) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedSolicitacao(solicitacao);
+              setShowSolicitacaoDialog(true);
+            }}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDelete(solicitacao.id, 'solicitacao')}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  const solicitacoesFilters = [
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select' as const,
+      options: [
+        { value: 'pendente', label: 'Pendente' },
+        { value: 'em_analise', label: 'Em Análise' },
+        { value: 'atendida', label: 'Atendida' },
+        { value: 'rejeitada', label: 'Rejeitada' }
+      ],
+      value: statusSolicitacoesFilter,
+      onChange: setStatusSolicitacoesFilter
+    },
+    {
+      key: 'tipo_solicitacao',
+      label: 'Tipo',
+      type: 'select' as const,
+      options: [
+        { value: 'acesso', label: 'Acesso' },
+        { value: 'correcao', label: 'Correção' },
+        { value: 'exclusao', label: 'Exclusão' },
+        { value: 'portabilidade', label: 'Portabilidade' },
+        { value: 'oposicao', label: 'Oposição' },
+        { value: 'revogacao_consentimento', label: 'Revogação de Consentimento' }
+      ],
+      value: tipoSolicitacaoFilter,
+      onChange: setTipoSolicitacaoFilter
+    }
+  ];
 
   const handleDelete = (id: string, type: string) => {
     setDeleteConfirm({ open: true, id, type });
@@ -280,147 +469,81 @@ export default function Dados() {
         </TabsContent>
 
         <TabsContent value="ropa" className="space-y-4">
-          <Card className="rounded-lg border overflow-hidden">
-            <CardContent className="p-0">
-              <div className="p-6 pb-4">
-                <div className="flex items-center justify-between gap-4 mb-4">
-                  <Input
-                    placeholder="Buscar ROPA..."
-                    className="max-w-sm"
-                  />
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setShowFilters(!showFilters)}
-                    >
-                      <Filter className="mr-2 h-4 w-4" />
-                      Filtros
-                    </Button>
-                     <Button size="sm" onClick={() => setShowRopaWizard(true)}>
-                       <Plus className="mr-2 h-4 w-4" />
-                       Novo ROPA
-                     </Button>
-                  </div>
-                </div>
-              </div>
-              {showFilters && (
-                <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
-                  <Input placeholder="Filtrar por status..." className="w-[180px]" />
-                  <Input placeholder="Filtrar por base legal..." className="w-[180px]" />
-                </div>
-              )}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome do Tratamento</TableHead>
-                    <TableHead>Base Legal</TableHead>
-                    <TableHead>Categoria Titulares</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {ropaRegistros.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="p-0">
-                        <EmptyState
-                          icon={<FileText className="h-8 w-8" />}
-                          title="Nenhum registro ROPA criado"
-                          description="Ainda não há registros ROPA cadastrados. Comece criando o primeiro registro."
-                           action={{
-                             label: "Novo ROPA",
-                             onClick: () => setShowRopaWizard(true)
-                           }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    ropaRegistros.map((ropa) => (
-                      <TableRow key={ropa.id}>
-                        <TableCell className="font-medium">{ropa.nome_tratamento}</TableCell>
-                        <TableCell>{ropa.base_legal}</TableCell>
-                        <TableCell>{ropa.categoria_titulares}</TableCell>
-                        <TableCell>{getStatusBadge(ropa.status)}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <div className="flex justify-end mb-4">
+            <Button size="sm" onClick={() => setShowRopaWizard(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo ROPA
+            </Button>
+          </div>
+          <DataTable
+            data={ropaRegistros}
+            columns={ropaColumns}
+            loading={false}
+            searchable
+            searchPlaceholder="Buscar ROPA..."
+            searchValue={searchRopaTerm}
+            onSearchChange={setSearchRopaTerm}
+            filters={ropaFilters}
+            sortField={sortRopaField}
+            sortDirection={sortRopaDirection}
+            onSort={(field) => {
+              if (sortRopaField === field) {
+                setSortRopaDirection(sortRopaDirection === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortRopaField(field);
+                setSortRopaDirection('asc');
+              }
+            }}
+            emptyState={{
+              icon: <FileText className="h-8 w-8" />,
+              title: "Nenhum registro ROPA criado",
+              description: "Ainda não há registros ROPA cadastrados. Comece criando o primeiro registro.",
+              action: {
+                label: "Novo ROPA",
+                onClick: () => setShowRopaWizard(true)
+              }
+            }}
+            onRefresh={loadData}
+          />
         </TabsContent>
 
         <TabsContent value="solicitacoes" className="space-y-4">
-          <Card className="rounded-lg border overflow-hidden">
-            <CardContent className="p-0">
-              <div className="p-6 pb-4">
-                <div className="flex items-center justify-between gap-4 mb-4">
-                  <Input
-                    placeholder="Buscar solicitações..."
-                    className="max-w-sm"
-                  />
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setShowFilters(!showFilters)}
-                    >
-                      <Filter className="mr-2 h-4 w-4" />
-                      Filtros
-                    </Button>
-                    <Button size="sm" onClick={() => setShowSolicitacaoDialog(true)}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Nova Solicitação
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              {showFilters && (
-                <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
-                  <Input placeholder="Filtrar por status..." className="w-[180px]" />
-                  <Input placeholder="Filtrar por tipo solicitação..." className="w-[180px]" />
-                </div>
-              )}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Titular</TableHead>
-                    <TableHead>Canal</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Prazo</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {solicitacoes.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="p-0">
-                        <EmptyState
-                          icon={<Users className="h-8 w-8" />}
-                          title="Nenhuma solicitação registrada"
-                          description="Ainda não há solicitações de titulares. Comece criando o primeiro registro."
-                          action={{
-                            label: "Nova Solicitação",
-                            onClick: () => setShowSolicitacaoDialog(true)
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    solicitacoes.map((solicitacao) => (
-                      <TableRow key={solicitacao.id}>
-                        <TableCell>{solicitacao.tipo_solicitacao}</TableCell>
-                        <TableCell>{JSON.parse(solicitacao.dados_titular).nome}</TableCell>
-                        <TableCell>{solicitacao.canal_solicitacao}</TableCell>
-                        <TableCell>{getStatusBadge(solicitacao.status)}</TableCell>
-                        <TableCell>{formatDateOnly(solicitacao.prazo_resposta)}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <div className="flex justify-end mb-4">
+            <Button size="sm" onClick={() => setShowSolicitacaoDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Solicitação
+            </Button>
+          </div>
+          <DataTable
+            data={solicitacoes}
+            columns={solicitacoesColumns}
+            loading={false}
+            searchable
+            searchPlaceholder="Buscar solicitações..."
+            searchValue={searchSolicitacoesTerm}
+            onSearchChange={setSearchSolicitacoesTerm}
+            filters={solicitacoesFilters}
+            sortField={sortSolicitacoesField}
+            sortDirection={sortSolicitacoesDirection}
+            onSort={(field) => {
+              if (sortSolicitacoesField === field) {
+                setSortSolicitacoesDirection(sortSolicitacoesDirection === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortSolicitacoesField(field);
+                setSortSolicitacoesDirection('asc');
+              }
+            }}
+            emptyState={{
+              icon: <Users className="h-8 w-8" />,
+              title: "Nenhuma solicitação registrada",
+              description: "Ainda não há solicitações de titulares. Comece criando o primeiro registro.",
+              action: {
+                label: "Nova Solicitação",
+                onClick: () => setShowSolicitacaoDialog(true)
+              }
+            }}
+            onRefresh={loadData}
+          />
         </TabsContent>
       </Tabs>
 

@@ -8,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import { format, addDays } from "date-fns";
+import { format, addDays, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 
 interface SolicitacaoTitularDialogProps {
   isOpen: boolean;
@@ -55,8 +56,8 @@ export function SolicitacaoTitularDialog({ isOpen, onClose, onSave, solicitacao 
       const payload = {
         ...formData,
         dados_titular: JSON.parse(formData.dados_titular),
-        data_resposta: formData.data_resposta ? format(formData.data_resposta, 'yyyy-MM-dd HH:mm:ss') : null,
-        prazo_resposta: format(formData.prazo_resposta, 'yyyy-MM-dd'),
+        data_resposta: formData.data_resposta ? parseDateForDB(format(formData.data_resposta, 'yyyy-MM-dd')) : null,
+        prazo_resposta: parseDateForDB(format(formData.prazo_resposta, 'yyyy-MM-dd')),
         empresa_id: profile.empresa_id
       };
 

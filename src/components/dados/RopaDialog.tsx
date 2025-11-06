@@ -9,10 +9,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 
 interface RopaDialogProps {
   isOpen: boolean;
@@ -83,8 +84,8 @@ export function RopaDialog({ isOpen, onClose, onSave, ropa }: RopaDialogProps) {
 
       const payload = {
         ...formData,
-        data_inicio: formData.data_inicio ? format(formData.data_inicio, 'yyyy-MM-dd') : null,
-        data_fim: formData.data_fim ? format(formData.data_fim, 'yyyy-MM-dd') : null,
+        data_inicio: formData.data_inicio ? parseDateForDB(format(formData.data_inicio, 'yyyy-MM-dd')) : null,
+        data_fim: formData.data_fim ? parseDateForDB(format(formData.data_fim, 'yyyy-MM-dd')) : null,
         empresa_id: profile.empresa_id,
         ...(ropa?.id ? {} : { created_by: (await supabase.auth.getUser()).data.user?.id })
       };
