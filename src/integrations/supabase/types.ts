@@ -2871,7 +2871,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           descricao: string | null
-          documento_id: string
+          documento_id: string | null
           documento_nome: string | null
           documento_tipo: string | null
           empresa_id: string
@@ -2895,7 +2895,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           descricao?: string | null
-          documento_id: string
+          documento_id?: string | null
           documento_nome?: string | null
           documento_tipo?: string | null
           empresa_id: string
@@ -2919,7 +2919,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           descricao?: string | null
-          documento_id?: string
+          documento_id?: string | null
           documento_nome?: string | null
           documento_tipo?: string | null
           empresa_id?: string
