@@ -3,7 +3,11 @@ import type { AdherenceAssessment, PontoForte, PontoMelhoria } from './types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?: any[]) {
+export async function exportAssessmentToPDF(
+  assessment: AdherenceAssessment, 
+  details?: any[],
+  empresaLogoUrl?: string
+) {
   const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
@@ -34,32 +38,6 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
     return false;
   };
 
-  // Helper para adicionar box destacado
-  const addBox = (height: number, bgColor: [number, number, number]) => {
-    pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
-    pdf.rect(marginX, y, contentWidth, height, 'F');
-  };
-
-  // Helper para adicionar texto com quebra de linha
-  const addText = (
-    text: string, 
-    fontSize: number, 
-    isBold = false, 
-    color: [number, number, number] = colors.primary,
-    indent = 0
-  ) => {
-    pdf.setFontSize(fontSize);
-    pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
-    pdf.setTextColor(color[0], color[1], color[2]);
-    const lines = pdf.splitTextToSize(text, contentWidth - indent);
-    
-    lines.forEach((line: string) => {
-      checkAddPage(fontSize + 8);
-      pdf.text(line, marginX + indent, y);
-      y += fontSize + 8;
-    });
-  };
-
   // Helper para adicionar seção com título
   const addSection = (title: string, spacing = 25) => {
     checkAddPage(60);
@@ -68,20 +46,57 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
     pdf.setLineWidth(2);
     pdf.line(marginX, y, marginX + 60, y);
     y += 15;
-    addText(title, 14, true, colors.primary);
-    y += 5;
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+    pdf.text(title, marginX, y);
+    y += 20;
   };
 
+  // Helper para carregar e adicionar logo
+  const loadLogo = (): Promise<void> => {
+    return new Promise((resolve) => {
+      const logoUrl = empresaLogoUrl || '/governaii-logo.png';
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = () => {
+        try {
+          const logoWidth = 120;
+          const logoHeight = (img.height / img.width) * logoWidth;
+          const logoX = (pageWidth - logoWidth) / 2;
+          const logoY = 40;
+          
+          pdf.addImage(img, 'PNG', logoX, logoY, logoWidth, logoHeight);
+          y = logoY + logoHeight + 20;
+        } catch (error) {
+          console.error('Erro ao adicionar logo:', error);
+          y = 50;
+        }
+        resolve();
+      };
+      
+      img.onerror = () => {
+        console.error('Erro ao carregar logo');
+        y = 50;
+        resolve();
+      };
+      
+      img.src = logoUrl;
+    });
+  };
+
+  // Carregar logo
+  await loadLogo();
+
   // ========== CAPA EXECUTIVA ==========
-  // Background da capa
   pdf.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-  pdf.rect(0, 0, pageWidth, 200, 'F');
+  pdf.rect(0, y, pageWidth, 200 - (y - marginY), 'F');
   
-  // Título Principal
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(24);
   pdf.setFont('helvetica', 'bold');
-  const titleY = 100;
+  const titleY = y + 60;
   pdf.text('RELATÓRIO DE AVALIAÇÃO', pageWidth / 2, titleY, { align: 'center' });
   pdf.text('DE ADERÊNCIA', pageWidth / 2, titleY + 30, { align: 'center' });
   
@@ -120,7 +135,7 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
   
   y += boxHeight - 65 + 30;
 
-  // ========== RESULTADO GERAL (DESTAQUE) ==========
+  // ========== RESULTADO GERAL ==========
   addSection('SUMÁRIO EXECUTIVO', 30);
   
   const resultLabel = assessment.resultado_geral === 'conforme' 
@@ -129,7 +144,6 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
     ? 'NÃO CONFORME' 
     : 'PARCIALMENTE CONFORME';
 
-  // Box destacado para o resultado
   const resultBoxHeight = 90;
   checkAddPage(resultBoxHeight + 20);
   pdf.setFillColor(colors.highlight[0], colors.highlight[1], colors.highlight[2]);
@@ -211,7 +225,6 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
     assessment.pontos_fortes.forEach((ponto: PontoForte, index: number) => {
       checkAddPage(70);
       
-      // Box para cada ponto
       pdf.setFillColor(colors.highlight[0], colors.highlight[1], colors.highlight[2]);
       const boxStartY = y;
       const boxHeight = 60;
@@ -253,7 +266,6 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
         ponto.prioridade === 'media' ? colors.secondary :
         colors.light;
       
-      // Box para cada ponto
       pdf.setFillColor(colors.highlight[0], colors.highlight[1], colors.highlight[2]);
       const boxStartY = y;
       const boxHeight = 65;
@@ -262,7 +274,6 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
       pdf.setLineWidth(0.5);
       pdf.rect(marginX, boxStartY, contentWidth, boxHeight, 'S');
       
-      // Barra lateral de prioridade
       pdf.setFillColor(prioridadeColor[0], prioridadeColor[1], prioridadeColor[2]);
       pdf.rect(marginX, boxStartY, 4, boxHeight, 'F');
       
@@ -272,7 +283,6 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
       pdf.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
       pdf.text(`${index + 1}. ${ponto.titulo}`, marginX + 15, y);
       
-      // Badge de prioridade
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(prioridadeColor[0], prioridadeColor[1], prioridadeColor[2]);
@@ -297,14 +307,13 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
   if (assessment.recomendacoes && assessment.recomendacoes.length > 0) {
     addSection('RECOMENDAÇÕES');
     
-    assessment.recomendacoes.forEach((rec: string, index: number) => {
+    assessment.recomendacoes.forEach((rec: string) => {
       checkAddPage(35);
       
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
       
-      // Bullet point
       pdf.setFillColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
       pdf.circle(marginX + 5, y - 3, 2, 'F');
       
@@ -345,7 +354,7 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
     addSection('ANÁLISE DETALHADA POR REQUISITO', 0);
     y += 15;
 
-    details.forEach((detail: any, idx: number) => {
+    details.forEach((detail: any) => {
       checkAddPage(110);
       
       const statusColor: [number, number, number] = 
@@ -354,22 +363,19 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
         detail.status_aderencia === 'parcial' ? colors.warning :
         colors.light;
 
-      // Box para cada requisito
+      pdf.setFillColor(colors.highlight[0], colors.highlight[1], colors.highlight[2]);
       const boxStartY = y;
       const boxHeight = 95;
-      pdf.setFillColor(colors.highlight[0], colors.highlight[1], colors.highlight[2]);
       pdf.rect(marginX, boxStartY, contentWidth, boxHeight, 'F');
       pdf.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
       pdf.setLineWidth(0.5);
       pdf.rect(marginX, boxStartY, contentWidth, boxHeight, 'S');
       
-      // Barra lateral de status
       pdf.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
       pdf.rect(marginX, boxStartY, 3, boxHeight, 'F');
       
       y += 18;
       
-      // Código e título
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
@@ -379,7 +385,6 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
       const titleLines = pdf.splitTextToSize(detail.requisito_titulo, contentWidth - 100);
       pdf.text(titleLines[0], marginX + 80, y);
       
-      // Status badge
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
@@ -388,7 +393,6 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
       
       y += 18;
       
-      // Score
       if (detail.score_conformidade !== null) {
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'normal');
@@ -397,7 +401,6 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
         y += 15;
       }
       
-      // Evidências
       if (detail.evidencias_encontradas) {
         pdf.setFontSize(8);
         pdf.setFont('helvetica', 'bold');
@@ -411,7 +414,6 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
         y += 12;
       }
       
-      // Gaps
       if (detail.gaps_especificos) {
         pdf.setFontSize(8);
         pdf.setFont('helvetica', 'bold');
@@ -428,33 +430,25 @@ export function exportAssessmentToPDF(assessment: AdherenceAssessment, details?:
     });
   }
 
-  // ========== RODAPÉ EM TODAS AS PÁGINAS ==========
+  // ========== RODAPÉ ==========
   const totalPages = pdf.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     pdf.setPage(i);
     
-    // Linha superior do rodapé
     pdf.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
     pdf.setLineWidth(0.5);
     pdf.line(marginX, pageHeight - 35, pageWidth - marginX, pageHeight - 35);
     
-    // Texto do rodapé
     pdf.setFontSize(7);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(colors.light[0], colors.light[1], colors.light[2]);
-    pdf.text(
-      `Página ${i} de ${totalPages}`,
-      marginX,
-      pageHeight - 20
-    );
+    pdf.text(`Página ${i} de ${totalPages}`, marginX, pageHeight - 20);
     pdf.text(
       `Gerado em ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`,
       pageWidth - marginX,
       pageHeight - 20,
       { align: 'right' }
     );
-    
-    // Nome do relatório no centro
     pdf.text(
       'Relatório de Avaliação de Aderência',
       pageWidth / 2,

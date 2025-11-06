@@ -11,6 +11,7 @@ import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
 import { exportAssessmentToPDF } from './ExportPDF';
 import { useToast } from '@/hooks/use-toast';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
 
 interface AdherenceResultViewProps {
   assessment: AdherenceAssessment;
@@ -19,6 +20,7 @@ interface AdherenceResultViewProps {
 
 export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewProps) {
   const { toast } = useToast();
+  const { empresaId } = useEmpresaId();
   
   // Buscar detalhes por requisito
   const { data: details } = useOptimizedQuery(
@@ -34,6 +36,24 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
     },
     [assessment.id],
     { cacheKey: `adherence-details-${assessment.id}`, cacheDuration: 60000 }
+  );
+
+  // Buscar dados da empresa
+  const { data: empresa } = useOptimizedQuery(
+    async () => {
+      if (!empresaId) return { data: null, error: null };
+      
+      const { data, error } = await supabase
+        .from('empresas')
+        .select('nome, logo_url')
+        .eq('id', empresaId)
+        .single();
+
+      if (error) throw error;
+      return { data, error: null };
+    },
+    [empresaId],
+    { cacheKey: `empresa-${empresaId}`, cacheDuration: 300000 }
   );
 
   const getResultColor = (resultado?: string) => {
@@ -104,9 +124,9 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
 
   const total = distribuicao.conforme + distribuicao.parcial + distribuicao.nao_conforme + distribuicao.nao_aplicavel;
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     try {
-      exportAssessmentToPDF(assessment, details);
+      await exportAssessmentToPDF(assessment, details, empresa?.logo_url);
       toast({
         title: "PDF exportado",
         description: "O relatório foi exportado com sucesso.",
