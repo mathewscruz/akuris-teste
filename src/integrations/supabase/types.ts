@@ -14,6 +14,275 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_review_history: {
+        Row: {
+          acao_tomada: string
+          conta_id: string
+          created_at: string
+          data_revisao: string
+          decisao: string
+          email_beneficiario: string | null
+          empresa_id: string
+          id: string
+          justificativa_revisor: string | null
+          nivel_privilegio: string
+          review_id: string
+          revisado_por: string | null
+          sistema_nome: string
+          tipo_acesso: string
+          usuario_beneficiario: string
+        }
+        Insert: {
+          acao_tomada: string
+          conta_id: string
+          created_at?: string
+          data_revisao: string
+          decisao: string
+          email_beneficiario?: string | null
+          empresa_id: string
+          id?: string
+          justificativa_revisor?: string | null
+          nivel_privilegio: string
+          review_id: string
+          revisado_por?: string | null
+          sistema_nome: string
+          tipo_acesso: string
+          usuario_beneficiario: string
+        }
+        Update: {
+          acao_tomada?: string
+          conta_id?: string
+          created_at?: string
+          data_revisao?: string
+          decisao?: string
+          email_beneficiario?: string | null
+          empresa_id?: string
+          id?: string
+          justificativa_revisor?: string | null
+          nivel_privilegio?: string
+          review_id?: string
+          revisado_por?: string | null
+          sistema_nome?: string
+          tipo_acesso?: string
+          usuario_beneficiario?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_review_history_conta_id_fkey"
+            columns: ["conta_id"]
+            isOneToOne: false
+            referencedRelation: "contas_privilegiadas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_review_history_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_review_history_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "access_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_review_history_revisado_por_fkey"
+            columns: ["revisado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      access_review_items: {
+        Row: {
+          conta_id: string
+          created_at: string
+          data_concessao: string | null
+          data_expiracao: string | null
+          data_revisao: string | null
+          decisao: string
+          email_beneficiario: string | null
+          id: string
+          justificativa_original: string | null
+          justificativa_revisor: string | null
+          nivel_privilegio: string
+          nova_data_expiracao: string | null
+          observacoes_revisor: string | null
+          review_id: string
+          revisado_por: string | null
+          tipo_acesso: string
+          updated_at: string
+          usuario_beneficiario: string
+        }
+        Insert: {
+          conta_id: string
+          created_at?: string
+          data_concessao?: string | null
+          data_expiracao?: string | null
+          data_revisao?: string | null
+          decisao?: string
+          email_beneficiario?: string | null
+          id?: string
+          justificativa_original?: string | null
+          justificativa_revisor?: string | null
+          nivel_privilegio: string
+          nova_data_expiracao?: string | null
+          observacoes_revisor?: string | null
+          review_id: string
+          revisado_por?: string | null
+          tipo_acesso: string
+          updated_at?: string
+          usuario_beneficiario: string
+        }
+        Update: {
+          conta_id?: string
+          created_at?: string
+          data_concessao?: string | null
+          data_expiracao?: string | null
+          data_revisao?: string | null
+          decisao?: string
+          email_beneficiario?: string | null
+          id?: string
+          justificativa_original?: string | null
+          justificativa_revisor?: string | null
+          nivel_privilegio?: string
+          nova_data_expiracao?: string | null
+          observacoes_revisor?: string | null
+          review_id?: string
+          revisado_por?: string | null
+          tipo_acesso?: string
+          updated_at?: string
+          usuario_beneficiario?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_review_items_conta_id_fkey"
+            columns: ["conta_id"]
+            isOneToOne: false
+            referencedRelation: "contas_privilegiadas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_review_items_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "access_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_review_items_revisado_por_fkey"
+            columns: ["revisado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      access_reviews: {
+        Row: {
+          contas_aprovadas: number
+          contas_revisadas: number
+          contas_revogadas: number
+          created_at: string
+          created_by: string
+          data_conclusao: string | null
+          data_criacao: string
+          data_inicio: string
+          data_limite: string
+          descricao: string | null
+          empresa_id: string
+          id: string
+          link_token: string | null
+          nome_revisao: string
+          observacoes: string | null
+          responsavel_revisao: string
+          sistema_id: string
+          status: string
+          tipo_revisao: string
+          total_contas: number
+          updated_at: string
+        }
+        Insert: {
+          contas_aprovadas?: number
+          contas_revisadas?: number
+          contas_revogadas?: number
+          created_at?: string
+          created_by: string
+          data_conclusao?: string | null
+          data_criacao?: string
+          data_inicio?: string
+          data_limite: string
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          link_token?: string | null
+          nome_revisao: string
+          observacoes?: string | null
+          responsavel_revisao: string
+          sistema_id: string
+          status?: string
+          tipo_revisao: string
+          total_contas?: number
+          updated_at?: string
+        }
+        Update: {
+          contas_aprovadas?: number
+          contas_revisadas?: number
+          contas_revogadas?: number
+          created_at?: string
+          created_by?: string
+          data_conclusao?: string | null
+          data_criacao?: string
+          data_inicio?: string
+          data_limite?: string
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          link_token?: string | null
+          nome_revisao?: string
+          observacoes?: string | null
+          responsavel_revisao?: string
+          sistema_id?: string
+          status?: string
+          tipo_revisao?: string
+          total_contas?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_reviews_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "access_reviews_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_reviews_responsavel_revisao_fkey"
+            columns: ["responsavel_revisao"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "access_reviews_sistema_id_fkey"
+            columns: ["sistema_id"]
+            isOneToOne: false
+            referencedRelation: "sistemas_privilegiados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asset_agents: {
         Row: {
           agent_token: string
@@ -4643,6 +4912,7 @@ export type Database = {
       generate_temp_password: { Args: never; Returns: string }
       gerar_protocolo_denuncia: { Args: never; Returns: string }
       gerar_token_publico: { Args: never; Returns: string }
+      gerar_token_revisao: { Args: never; Returns: string }
       get_empresa_by_slug: { Args: { empresa_slug: string }; Returns: string }
       get_profiles_by_text_ids: {
         Args: { text_ids: string[] }
@@ -4692,6 +4962,10 @@ export type Database = {
       }
       requirement_pertence_empresa: {
         Args: { requirement_id: string }
+        Returns: boolean
+      }
+      review_pertence_empresa: {
+        Args: { review_id_param: string }
         Returns: boolean
       }
       risco_pertence_empresa: { Args: { risco_id: string }; Returns: boolean }
