@@ -105,3 +105,9 @@ verify_jwt = false
 
 [functions.send-chave-reminder]
 verify_jwt = false
+
+[functions.finalize-review]
+verify_jwt = false
+
+[functions.send-review-notification]
+verify_jwt = false

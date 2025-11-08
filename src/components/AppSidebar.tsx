@@ -89,6 +89,7 @@ const menuItems = [
     icon: Lock,
     subItems: [
       { title: 'Contas Privilegiadas', url: '/contas-privilegiadas', icon: Users, moduleName: 'contas-privilegiadas' },
+      { title: 'Revisão de Acessos', url: '/revisao-acessos', icon: CheckSquare, moduleName: 'contas-privilegiadas' },
       { title: 'Incidentes', url: '/incidentes', icon: AlertCircle, moduleName: 'incidentes' },
       { title: 'Dados', url: '/dados', icon: HardDrive, moduleName: 'dados' },
     ],

@@ -23,6 +23,8 @@ import Incidentes from '@/pages/Incidentes';
 import Dados from '@/pages/Dados';
 import DueDiligence from '@/pages/DueDiligence';
 import Assessment from '@/pages/Assessment';
+import RevisaoAcessos from '@/pages/RevisaoAcessos';
+import ReviewExterna from '@/pages/ReviewExterna';
 import Denuncia from '@/pages/Denuncia';
 import DenunciaExterna from '@/pages/DenunciaExterna';
 import DenunciaExternaRedirect from '@/pages/DenunciaExternaRedirect';
@@ -160,6 +162,14 @@ function App() {
               <Layout>
                 <ProtectedRoute moduleName="due-diligence" fallbackToRoleCheck={false}>
                   <DueDiligence />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/review/:token" element={<ReviewExterna />} />
+            <Route path="/revisao-acessos" element={
+              <Layout>
+                <ProtectedRoute moduleName="contas-privilegiadas" fallbackToRoleCheck={false}>
+                  <RevisaoAcessos />
                 </ProtectedRoute>
               </Layout>
             } />

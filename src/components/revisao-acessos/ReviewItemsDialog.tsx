@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DataTable, Column } from "@/components/ui/data-table";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import { useReviewData } from "@/hooks/useReviewData";
 import { supabase } from "@/integrations/supabase/client";
@@ -84,46 +85,12 @@ export function ReviewItemsDialog({ open, onClose, review, onSuccess }: ReviewIt
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const filteredItems = items?.filter((item) =>
-    searchTerm
-      ? item.usuario_beneficiario.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredItems = searchTerm
+    ? items?.filter((item) =>
+        item.usuario_beneficiario.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.email_beneficiario?.toLowerCase().includes(searchTerm.toLowerCase())
-      : true
-  );
-
-  const columns: Column<any>[] = [
-    {
-      key: "usuario_beneficiario",
-      label: "Usuário",
-      sortable: true,
-    },
-    {
-      key: "email_beneficiario",
-      label: "Email",
-      render: (item) => item.email_beneficiario || "-",
-    },
-    {
-      key: "tipo_acesso",
-      label: "Tipo de Acesso",
-      sortable: true,
-    },
-    {
-      key: "nivel_privilegio",
-      label: "Nível",
-      sortable: true,
-    },
-    {
-      key: "data_expiracao",
-      label: "Expiração",
-      render: (item) => item.data_expiracao ? formatDateForInput(item.data_expiracao) : "-",
-    },
-    {
-      key: "decisao",
-      label: "Decisão",
-      sortable: true,
-      render: (item) => getDecisionBadge(item.decisao),
-    },
-  ];
+      )
+    : items;
 
   const progress = review?.total_contas > 0
     ? (review.contas_revisadas / review.total_contas) * 100
@@ -167,7 +134,13 @@ export function ReviewItemsDialog({ open, onClose, review, onSuccess }: ReviewIt
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 mb-4">
+              <Input
+                placeholder="Buscar por usuário ou email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1"
+              />
               <Button
                 variant="outline"
                 onClick={handleFinalize}
@@ -182,36 +155,50 @@ export function ReviewItemsDialog({ open, onClose, review, onSuccess }: ReviewIt
               </Button>
             </div>
 
-            <DataTable
-              data={filteredItems || []}
-              columns={columns}
-              loading={loading}
-              searchValue={searchTerm}
-              onSearchChange={setSearchTerm}
-              searchPlaceholder="Buscar itens..."
-              customActions={(item) => (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDecision(item);
-                  }}
-                >
-                  {item.decisao === "pendente" ? (
-                    <>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Revisar
-                    </>
-                  ) : (
-                    <>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Editar
-                    </>
-                  )}
-                </Button>
+            <div className="space-y-4">
+              {filteredItems?.map((item) => (
+                <Card key={item.id} className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-semibold">{item.usuario_beneficiario}</h4>
+                      <p className="text-sm text-muted-foreground">{item.email_beneficiario || "-"}</p>
+                      <div className="flex gap-2 mt-2">
+                        <Badge>{item.tipo_acesso}</Badge>
+                        <Badge variant="outline">{item.nivel_privilegio}</Badge>
+                        {getDecisionBadge(item.decisao)}
+                      </div>
+                      {item.data_expiracao && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Expira: {formatDateForInput(item.data_expiracao)}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDecision(item)}
+                    >
+                      {item.decisao === "pendente" ? (
+                        <>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Revisar
+                        </>
+                      ) : (
+                        <>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Editar
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+              {filteredItems?.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">
+                  Nenhum item encontrado
+                </p>
               )}
-            />
+            </div>
           </div>
         </DialogContent>
       </Dialog>

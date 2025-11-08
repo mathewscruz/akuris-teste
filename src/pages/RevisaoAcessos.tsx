@@ -235,23 +235,9 @@ export default function RevisaoAcessos() {
                   onChange: setStatusFilter,
                 },
               ]}
+              sortField={sortConfig?.field}
+              sortDirection={sortConfig?.direction}
               onSort={handleSort}
-              sortConfig={sortConfig}
-              onEdit={handleEdit}
-              onDelete={(review) => setDeleteConfirm(review.id)}
-              onRowClick={handleViewItems}
-              customActions={(review) => (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleViewItems(review);
-                  }}
-                >
-                  Ver Itens
-                </Button>
-              )}
             />
           </TabsContent>
 
@@ -289,10 +275,11 @@ export default function RevisaoAcessos() {
 
       <ConfirmDialog
         open={!!deleteConfirm}
-        onClose={() => setDeleteConfirm(null)}
+        onOpenChange={(open) => !open && setDeleteConfirm(null)}
         onConfirm={handleDelete}
         title="Excluir Revisão"
         description="Tem certeza que deseja excluir esta revisão? Esta ação não pode ser desfeita."
+        variant="destructive"
       />
     </div>
   );

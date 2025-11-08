@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Search, Filter, Download, RefreshCw, ChevronDown, ChevronUp } from "lucide-react"
 
-interface Column<T> {
+export interface Column<T> {
   key: keyof T | string
   label: string
   sortable?: boolean
