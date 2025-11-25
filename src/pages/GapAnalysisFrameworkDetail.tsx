@@ -8,6 +8,7 @@ import { GenericScoreDashboard } from '@/components/gap-analysis/GenericScoreDas
 import { GenericRequirementsTable } from '@/components/gap-analysis/GenericRequirementsTable';
 import { NISTRadarChart } from '@/components/gap-analysis/nist/NISTRadarChart';
 import { CategoryBarChart } from '@/components/gap-analysis/CategoryBarChart';
+import { AreaBarChart } from '@/components/gap-analysis/AreaBarChart';
 import { supabase } from '@/integrations/supabase/client';
 import { getFrameworkConfig } from '@/lib/framework-configs';
 import { useFrameworkScore } from '@/hooks/useFrameworkScore';
@@ -128,14 +129,20 @@ export default function GapAnalysisFrameworkDetail() {
         />
 
         {/* Radar and Bar Charts side by side */}
-        {(pillarScores.length > 3 || categoryScores.length > 0) && (
-          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+        {(pillarScores.length > 3 || categoryScores.length > 0 || (config.id === 'nist-csf-2.0' && areaScores.length > 0)) && (
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
             {pillarScores.length > 3 && (
               <NISTRadarChart pillarScores={pillarScores} />
             )}
             {categoryScores.length > 0 && (
               <CategoryBarChart 
                 categoryScores={categoryScores}
+                config={config}
+              />
+            )}
+            {config.id === 'nist-csf-2.0' && areaScores.length > 0 && (
+              <AreaBarChart 
+                areaScores={areaScores}
                 config={config}
               />
             )}

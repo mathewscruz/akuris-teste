@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from './useEmpresaId';
-import { FrameworkConfig } from '@/lib/framework-configs';
+import { FrameworkConfig, NIST_PILLAR_NAMES } from '@/lib/framework-configs';
 
 interface Requirement {
   id: string;
@@ -40,6 +40,8 @@ interface AreaScore {
   score: number;
   totalRequirements: number;
   evaluatedRequirements: number;
+  total: number;
+  evaluated: number;
 }
 
 interface SectionScore {
@@ -169,7 +171,9 @@ export function useFrameworkScore(frameworkId: string, config: FrameworkConfig):
           
           calculatedPillarScores.push({
             pillar: pillarName,
-            name: pillarName,
+            name: config.id === 'nist-csf-2.0' && PILLAR_COLORS[pillarName] 
+              ? (NIST_PILLAR_NAMES[pillarName] || pillarName)
+              : pillarName,
             score: pillarScore,
             totalRequirements: reqs.length,
             evaluatedRequirements: evaluated,
@@ -197,8 +201,55 @@ export function useFrameworkScore(frameworkId: string, config: FrameworkConfig):
         }));
         setCategoryScores(calculatedCategoryScores);
         
+        // Calcular scores por área responsável
+        const areaGroups = new Map<string, Requirement[]>();
+        (requirements || []).forEach((req: Requirement) => {
+          const area = req.area_responsavel || 'Não Atribuída';
+          if (!areaGroups.has(area)) {
+            areaGroups.set(area, []);
+          }
+          areaGroups.get(area)?.push(req);
+        });
+
+        const calculatedAreaScores: AreaScore[] = [];
+        areaGroups.forEach((reqs, areaName) => {
+          let totalWeightedScore = 0;
+          let totalWeight = 0;
+          let evaluated = 0;
+
+          reqs.forEach((req) => {
+            const evaluation = evalMap.get(req.id);
+            const status = evaluation?.conformity_status || 'nao_avaliado';
+            const weight = req.peso || 1;
+
+            if (status !== 'nao_aplicavel') {
+              const score = config.statusScores[status as keyof typeof config.statusScores] || 0;
+              totalWeightedScore += score * weight;
+              totalWeight += weight;
+              
+              if (status !== 'nao_avaliado') {
+                evaluated++;
+              }
+            }
+          });
+
+          const areaScore = totalWeight > 0 ? totalWeightedScore / totalWeight : 0;
+          
+          calculatedAreaScores.push({
+            area: areaName,
+            score: areaScore,
+            totalRequirements: reqs.length,
+            evaluatedRequirements: evaluated,
+            total: reqs.length,
+            evaluated: evaluated,
+          });
+        });
+
+        // Ordenar por score descendente
+        calculatedAreaScores.sort((a, b) => b.score - a.score);
+        
+        setAreaScores(calculatedAreaScores);
         setDomainScores([]);
-        setAreaScores([]);
         setSectionScores([]);
         setTotalRequirements(requirements?.length || 0);
         setEvaluatedRequirements(totalEvaluated);
