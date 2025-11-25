@@ -4,6 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { toast } from "sonner";
@@ -46,6 +48,8 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   const [activeTab, setActiveTab] = useState<string>('all');
   const [selectedRequirement, setSelectedRequirement] = useState<Requirement | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const loadRequirements = async () => {
     if (!empresaId) return;
@@ -162,6 +166,59 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   const filteredRequirements = activeTab === 'all' 
     ? requirements 
     : requirements.filter(r => (r.categoria || 'Outros') === activeTab);
+
+  // Paginação
+  const totalPages = Math.ceil(filteredRequirements.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedRequirements = filteredRequirements.slice(startIndex, endIndex);
+
+  // Reset page quando mudar filtro ou items per page
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, itemsPerPage]);
+
+  const PaginationControls = () => (
+    <div className="flex items-center justify-between mt-4 px-2">
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">Itens por página:</span>
+        <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number(v))}>
+          <SelectTrigger className="w-20">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="10">10</SelectItem>
+            <SelectItem value="20">20</SelectItem>
+            <SelectItem value="50">50</SelectItem>
+            <SelectItem value="100">100</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">
+          Página {currentPage} de {totalPages} ({filteredRequirements.length} itens)
+        </span>
+        <div className="flex gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -312,7 +369,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRequirements.map(req => (
+                {paginatedRequirements.map(req => (
                   <TableRow 
                     key={req.id}
                     className="cursor-pointer hover:bg-muted/50"
@@ -351,6 +408,8 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
                 ))}
               </TableBody>
             </Table>
+            
+            {activeTab === 'all' && <PaginationControls />}
           </TabsContent>
         </Tabs>
 

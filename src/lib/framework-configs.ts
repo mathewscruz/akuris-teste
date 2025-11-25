@@ -1,6 +1,16 @@
 export type ScoreType = 'scale_0_5' | 'percentage';
 export type ConformityStatus = 'conforme' | 'parcial' | 'nao_conforme' | 'nao_aplicavel' | 'nao_avaliado';
 
+// Mapeamento de pilares NIST para português
+export const NIST_PILLAR_NAMES: Record<string, string> = {
+  'GOVERN': 'Governar',
+  'IDENTIFY': 'Identificar',
+  'PROTECT': 'Proteger',
+  'DETECT': 'Detectar',
+  'RESPOND': 'Responder',
+  'RECOVER': 'Recuperar',
+};
+
 export interface FrameworkConfig {
   id: string;
   name: string;
