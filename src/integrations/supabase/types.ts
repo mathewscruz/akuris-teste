@@ -3253,10 +3253,12 @@ export type Database = {
           cnpj: string | null
           contato: string | null
           created_at: string
+          data_inicio_trial: string | null
           id: string
           logo_url: string | null
           nome: string
           slug: string | null
+          status_licenca: string | null
           updated_at: string
         }
         Insert: {
@@ -3264,10 +3266,12 @@ export type Database = {
           cnpj?: string | null
           contato?: string | null
           created_at?: string
+          data_inicio_trial?: string | null
           id?: string
           logo_url?: string | null
           nome: string
           slug?: string | null
+          status_licenca?: string | null
           updated_at?: string
         }
         Update: {
@@ -3275,10 +3279,12 @@ export type Database = {
           cnpj?: string | null
           contato?: string | null
           created_at?: string
+          data_inicio_trial?: string | null
           id?: string
           logo_url?: string | null
           nome?: string
           slug?: string | null
+          status_licenca?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -5043,6 +5049,7 @@ export type Database = {
         Args: { assessment_link_token: string }
         Returns: boolean
       }
+      check_trial_expiration: { Args: never; Returns: undefined }
       conta_privilegiada_pertence_empresa: {
         Args: { conta_id: string }
         Returns: boolean

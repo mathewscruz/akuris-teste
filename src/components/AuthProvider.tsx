@@ -20,6 +20,9 @@ interface Company {
   logo_url: string | null;
   cnpj: string | null;
   contato: string | null;
+  ativo: boolean;
+  status_licenca: 'trial' | 'em_operacao';
+  data_inicio_trial: string | null;
 }
 
 interface AuthContextType {
@@ -72,7 +75,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               nome,
               logo_url,
               cnpj,
-              contato
+              contato,
+              ativo,
+              status_licenca,
+              data_inicio_trial
             )
           `)
           .eq('user_id', userId)
@@ -90,7 +96,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       setProfile(data);
       
-      const newCompany = data.empresas || null;
+      const newCompany = data.empresas ? {
+        ...data.empresas,
+        status_licenca: (data.empresas.status_licenca || 'em_operacao') as 'trial' | 'em_operacao',
+        data_inicio_trial: data.empresas.data_inicio_trial || null,
+      } : null;
       logger.debug('Company updated', { 
         empresaId: newCompany?.id, 
         empresaNome: newCompany?.nome 

@@ -267,7 +267,6 @@ export function RecentActivities() {
                     <p className="text-sm font-medium text-foreground truncate">
                       {activity.title}
                     </p>
-                    {activity.status && getStatusBadge(activity.module, activity.status)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {activity.description}

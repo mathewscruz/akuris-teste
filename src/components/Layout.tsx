@@ -9,6 +9,8 @@ import UserProfile from '@/components/UserProfile';
 import NotificationCenter from '@/components/NotificationCenter';
 import PasswordChangeRequired from '@/components/PasswordChangeRequired';
 import PageTransition from '@/components/PageTransition';
+import TrialBanner from '@/components/TrialBanner';
+import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -19,6 +21,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const breadcrumbs = useBreadcrumb();
+  
+  // Timeout de sessão por inatividade
+  useInactivityTimeout();
 
   if (loading) {
     return (
@@ -49,6 +54,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         />
         
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* Banner de Trial */}
+          <TrialBanner />
+          
           <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card flex-shrink-0">
             <div className="flex items-center gap-4 min-w-0">
               <SidebarTrigger />
