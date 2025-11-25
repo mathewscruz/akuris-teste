@@ -5,18 +5,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Plus, Search, Edit, Trash2, Building2, Upload } from 'lucide-react';
+import { differenceInDays } from 'date-fns';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
 const empresaSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
   cnpj: z.string().optional(),
   contato: z.string().optional(),
+  status_licenca: z.enum(['trial', 'em_operacao']).default('em_operacao'),
 });
 
 type EmpresaForm = z.infer<typeof empresaSchema>;
@@ -28,6 +31,8 @@ interface Empresa {
   contato?: string;
   logo_url?: string;
   ativo: boolean;
+  status_licenca: 'trial' | 'em_operacao';
+  data_inicio_trial?: string;
   created_at: string;
 }
 
@@ -47,6 +52,7 @@ const GerenciamentoEmpresas = () => {
       nome: '',
       cnpj: '',
       contato: '',
+      status_licenca: 'em_operacao',
     },
   });
 
@@ -58,7 +64,14 @@ const GerenciamentoEmpresas = () => {
         .order('nome');
 
       if (error) throw error;
-      setEmpresas(data || []);
+      
+      // Cast para o tipo correto
+      const empresasFormatadas = (data || []).map(emp => ({
+        ...emp,
+        status_licenca: (emp.status_licenca || 'em_operacao') as 'trial' | 'em_operacao',
+      }));
+      
+      setEmpresas(empresasFormatadas);
     } catch (error) {
       console.error('Erro ao buscar empresas:', error);
       toast.error('Erro ao carregar empresas');
@@ -78,17 +91,42 @@ const GerenciamentoEmpresas = () => {
   const handleSubmit = async (data: EmpresaForm) => {
     try {
       if (editingEmpresa) {
+        // Preparar dados de atualização
+        const updateData: any = {
+          nome: data.nome,
+          cnpj: data.cnpj,
+          contato: data.contato,
+          status_licenca: data.status_licenca,
+        };
+
+        // Se mudou para trial e não tinha data de início, definir agora
+        if (data.status_licenca === 'trial' && !editingEmpresa.data_inicio_trial) {
+          updateData.data_inicio_trial = new Date().toISOString();
+        }
+
         const { error } = await supabase
           .from('empresas')
-          .update(data)
+          .update(updateData)
           .eq('id', editingEmpresa.id);
 
         if (error) throw error;
         toast.success('Empresa atualizada com sucesso');
       } else {
+        // Ao criar nova empresa, se for trial, definir data de início
+        const insertData: any = {
+          nome: data.nome,
+          cnpj: data.cnpj,
+          contato: data.contato,
+          status_licenca: data.status_licenca,
+        };
+
+        if (data.status_licenca === 'trial') {
+          insertData.data_inicio_trial = new Date().toISOString();
+        }
+
         const { error } = await supabase
           .from('empresas')
-          .insert([{ ...data, nome: data.nome }]);
+          .insert([insertData]);
 
         if (error) throw error;
         toast.success('Empresa criada com sucesso');
@@ -110,6 +148,7 @@ const GerenciamentoEmpresas = () => {
       nome: empresa.nome,
       cnpj: empresa.cnpj || '',
       contato: empresa.contato || '',
+      status_licenca: empresa.status_licenca || 'em_operacao',
     });
     setDialogOpen(true);
   };
@@ -277,6 +316,27 @@ const GerenciamentoEmpresas = () => {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="status_licenca"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status de Licença</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="em_operacao">Em Operação</SelectItem>
+                          <SelectItem value="trial">Trial (14 dias)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <div className="flex justify-end gap-2 pt-4">
                   <Button
                     type="button"
@@ -303,6 +363,7 @@ const GerenciamentoEmpresas = () => {
               <TableHead>Nome</TableHead>
               <TableHead>CNPJ</TableHead>
               <TableHead>Contato</TableHead>
+              <TableHead>Licença</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Ações</TableHead>
             </TableRow>
@@ -341,6 +402,19 @@ const GerenciamentoEmpresas = () => {
                 <TableCell className="font-medium">{empresa.nome}</TableCell>
                 <TableCell>{empresa.cnpj || '-'}</TableCell>
                 <TableCell>{empresa.contato || '-'}</TableCell>
+                <TableCell>
+                  {empresa.status_licenca === 'trial' ? (
+                    <Badge variant="outline" className="bg-warning/10 text-warning border-warning">
+                      🟡 Trial {empresa.data_inicio_trial && 
+                        `(${Math.max(0, 14 - differenceInDays(new Date(), new Date(empresa.data_inicio_trial)))}d)`
+                      }
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary">
+                      🟢 Em Operação
+                    </Badge>
+                  )}
+                </TableCell>
                 <TableCell>
                   <Badge variant={empresa.ativo ? 'default' : 'secondary'}>
                     {empresa.ativo ? 'Ativo' : 'Inativo'}
