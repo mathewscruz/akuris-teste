@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -55,7 +55,12 @@ export default function GapAnalysisFrameworkDetail() {
     loadFramework();
   }, [frameworkId, navigate]);
 
-  const config = framework ? getFrameworkConfig(framework.nome, framework.tipo_framework) : null;
+  const config = useMemo(() => 
+    framework ? getFrameworkConfig(framework.nome, framework.tipo_framework) : null,
+    [framework?.nome, framework?.tipo_framework]
+  );
+  
+  const defaultConfig = useMemo(() => getFrameworkConfig('default')!, []);
   
   const {
     overallScore,
@@ -67,7 +72,7 @@ export default function GapAnalysisFrameworkDetail() {
     totalRequirements,
     evaluatedRequirements,
     loading: scoreLoading,
-  } = useFrameworkScore(frameworkId || '', config || getFrameworkConfig('default')!);
+  } = useFrameworkScore(frameworkId || '', config || defaultConfig);
 
   const handleExportPDF = () => {
     toast.info('Exportação de PDF em desenvolvimento');
