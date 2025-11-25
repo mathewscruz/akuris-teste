@@ -262,7 +262,7 @@ export function useFrameworkScore(frameworkId: string, config: FrameworkConfig):
     };
 
     loadScore();
-  }, [frameworkId, empresaId, config]);
+  }, [frameworkId, empresaId, config?.id, config?.scoreType]);
 
   return {
     overallScore,
