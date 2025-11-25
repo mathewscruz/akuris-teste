@@ -9,6 +9,7 @@ import { useNISTScore } from "@/hooks/useNISTScore";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
+import { exportNISTPDF } from "@/components/gap-analysis/nist/ExportNISTPDF";
 
 export default function GapAnalysisNIST() {
   const navigate = useNavigate();
@@ -49,8 +50,65 @@ export default function GapAnalysisNIST() {
 
   const { data: scoreData, loading: loadingScore, refetch } = useNISTScore(frameworkId || '');
 
-  const handleExport = () => {
-    toast.info('Funcionalidade de exportação em desenvolvimento');
+  const handleExport = async () => {
+    if (!scoreData || !frameworkId) {
+      toast.error('Dados não disponíveis para exportação');
+      return;
+    }
+
+    try {
+      toast.info('Gerando relatório PDF...');
+
+      // Fetch all requirements with evaluations
+      const { data: requirements, error } = await supabase
+        .from('gap_analysis_requirements')
+        .select(`
+          id,
+          codigo,
+          titulo,
+          descricao,
+          categoria,
+          peso,
+          gap_analysis_evaluations (
+            conformity_status,
+            conformity_score
+          )
+        `)
+        .eq('framework_id', frameworkId)
+        .order('ordem');
+
+      if (error) throw error;
+
+      // Transform requirements data
+      const requirementsWithStatus = requirements?.map(req => ({
+        id: req.id,
+        codigo: req.codigo || '',
+        titulo: req.titulo,
+        descricao: req.descricao || '',
+        categoria: req.categoria || '',
+        peso: req.peso || 1,
+        conformity_status: (req.gap_analysis_evaluations as any)?.[0]?.conformity_status,
+        conformity_score: (req.gap_analysis_evaluations as any)?.[0]?.conformity_score
+      })) || [];
+
+      // Fetch company info
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('empresas(nome, logo_url)')
+        .eq('user_id', user?.id)
+        .single();
+
+      const empresaNome = (profile?.empresas as any)?.nome || 'Empresa';
+      const empresaLogoUrl = (profile?.empresas as any)?.logo_url;
+
+      await exportNISTPDF(scoreData, requirementsWithStatus, empresaNome, empresaLogoUrl);
+      
+      toast.success('Relatório exportado com sucesso!');
+    } catch (error: any) {
+      console.error('Error exporting PDF:', error);
+      toast.error('Erro ao exportar relatório: ' + error.message);
+    }
   };
 
   if (loadingFramework) {
