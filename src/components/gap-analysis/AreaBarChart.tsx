@@ -52,7 +52,7 @@ export const AreaBarChart: React.FC<AreaBarChartProps> = ({ areaScores, config }
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
+          <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 10, left: 70, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis 
               type="number" 
@@ -63,7 +63,7 @@ export const AreaBarChart: React.FC<AreaBarChartProps> = ({ areaScores, config }
               type="category" 
               dataKey="name" 
               tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }}
-              width={90}
+              width={65}
             />
             <Tooltip 
               contentStyle={{
