@@ -183,9 +183,9 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   };
 
   const getStatusBadge = (status?: string | null) => {
-    const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-      conforme: { label: 'Conforme', variant: 'default' },
-      parcial: { label: 'Parcial', variant: 'secondary' },
+    const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' }> = {
+      conforme: { label: 'Conforme', variant: 'success' },
+      parcial: { label: 'Parcial', variant: 'warning' },
       nao_conforme: { label: 'Não Conforme', variant: 'destructive' },
       nao_aplicavel: { label: 'N/A', variant: 'outline' },
       nao_avaliado: { label: 'Não Avaliado', variant: 'outline' },
