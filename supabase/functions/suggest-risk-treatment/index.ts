@@ -15,18 +15,9 @@ serve(async (req) => {
   }
 
   try {
-    const { error } = await supabase.functions.invoke('suggest-risk-treatment', {
-      body: {
-        nome,
-        descricao,
-        categoria,
-        nivel_risco
-      }
-    });
+    const { nome, descricao, categoria, nivel_risco } = await req.json();
 
-    if (error) throw error;
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const prompt = `Você é um especialista em gestão de riscos corporativos. Analise o seguinte risco e forneça sugestões de tratamento:
 
 RISCO: ${nome}
 DESCRIÇÃO: ${descricao}
@@ -76,6 +67,7 @@ Seja específico e prático, focando em ações implementáveis no contexto empr
 
     if (!response.ok) {
       const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
       throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
     }
 
