@@ -315,22 +315,26 @@ export function AppSidebar() {
                       )}
                     </Collapsible>
                   ) : (
-                    <SidebarMenuButton asChild className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-sm h-9 min-w-0">
+                    <SidebarMenuButton asChild className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-sm h-9 min-w-0 px-3">
                       <NavLink 
                         to={item.url} 
                         onClick={handleNavClick}
-                        className={({ isActive }) => `flex items-center w-full min-w-0 ${getNavCls({ isActive })}`}
+                        className={({ isActive }) => `flex items-center justify-between w-full min-w-0 ${getNavCls({ isActive })}`}
                       >
-                        <item.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out ${
-                          isActive(item.url) ? 'text-primary scale-110' : ''
-                        }`} />
-                        {!isCollapsed && (
-                          <span className={`text-sm font-medium transition-all duration-300 ease-out truncate ${
-                            isActive(item.url) ? 'text-primary font-semibold' : ''
-                          }`}>
-                            {item.title}
-                          </span>
-                        )}
+                        <div className="flex items-center min-w-0">
+                          <item.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out ${
+                            isActive(item.url) ? 'text-primary scale-110' : ''
+                          }`} />
+                          {!isCollapsed && (
+                            <span className={`text-sm font-medium transition-all duration-300 ease-out truncate ${
+                              isActive(item.url) ? 'text-primary font-semibold' : ''
+                            }`}>
+                              {item.title}
+                            </span>
+                          )}
+                        </div>
+                        {/* Placeholder para manter alinhamento com itens que têm chevron */}
+                        {!isCollapsed && <div className="w-4 h-4 flex-shrink-0" />}
                       </NavLink>
                     </SidebarMenuButton>
                   )}

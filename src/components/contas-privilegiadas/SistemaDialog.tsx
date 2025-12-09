@@ -116,8 +116,8 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <div className="grid grid-cols-2 gap-5">
               <FormField
                 control={form.control}
                 name="nome_sistema"
@@ -165,7 +165,7 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-5">
               <FormField
                 control={form.control}
                 name="criticidade"
@@ -291,7 +291,7 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
               )}
             />
 
-            <div className="flex justify-end space-x-2 pt-4">
+            <div className="flex justify-end gap-3 pt-4 border-t border-border/50">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>

@@ -137,7 +137,7 @@ export default function ContaDialog({ open, onClose, conta, sistemas }: ContaDia
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {conta ? 'Editar Conta Privilegiada' : 'Nova Conta Privilegiada'}
@@ -151,8 +151,8 @@ export default function ContaDialog({ open, onClose, conta, sistemas }: ContaDia
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <div className="grid grid-cols-2 gap-5">
               <FormField
                 control={form.control}
                 name="usuario_beneficiario"
@@ -207,7 +207,7 @@ export default function ContaDialog({ open, onClose, conta, sistemas }: ContaDia
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-5">
               <FormField
                 control={form.control}
                 name="tipo_acesso"
@@ -403,7 +403,7 @@ export default function ContaDialog({ open, onClose, conta, sistemas }: ContaDia
               )}
             />
 
-            <div className="flex justify-end space-x-2 pt-4">
+            <div className="flex justify-end gap-3 pt-4 border-t border-border/50">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
