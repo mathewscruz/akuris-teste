@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { UserSelect } from "@/components/riscos/UserSelect";
 
 interface ChaveDialogProps {
   open: boolean;
@@ -222,7 +223,11 @@ export function ChaveDialog({ open, onOpenChange, chave }: ChaveDialogProps) {
                   <FormItem>
                     <FormLabel>Responsável</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <UserSelect
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder="Selecionar responsável..."
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
