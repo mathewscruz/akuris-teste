@@ -267,15 +267,24 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-[#0A1628] text-white overflow-x-hidden">
+      {/* Skip to main content - Accessibility */}
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-blue-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-md"
+      >
+        Pular para o conteúdo principal
+      </a>
+
       {/* Animated Background Grid */}
-      <div className="fixed inset-0 landing-grid-bg opacity-50 pointer-events-none" />
+      <div className="fixed inset-0 landing-grid-bg opacity-50 pointer-events-none" aria-hidden="true" />
       
       {/* Gradient Orbs */}
-      <div className="fixed top-1/4 -left-32 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] pointer-events-none" />
-      <div className="fixed bottom-1/4 -right-32 w-96 h-96 bg-cyan-500/20 rounded-full blur-[128px] pointer-events-none" />
+      <div className="fixed top-1/4 -left-32 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] pointer-events-none" aria-hidden="true" />
+      <div className="fixed bottom-1/4 -right-32 w-96 h-96 bg-cyan-500/20 rounded-full blur-[128px] pointer-events-none" aria-hidden="true" />
 
       {/* Header */}
       <header
+        role="banner"
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
             ? "bg-[#0A1628]/90 backdrop-blur-xl border-b border-white/5 py-3"
@@ -287,13 +296,14 @@ const LandingPage = () => {
             <div className="flex items-center">
               <img
                 src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/empresa-logos/Governiaa%20(500%20x%20200%20px).png"
-                alt="GovernAII"
+                alt="GovernAII - Plataforma de Governança, Riscos e Conformidade"
                 className="h-20 w-auto"
+                loading="eager"
               />
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-8">
+            <nav className="hidden md:flex items-center gap-8" role="navigation" aria-label="Navegação principal">
               <button
                 onClick={() => scrollToSection("modulos")}
                 className="text-sm text-gray-300 hover:text-white transition-colors"
@@ -329,14 +339,17 @@ const LandingPage = () => {
             <button
               className="md:hidden text-white p-2"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-expanded={isMenuOpen}
+              aria-controls="mobile-navigation"
+              aria-label={isMenuOpen ? "Fechar menu" : "Abrir menu"}
             >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isMenuOpen ? <X className="h-6 w-6" aria-hidden="true" /> : <Menu className="h-6 w-6" aria-hidden="true" />}
             </button>
           </div>
 
           {/* Mobile Navigation */}
           {isMenuOpen && (
-            <nav className="md:hidden mt-4 pb-4 border-t border-white/10 pt-4 space-y-3">
+            <nav id="mobile-navigation" className="md:hidden mt-4 pb-4 border-t border-white/10 pt-4 space-y-3" role="navigation" aria-label="Navegação mobile">
               <button
                 onClick={() => scrollToSection("modulos")}
                 className="block w-full text-left text-gray-300 hover:text-white py-2"
@@ -371,13 +384,15 @@ const LandingPage = () => {
         </div>
       </header>
 
+      {/* Main Content */}
+      <main id="main-content" role="main">
       {/* Hero Section */}
-      <section className="relative min-h-[85vh] flex items-center pt-20">
+      <section className="relative min-h-[85vh] flex items-center pt-20" aria-labelledby="hero-title">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
             <div className="space-y-6">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight landing-fade-in-up landing-stagger-2">
+              <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight landing-fade-in-up landing-stagger-2">
                 Transforme sua{" "}
                 <span className="landing-gradient-text">Governança</span>
                 <br />
@@ -973,16 +988,17 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
-      <footer className="relative py-12 border-t border-white/5">
+      <footer className="relative py-12 border-t border-white/5" role="contentinfo">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">
               <div className="flex items-center mb-4">
                 <img
                   src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/empresa-logos/Governiaa%20(500%20x%20200%20px).png"
-                  alt="GovernAII"
+                  alt="GovernAII - Logotipo da empresa"
                   className="h-12 w-auto"
                 />
               </div>
