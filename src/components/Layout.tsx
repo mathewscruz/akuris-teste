@@ -11,19 +11,36 @@ import PasswordChangeRequired from '@/components/PasswordChangeRequired';
 import PageTransition from '@/components/PageTransition';
 import TrialBanner from '@/components/TrialBanner';
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
+import { differenceInDays, parseISO } from 'date-fns';
+import { AlertTriangle, Lock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, loading, hasTemporaryPassword, checkTemporaryPassword } = useAuth();
+  const { user, loading, hasTemporaryPassword, checkTemporaryPassword, company, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const breadcrumbs = useBreadcrumb();
   
   // Timeout de sessão por inatividade
   useInactivityTimeout();
+
+  // Verificar se a empresa está inativa
+  const isCompanyInactive = company && company.ativo === false;
+
+  // Verificar se o trial expirou
+  const isTrialExpired = React.useMemo(() => {
+    if (!company) return false;
+    if (company.status_licenca !== 'trial') return false;
+    if (!company.data_inicio_trial) return false;
+    
+    const trialStartDate = parseISO(company.data_inicio_trial);
+    const diasDecorridos = differenceInDays(new Date(), trialStartDate);
+    return diasDecorridos >= 14;
+  }, [company]);
 
   if (loading) {
     return (
@@ -38,6 +55,74 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Tela de bloqueio para empresa inativa
+  if (isCompanyInactive) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(200,25%,8%)] via-[hsl(200,22%,11%)] to-[hsl(200,25%,8%)] p-4">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+            <Lock className="h-8 w-8 text-red-600" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-white">Acesso Bloqueado</h1>
+            <p className="text-muted-foreground">
+              Sua empresa está temporariamente desativada. Entre em contato com o suporte para mais informações.
+            </p>
+          </div>
+          <div className="space-y-3">
+            <a 
+              href="mailto:contato@governaii.com.br" 
+              className="block w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-lg font-medium transition-colors"
+            >
+              Entrar em Contato
+            </a>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => signOut()}
+            >
+              Sair
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Tela de bloqueio para trial expirado
+  if (isTrialExpired) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(200,25%,8%)] via-[hsl(200,22%,11%)] to-[hsl(200,25%,8%)] p-4">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
+            <AlertTriangle className="h-8 w-8 text-amber-600" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-white">Período de Teste Expirado</h1>
+            <p className="text-muted-foreground">
+              Seu período de teste de 14 dias chegou ao fim. Entre em contato para ativar sua licença e continuar usando o GovernAII.
+            </p>
+          </div>
+          <div className="space-y-3">
+            <a 
+              href="mailto:comercial@governaii.com.br" 
+              className="block w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-lg font-medium transition-colors"
+            >
+              Ativar Licença
+            </a>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => signOut()}
+            >
+              Sair
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Navigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,20 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle2, Loader2 } from 'lucide-react';
 import logoImage from '@/assets/governaii-logo-main.png';
 import { ForgotPasswordDialog } from '@/components/ForgotPasswordDialog';
+import { z } from 'zod';
+import { logger } from '@/lib/logger';
+
+// Schema de validação Zod
+const loginSchema = z.object({
+  email: z.string()
+    .min(1, 'Email é obrigatório')
+    .email('Email inválido'),
+  password: z.string()
+    .min(6, 'Senha deve ter no mínimo 6 caracteres')
+});
 
 const getErrorMessage = (error: any): string => {
   const message = error?.message || '';
@@ -42,6 +53,18 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [forgotPasswordDialogOpen, setForgotPasswordDialogOpen] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+
+  // Carregar email salvo do "Lembrar-me"
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('governaii_remember_email');
+    const savedRemember = localStorage.getItem('governaii_remember_me') === 'true';
+    if (savedEmail && savedRemember) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   if (!loading && user) {
     return <Navigate to="/dashboard" replace />;
@@ -60,22 +83,42 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error('Por favor, preencha todos os campos');
+    setErrors({});
+
+    // Validação com Zod
+    const validation = loginSchema.safeParse({ email: email.trim(), password });
+    if (!validation.success) {
+      const fieldErrors: { email?: string; password?: string } = {};
+      validation.error.errors.forEach((err) => {
+        if (err.path[0] === 'email') fieldErrors.email = err.message;
+        if (err.path[0] === 'password') fieldErrors.password = err.message;
+      });
+      setErrors(fieldErrors);
       return;
     }
 
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
       if (error) throw error;
+
+      // Salvar ou limpar "Lembrar-me"
+      if (rememberMe) {
+        localStorage.setItem('governaii_remember_email', email.trim());
+        localStorage.setItem('governaii_remember_me', 'true');
+      } else {
+        localStorage.removeItem('governaii_remember_email');
+        localStorage.removeItem('governaii_remember_me');
+      }
+
+      setLoginSuccess(true);
       toast.success('Login realizado com sucesso!');
     } catch (error: any) {
-      console.error('Error signing in:', error);
+      logger.warn('Login failed', { module: 'Auth', action: 'login', details: error.message });
       toast.error(getErrorMessage(error));
       setIsLoading(false);
     }
@@ -123,10 +166,16 @@ const Auth = () => {
                   type="email"
                   placeholder="email@empresa.com.br"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-12 px-4 border-border focus:border-primary focus:ring-primary"
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.email) setErrors(prev => ({ ...prev, email: undefined }));
+                  }}
+                  autoFocus
+                  className={`h-12 px-4 border-border focus:border-primary focus:ring-primary ${errors.email ? 'border-destructive' : ''}`}
                 />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email}</p>
+                )}
               </div>
               
               <div className="space-y-2">
@@ -139,9 +188,11 @@ const Auth = () => {
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="h-12 px-4 pr-12 border-border focus:border-primary focus:ring-primary"
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
+                    }}
+                    className={`h-12 px-4 pr-12 border-border focus:border-primary focus:ring-primary ${errors.password ? 'border-destructive' : ''}`}
                   />
                   <button
                     type="button"
@@ -155,6 +206,9 @@ const Auth = () => {
                     )}
                   </button>
                 </div>
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password}</p>
+                )}
               </div>
 
               <div className="flex items-center justify-between">
@@ -185,15 +239,34 @@ const Auth = () => {
                 type="submit" 
                 variant="gradient"
                 className="w-full h-12 font-semibold text-base"
-                disabled={isLoading}
+                disabled={isLoading || loginSuccess}
               >
-                {isLoading ? 'Entrando...' : 'Entrar'}
+                {loginSuccess ? (
+                  <>
+                    <CheckCircle2 className="mr-2 h-4 w-4 text-green-400" />
+                    Sucesso!
+                  </>
+                ) : isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Entrando...
+                  </>
+                ) : (
+                  'Entrar'
+                )}
               </Button>
             </form>
           </CardContent>
         </Card>
         
-        <div className="text-center mt-8">
+        <div className="text-center mt-8 space-y-2">
+          <Link 
+            to="/politica-privacidade" 
+            target="_blank"
+            className="text-muted-foreground hover:text-primary text-sm transition-colors"
+          >
+            Política de Privacidade
+          </Link>
           <p className="text-muted-foreground text-sm">
             © 2025 - GovernAII - Todos os direitos reservados
           </p>
