@@ -37,6 +37,7 @@ import DenunciaConsulta from '@/pages/DenunciaConsulta';
 import Configuracoes from '@/pages/Configuracoes';
 import NotFound from '@/pages/NotFound';
 import LandingPage from '@/pages/LandingPage';
+import PoliticaPrivacidade from '@/pages/PoliticaPrivacidade';
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ function App() {
             <Route path="/:empresa/denuncia/consulta" element={<DenunciaConsulta />} />
             <Route path="/404" element={<NotFound />} />
             <Route path="/" element={<LandingPage />} />
+            <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
             <Route path="/dashboard" element={
               <Layout>
                 <ProtectedRoute moduleName="dashboard" fallbackToRoleCheck={false}>
