@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Plus, RefreshCw, Download, Eye, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatCard } from "@/components/ui/stat-card";
 import { DataTable, Column } from "@/components/ui/data-table";
@@ -343,74 +343,80 @@ export default function RevisaoAcessos() {
         />
       </div>
 
-      <Card className="p-6">
-        <Tabs defaultValue="ativas">
-          <TabsList>
-            <TabsTrigger value="ativas">Revisões Ativas</TabsTrigger>
-            <TabsTrigger value="historico">Histórico</TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue="ativas">
+        <TabsList>
+          <TabsTrigger value="ativas">Revisões Ativas</TabsTrigger>
+          <TabsTrigger value="historico">Histórico</TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="ativas" className="space-y-4">
-            <div className="flex gap-2">
-              <Button onClick={() => {
-                setSelectedReview(null);
-                setReviewDialogOpen(true);
-              }}>
-                <Plus className="mr-2 h-4 w-4" />
-                Nova Revisão
-              </Button>
-              <Button variant="outline" onClick={() => refetch()}>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Atualizar
-              </Button>
-              <Button variant="outline">
-                <Download className="mr-2 h-4 w-4" />
-                Exportar
-              </Button>
-            </div>
+        <TabsContent value="ativas" className="space-y-4 mt-4">
+          <div className="flex gap-2 justify-end">
+            <Button onClick={() => {
+              setSelectedReview(null);
+              setReviewDialogOpen(true);
+            }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Revisão
+            </Button>
+            <Button variant="outline" onClick={() => refetch()}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Atualizar
+            </Button>
+            <Button variant="outline">
+              <Download className="mr-2 h-4 w-4" />
+              Exportar
+            </Button>
+          </div>
 
-            <DataTable
-              data={filteredAndSortedReviews || []}
-              columns={columns}
-              loading={reviewsLoading}
-              searchValue={searchTerm}
-              onSearchChange={setSearchTerm}
-              searchPlaceholder="Buscar revisões..."
-              filters={[
-                {
-                  key: "status",
-                  label: "Status",
-                  options: [
-                    { value: "all", label: "Todos" },
-                    { value: "rascunho", label: "Rascunho" },
-                    { value: "em_andamento", label: "Em Andamento" },
-                    { value: "concluida", label: "Concluída" },
-                    { value: "cancelada", label: "Cancelada" },
-                  ],
-                  value: statusFilter,
-                  onChange: setStatusFilter,
-                },
-              ]}
-              sortField={sortConfig?.field}
-              sortDirection={sortConfig?.direction}
-              onSort={handleSort}
-            />
-          </TabsContent>
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <DataTable
+                data={filteredAndSortedReviews || []}
+                columns={columns}
+                loading={reviewsLoading}
+                searchValue={searchTerm}
+                onSearchChange={setSearchTerm}
+                searchPlaceholder="Buscar revisões..."
+                filters={[
+                  {
+                    key: "status",
+                    label: "Status",
+                    options: [
+                      { value: "all", label: "Todos" },
+                      { value: "rascunho", label: "Rascunho" },
+                      { value: "em_andamento", label: "Em Andamento" },
+                      { value: "concluida", label: "Concluída" },
+                      { value: "cancelada", label: "Cancelada" },
+                    ],
+                    value: statusFilter,
+                    onChange: setStatusFilter,
+                  },
+                ]}
+                sortField={sortConfig?.field}
+                sortDirection={sortConfig?.direction}
+                onSort={handleSort}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          <TabsContent value="historico" className="space-y-4">
-            <DataTable
-              data={historico || []}
-              columns={historicoColumns}
-              loading={historicoLoading}
-              searchPlaceholder="Buscar no histórico..."
-              emptyState={{
-                title: "Nenhuma revisão concluída",
-                description: "As revisões finalizadas aparecerão aqui."
-              }}
-            />
-          </TabsContent>
-        </Tabs>
-      </Card>
+        <TabsContent value="historico" className="space-y-4 mt-4">
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <DataTable
+                data={historico || []}
+                columns={historicoColumns}
+                loading={historicoLoading}
+                searchPlaceholder="Buscar no histórico..."
+                emptyState={{
+                  title: "Nenhuma revisão concluída",
+                  description: "As revisões finalizadas aparecerão aqui."
+                }}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <ReviewDialog
         open={reviewDialogOpen}

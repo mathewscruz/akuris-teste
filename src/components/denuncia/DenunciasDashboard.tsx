@@ -6,6 +6,7 @@ import { AlertTriangle, Shield, Clock, CheckCircle, Eye, UserCheck, Calendar } f
 import { DenunciaDialog } from './DenunciaDialog';
 import { useToast } from '@/hooks/use-toast';
 import { DataTable } from '@/components/ui/data-table';
+import { Card, CardContent } from '@/components/ui/card';
 import { formatDateOnly } from '@/lib/date-utils';
 
 interface Denuncia {
@@ -266,35 +267,39 @@ export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | n
   ];
 
   return (
-    <div className="space-y-6">
-      <DataTable
-        data={filteredAndSortedDenuncias}
-        columns={columns}
-        loading={loading}
-        searchable
-        searchPlaceholder="Buscar por protocolo, título ou conteúdo..."
-        searchValue={searchTerm}
-        onSearchChange={setSearchTerm}
-        filters={filters}
-        sortField={sortField}
-        sortDirection={sortDirection}
-        onSort={(field) => {
-          if (sortField === field) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-          } else {
-            setSortField(field);
-            setSortDirection('asc');
-          }
-        }}
-        emptyState={{
-          icon: <Shield className="h-8 w-8" />,
-          title: searchTerm ? "Nenhuma denúncia encontrada" : "Nenhuma denúncia registrada",
-          description: searchTerm 
-            ? "Tente ajustar os termos de busca ou limpe os filtros."
-            : "Denúncias recebidas aparecerão aqui.",
-        }}
-        onRefresh={carregarDenuncias}
-      />
+    <>
+      <Card className="rounded-lg border overflow-hidden">
+        <CardContent className="p-0">
+          <DataTable
+            data={filteredAndSortedDenuncias}
+            columns={columns}
+            loading={loading}
+            searchable
+            searchPlaceholder="Buscar por protocolo, título ou conteúdo..."
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            filters={filters}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSort={(field) => {
+              if (sortField === field) {
+                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortField(field);
+                setSortDirection('asc');
+              }
+            }}
+            emptyState={{
+              icon: <Shield className="h-8 w-8" />,
+              title: searchTerm ? "Nenhuma denúncia encontrada" : "Nenhuma denúncia registrada",
+              description: searchTerm 
+                ? "Tente ajustar os termos de busca ou limpe os filtros."
+                : "Denúncias recebidas aparecerão aqui.",
+            }}
+            onRefresh={carregarDenuncias}
+          />
+        </CardContent>
+      </Card>
 
       {/* Dialog de detalhes */}
       {selectedDenuncia && (
@@ -305,6 +310,6 @@ export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | n
           onDenunciaAtualizada={handleDenunciaAtualizada}
         />
       )}
-    </div>
+    </>
   );
 }

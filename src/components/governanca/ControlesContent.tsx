@@ -682,77 +682,81 @@ export default function ControlesContent() {
       </div>
 
       {/* DataTable with sorting */}
-      <DataTable
-        data={sortedControles.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)}
-        columns={controlesColumns}
-        loading={isLoading}
-        searchable={true}
-        searchPlaceholder="Buscar controles..."
-        searchValue={searchValue}
-        onSearchChange={setSearchValue}
-        sortField={sortField}
-        sortDirection={sortDirection}
-        onSort={handleSort}
-        filters={[
-          {
-            key: 'status',
-            label: 'Status',
-            options: [
-              { value: 'todos', label: 'Todos os Status' },
-              { value: 'ativo', label: 'Ativo' },
-              { value: 'inativo', label: 'Inativo' },
-              { value: 'em_revisao', label: 'Em Revisão' },
-              { value: 'descontinuado', label: 'Descontinuado' },
-            ],
-            value: statusFilter,
-            onChange: setStatusFilter,
-          },
-          {
-            key: 'tipo',
-            label: 'Tipo',
-            options: [
-              { value: 'todos', label: 'Todos os Tipos' },
-              { value: 'preventivo', label: 'Preventivo' },
-              { value: 'detectivo', label: 'Detectivo' },
-              { value: 'corretivo', label: 'Corretivo' },
-            ],
-            value: tipoFilter,
-            onChange: setTipoFilter,
-          },
-          {
-            key: 'criticidade',
-            label: 'Criticidade',
-            options: [
-              { value: 'todos', label: 'Todas as Criticidades' },
-              { value: 'baixo', label: 'Baixo' },
-              { value: 'medio', label: 'Médio' },
-              { value: 'alto', label: 'Alto' },
-              { value: 'critico', label: 'Crítico' },
-            ],
-            value: criticidadeFilter,
-            onChange: setCriticidadeFilter,
-          },
-          {
-            key: 'auditoria',
-            label: 'Auditoria',
-            options: [
-              { value: 'todas', label: 'Todas as Auditorias' },
-              ...auditorias.map(a => ({ value: a.id, label: a.nome }))
-            ],
-            value: auditoriaFilter,
-            onChange: setAuditoriaFilter,
-          },
-        ]}
-        emptyState={{
-          icon: <Shield className="h-12 w-12" />,
-          title: "Nenhum controle cadastrado",
-          description: "Comece criando seu primeiro controle interno",
-          action: {
-            label: "Criar Primeiro Controle",
-            onClick: () => setControleDialogOpen(true)
-          }
-        }}
-      />
+      <Card className="rounded-lg border overflow-hidden">
+        <CardContent className="p-0">
+          <DataTable
+            data={sortedControles.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)}
+            columns={controlesColumns}
+            loading={isLoading}
+            searchable={true}
+            searchPlaceholder="Buscar controles..."
+            searchValue={searchValue}
+            onSearchChange={setSearchValue}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSort={handleSort}
+            filters={[
+              {
+                key: 'status',
+                label: 'Status',
+                options: [
+                  { value: 'todos', label: 'Todos os Status' },
+                  { value: 'ativo', label: 'Ativo' },
+                  { value: 'inativo', label: 'Inativo' },
+                  { value: 'em_revisao', label: 'Em Revisão' },
+                  { value: 'descontinuado', label: 'Descontinuado' },
+                ],
+                value: statusFilter,
+                onChange: setStatusFilter,
+              },
+              {
+                key: 'tipo',
+                label: 'Tipo',
+                options: [
+                  { value: 'todos', label: 'Todos os Tipos' },
+                  { value: 'preventivo', label: 'Preventivo' },
+                  { value: 'detectivo', label: 'Detectivo' },
+                  { value: 'corretivo', label: 'Corretivo' },
+                ],
+                value: tipoFilter,
+                onChange: setTipoFilter,
+              },
+              {
+                key: 'criticidade',
+                label: 'Criticidade',
+                options: [
+                  { value: 'todos', label: 'Todas as Criticidades' },
+                  { value: 'baixo', label: 'Baixo' },
+                  { value: 'medio', label: 'Médio' },
+                  { value: 'alto', label: 'Alto' },
+                  { value: 'critico', label: 'Crítico' },
+                ],
+                value: criticidadeFilter,
+                onChange: setCriticidadeFilter,
+              },
+              {
+                key: 'auditoria',
+                label: 'Auditoria',
+                options: [
+                  { value: 'todas', label: 'Todas as Auditorias' },
+                  ...auditorias.map(a => ({ value: a.id, label: a.nome }))
+                ],
+                value: auditoriaFilter,
+                onChange: setAuditoriaFilter,
+              },
+            ]}
+            emptyState={{
+              icon: <Shield className="h-12 w-12" />,
+              title: "Nenhum controle cadastrado",
+              description: "Comece criando seu primeiro controle interno",
+              action: {
+                label: "Criar Primeiro Controle",
+                onClick: () => setControleDialogOpen(true)
+              }
+            }}
+          />
+        </CardContent>
+      </Card>
 
       {/* Pagination */}
       {sortedControles.length > itemsPerPage && (
