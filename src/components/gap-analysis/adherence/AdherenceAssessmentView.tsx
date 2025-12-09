@@ -8,8 +8,7 @@ import { Plus, Eye, Loader2, FileCheck, AlertTriangle, TrendingUp, Target, Trash
 import { useAdherenceStats } from '@/hooks/useAdherenceStats';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDateOnly } from '@/lib/date-utils';
 import { AdherenceAssessmentDialog } from './AdherenceAssessmentDialog';
 import { toast } from 'sonner';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -209,7 +208,7 @@ export function AdherenceAssessmentView({ onViewResult }: AdherenceAssessmentVie
                     )}
 
                     <p className="text-xs text-muted-foreground mt-2">
-                      Analisado em {format(new Date(assessment.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+                      Analisado em {formatDateOnly(assessment.created_at)}
                     </p>
                   </div>
 

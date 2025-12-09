@@ -137,7 +137,7 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
           </CardContent>
         </Card>
 
-        <ScoreEvolutionChart frameworkId={frameworkId} />
+        <ScoreEvolutionChart frameworkId={frameworkId} scoreType={config.scoreType} />
       </div>
 
       {/* Scores por Seção (se houver) */}
