@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import ContaDialog from '@/components/contas-privilegiadas/ContaDialog';
 import SistemaDialog from '@/components/contas-privilegiadas/SistemaDialog';
+import { Card, CardContent } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
@@ -660,7 +661,7 @@ export default function ContasPrivilegiadas() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="contas" className="space-y-6">
+        <TabsContent value="contas" className="space-y-4">
           <div className="flex justify-end gap-2">
             <Button variant="outline" size="sm" onClick={handleRelatorios}>
               <BarChart3 className="h-4 w-4 mr-2" />
@@ -672,41 +673,45 @@ export default function ContasPrivilegiadas() {
             </Button>
           </div>
 
-          <DataTable
-            data={filteredAndSortedContas}
-            columns={contasColumns}
-            loading={loadingContas}
-            searchable
-            searchPlaceholder="Buscar contas..."
-            searchValue={searchContasTerm}
-            onSearchChange={setSearchContasTerm}
-            filters={contasFilters}
-            sortField={sortContasField}
-            sortDirection={sortContasDirection}
-            onSort={(field) => {
-              if (sortContasField === field) {
-                setSortContasDirection(sortContasDirection === 'asc' ? 'desc' : 'asc');
-              } else {
-                setSortContasField(field);
-                setSortContasDirection('asc');
-              }
-            }}
-            emptyState={{
-              icon: <Users className="h-8 w-8" />,
-              title: searchContasTerm ? "Nenhuma conta encontrada" : "Nenhuma conta cadastrada",
-              description: searchContasTerm 
-                ? "Tente ajustar os termos de busca ou limpe os filtros."
-                : "Comece cadastrando um sistema privilegiado e depois adicione contas de acesso.",
-              action: !searchContasTerm ? {
-                label: "Cadastrar Sistema",
-                onClick: () => setShowSistemaDialog(true)
-              } : undefined
-            }}
-            onRefresh={refetchContas}
-          />
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <DataTable
+                data={filteredAndSortedContas}
+                columns={contasColumns}
+                loading={loadingContas}
+                searchable
+                searchPlaceholder="Buscar contas..."
+                searchValue={searchContasTerm}
+                onSearchChange={setSearchContasTerm}
+                filters={contasFilters}
+                sortField={sortContasField}
+                sortDirection={sortContasDirection}
+                onSort={(field) => {
+                  if (sortContasField === field) {
+                    setSortContasDirection(sortContasDirection === 'asc' ? 'desc' : 'asc');
+                  } else {
+                    setSortContasField(field);
+                    setSortContasDirection('asc');
+                  }
+                }}
+                emptyState={{
+                  icon: <Users className="h-8 w-8" />,
+                  title: searchContasTerm ? "Nenhuma conta encontrada" : "Nenhuma conta cadastrada",
+                  description: searchContasTerm 
+                    ? "Tente ajustar os termos de busca ou limpe os filtros."
+                    : "Comece cadastrando um sistema privilegiado e depois adicione contas de acesso.",
+                  action: !searchContasTerm ? {
+                    label: "Cadastrar Sistema",
+                    onClick: () => setShowSistemaDialog(true)
+                  } : undefined
+                }}
+                onRefresh={refetchContas}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="sistemas" className="space-y-6">
+        <TabsContent value="sistemas" className="space-y-4">
           <div className="flex justify-end">
             <Button size="sm" onClick={() => setShowSistemaDialog(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -714,38 +719,42 @@ export default function ContasPrivilegiadas() {
             </Button>
           </div>
 
-          <DataTable
-            data={filteredAndSortedSistemas}
-            columns={sistemasColumns}
-            loading={loadingSistemas}
-            searchable
-            searchPlaceholder="Buscar sistemas..."
-            searchValue={searchSistemasTerm}
-            onSearchChange={setSearchSistemasTerm}
-            filters={sistemasFilters}
-            sortField={sortSistemasField}
-            sortDirection={sortSistemasDirection}
-            onSort={(field) => {
-              if (sortSistemasField === field) {
-                setSortSistemasDirection(sortSistemasDirection === 'asc' ? 'desc' : 'asc');
-              } else {
-                setSortSistemasField(field);
-                setSortSistemasDirection('asc');
-              }
-            }}
-            emptyState={{
-              icon: <Shield className="h-8 w-8" />,
-              title: searchSistemasTerm ? "Nenhum sistema encontrado" : "Nenhum sistema cadastrado",
-              description: searchSistemasTerm 
-                ? "Tente ajustar os termos de busca."
-                : "Cadastre os sistemas que possuem contas privilegiadas.",
-              action: !searchSistemasTerm ? {
-                label: "Cadastrar Primeiro Sistema",
-                onClick: () => setShowSistemaDialog(true)
-              } : undefined
-            }}
-            onRefresh={refetchSistemas}
-          />
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <DataTable
+                data={filteredAndSortedSistemas}
+                columns={sistemasColumns}
+                loading={loadingSistemas}
+                searchable
+                searchPlaceholder="Buscar sistemas..."
+                searchValue={searchSistemasTerm}
+                onSearchChange={setSearchSistemasTerm}
+                filters={sistemasFilters}
+                sortField={sortSistemasField}
+                sortDirection={sortSistemasDirection}
+                onSort={(field) => {
+                  if (sortSistemasField === field) {
+                    setSortSistemasDirection(sortSistemasDirection === 'asc' ? 'desc' : 'asc');
+                  } else {
+                    setSortSistemasField(field);
+                    setSortSistemasDirection('asc');
+                  }
+                }}
+                emptyState={{
+                  icon: <Shield className="h-8 w-8" />,
+                  title: searchSistemasTerm ? "Nenhum sistema encontrado" : "Nenhum sistema cadastrado",
+                  description: searchSistemasTerm 
+                    ? "Tente ajustar os termos de busca."
+                    : "Cadastre os sistemas que possuem contas privilegiadas.",
+                  action: !searchSistemasTerm ? {
+                    label: "Cadastrar Primeiro Sistema",
+                    onClick: () => setShowSistemaDialog(true)
+                  } : undefined
+                }}
+                onRefresh={refetchSistemas}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

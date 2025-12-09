@@ -385,6 +385,18 @@ export default function Incidentes() {
         ))}
       </div>
 
+      {/* Botão de ação */}
+      <div className="flex justify-end">
+        <IncidenteDialog 
+          incidente={selectedIncidente} 
+          onSuccess={() => {
+            loadIncidentes();
+            setEditDialogOpen(false);
+            setSelectedIncidente(null);
+          }}
+        />
+      </div>
+
       {/* Lista de Incidentes com DataTable */}
       <Card className="rounded-lg border overflow-hidden">
         <CardContent className="p-0">
@@ -406,16 +418,6 @@ export default function Incidentes() {
               description: 'Registre o primeiro incidente para começar o monitoramento.'
             }}
           />
-          <div className="p-4 border-t">
-            <IncidenteDialog 
-              incidente={selectedIncidente} 
-              onSuccess={() => {
-                loadIncidentes();
-                setEditDialogOpen(false);
-                setSelectedIncidente(null);
-              }}
-            />
-          </div>
         </CardContent>
       </Card>
 

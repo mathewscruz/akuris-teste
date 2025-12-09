@@ -470,81 +470,89 @@ export default function Dados() {
         </TabsContent>
 
         <TabsContent value="ropa" className="space-y-4">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end">
             <Button size="sm" onClick={() => setShowRopaWizard(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Novo ROPA
             </Button>
           </div>
-          <DataTable
-            data={ropaRegistros}
-            columns={ropaColumns}
-            loading={false}
-            searchable
-            searchPlaceholder="Buscar ROPA..."
-            searchValue={searchRopaTerm}
-            onSearchChange={setSearchRopaTerm}
-            filters={ropaFilters}
-            sortField={sortRopaField}
-            sortDirection={sortRopaDirection}
-            onSort={(field) => {
-              if (sortRopaField === field) {
-                setSortRopaDirection(sortRopaDirection === 'asc' ? 'desc' : 'asc');
-              } else {
-                setSortRopaField(field);
-                setSortRopaDirection('asc');
-              }
-            }}
-            emptyState={{
-              icon: <FileText className="h-8 w-8" />,
-              title: "Nenhum registro ROPA criado",
-              description: "Ainda não há registros ROPA cadastrados. Comece criando o primeiro registro.",
-              action: {
-                label: "Novo ROPA",
-                onClick: () => setShowRopaWizard(true)
-              }
-            }}
-            onRefresh={loadData}
-          />
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <DataTable
+                data={ropaRegistros}
+                columns={ropaColumns}
+                loading={false}
+                searchable
+                searchPlaceholder="Buscar ROPA..."
+                searchValue={searchRopaTerm}
+                onSearchChange={setSearchRopaTerm}
+                filters={ropaFilters}
+                sortField={sortRopaField}
+                sortDirection={sortRopaDirection}
+                onSort={(field) => {
+                  if (sortRopaField === field) {
+                    setSortRopaDirection(sortRopaDirection === 'asc' ? 'desc' : 'asc');
+                  } else {
+                    setSortRopaField(field);
+                    setSortRopaDirection('asc');
+                  }
+                }}
+                emptyState={{
+                  icon: <FileText className="h-8 w-8" />,
+                  title: "Nenhum registro ROPA criado",
+                  description: "Ainda não há registros ROPA cadastrados. Comece criando o primeiro registro.",
+                  action: {
+                    label: "Novo ROPA",
+                    onClick: () => setShowRopaWizard(true)
+                  }
+                }}
+                onRefresh={loadData}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="solicitacoes" className="space-y-4">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end">
             <Button size="sm" onClick={() => setShowSolicitacaoDialog(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Nova Solicitação
             </Button>
           </div>
-          <DataTable
-            data={solicitacoes}
-            columns={solicitacoesColumns}
-            loading={false}
-            searchable
-            searchPlaceholder="Buscar solicitações..."
-            searchValue={searchSolicitacoesTerm}
-            onSearchChange={setSearchSolicitacoesTerm}
-            filters={solicitacoesFilters}
-            sortField={sortSolicitacoesField}
-            sortDirection={sortSolicitacoesDirection}
-            onSort={(field) => {
-              if (sortSolicitacoesField === field) {
-                setSortSolicitacoesDirection(sortSolicitacoesDirection === 'asc' ? 'desc' : 'asc');
-              } else {
-                setSortSolicitacoesField(field);
-                setSortSolicitacoesDirection('asc');
-              }
-            }}
-            emptyState={{
-              icon: <Users className="h-8 w-8" />,
-              title: "Nenhuma solicitação registrada",
-              description: "Ainda não há solicitações de titulares. Comece criando o primeiro registro.",
-              action: {
-                label: "Nova Solicitação",
-                onClick: () => setShowSolicitacaoDialog(true)
-              }
-            }}
-            onRefresh={loadData}
-          />
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <DataTable
+                data={solicitacoes}
+                columns={solicitacoesColumns}
+                loading={false}
+                searchable
+                searchPlaceholder="Buscar solicitações..."
+                searchValue={searchSolicitacoesTerm}
+                onSearchChange={setSearchSolicitacoesTerm}
+                filters={solicitacoesFilters}
+                sortField={sortSolicitacoesField}
+                sortDirection={sortSolicitacoesDirection}
+                onSort={(field) => {
+                  if (sortSolicitacoesField === field) {
+                    setSortSolicitacoesDirection(sortSolicitacoesDirection === 'asc' ? 'desc' : 'asc');
+                  } else {
+                    setSortSolicitacoesField(field);
+                    setSortSolicitacoesDirection('asc');
+                  }
+                }}
+                emptyState={{
+                  icon: <Users className="h-8 w-8" />,
+                  title: "Nenhuma solicitação registrada",
+                  description: "Ainda não há solicitações de titulares. Comece criando o primeiro registro.",
+                  action: {
+                    label: "Nova Solicitação",
+                    onClick: () => setShowSolicitacaoDialog(true)
+                  }
+                }}
+                onRefresh={loadData}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
