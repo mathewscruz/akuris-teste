@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import { CreditsExhaustedDialog } from '@/components/CreditsExhaustedDialog';
+import { UserSelect } from './UserSelect';
 
 const tratamentoSchema = z.object({
   tipo_tratamento: z.string().min(1, 'Tipo de tratamento é obrigatório'),
@@ -248,9 +248,10 @@ export function TratamentoForm({ riscoId, tratamento, onSuccess, riscoData }: Tr
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="responsavel">Responsável</Label>
-          <Input
-            {...form.register('responsavel')}
-            placeholder="Nome do responsável"
+          <UserSelect
+            value={form.watch('responsavel') || ''}
+            onValueChange={(value) => form.setValue('responsavel', value)}
+            placeholder="Selecione o responsável"
           />
         </div>
 
