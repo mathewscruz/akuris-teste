@@ -214,8 +214,8 @@ export function IncidenteDialog({ incidente, onSuccess, trigger }: IncidenteDial
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <div className="grid grid-cols-2 gap-5">
               <FormField
                 control={form.control}
                 name="titulo"

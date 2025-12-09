@@ -309,8 +309,8 @@ const ManutencaoDialog: React.FC<ManutencaoDialogProps> = ({ ativoId, ativoNome,
                     {editingManutencao ? 'Editar Manutenção' : 'Nova Manutenção'}
                   </DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid grid-cols-2 gap-5">
                     <div className="space-y-2">
                       <Label htmlFor="tipo_manutencao">Tipo *</Label>
                       <Select value={formData.tipo_manutencao} onValueChange={(value) => setFormData(prev => ({...prev, tipo_manutencao: value}))}>
@@ -355,7 +355,7 @@ const ManutencaoDialog: React.FC<ManutencaoDialogProps> = ({ ativoId, ativoNome,
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-5">
                     <div className="space-y-2">
                       <Label htmlFor="data_manutencao">Data da Manutenção *</Label>
                       <Input
@@ -388,7 +388,7 @@ const ManutencaoDialog: React.FC<ManutencaoDialogProps> = ({ ativoId, ativoNome,
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-5">
                     <div className="space-y-2">
                       <Label htmlFor="responsavel">Responsável</Label>
                       <Input
@@ -408,7 +408,7 @@ const ManutencaoDialog: React.FC<ManutencaoDialogProps> = ({ ativoId, ativoNome,
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-5">
                     <div className="space-y-2">
                       <Label htmlFor="custo">Custo (R$)</Label>
                       <Input
@@ -457,7 +457,7 @@ const ManutencaoDialog: React.FC<ManutencaoDialogProps> = ({ ativoId, ativoNome,
                     />
                   </div>
 
-                  <div className="flex justify-end space-x-2 pt-4">
+                  <div className="flex justify-end gap-3 pt-4 border-t border-border/50">
                     <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                       Cancelar
                     </Button>

@@ -278,8 +278,8 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid gap-5 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome *</Label>
               <Input
@@ -322,7 +322,7 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
             />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-5 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="classificacao">Classificação *</Label>
               <Select value={formData.classificacao} onValueChange={(value) => setFormData(prev => ({ ...prev, classificacao: value }))}>
