@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { UserSelect } from "@/components/riscos/UserSelect";
 
 interface LicencaDialogProps {
   open: boolean;
@@ -361,7 +362,11 @@ export function LicencaDialog({ open, onOpenChange, licenca }: LicencaDialogProp
                   <FormItem>
                     <FormLabel>Responsável</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <UserSelect
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder="Selecionar responsável..."
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

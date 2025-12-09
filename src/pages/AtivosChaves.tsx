@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useChavesStats } from '@/hooks/useChavesStats';
+import { formatDateOnly } from '@/lib/date-utils';
 
 interface ChaveCriptografica {
   id: string;
@@ -107,8 +108,8 @@ export default function AtivosChaves() {
     const statusConfig = {
       'ativa': { variant: 'default' as const, label: 'Ativa', icon: CheckCircle },
       'expirada': { variant: 'destructive' as const, label: 'Expirada', icon: AlertTriangle },
-      'pendente_rotacao': { variant: 'secondary' as const, label: 'Pendente Rotação', icon: Clock },
-      'inativa': { variant: 'outline' as const, label: 'Inativa', icon: Clock },
+      'revogada': { variant: 'outline' as const, label: 'Revogada', icon: AlertTriangle },
+      'em_rotacao': { variant: 'secondary' as const, label: 'Em Rotação', icon: Clock },
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.ativa;
@@ -137,12 +138,6 @@ export default function AtivosChaves() {
     );
   };
 
-  // Função para formatar data sem conversão de timezone
-  const formatDateOnly = (dateString: string) => {
-    if (!dateString) return '-';
-    const [year, month, day] = dateString.split('T')[0].split('-');
-    return `${day}/${month}/${year}`;
-  };
 
   // Filtrar e ordenar chaves
   const filteredAndSortedChaves = useMemo(() => {
@@ -270,8 +265,8 @@ export default function AtivosChaves() {
         { value: 'todos', label: 'Todos os status' },
         { value: 'ativa', label: 'Ativa' },
         { value: 'expirada', label: 'Expirada' },
-        { value: 'pendente_rotacao', label: 'Pendente Rotação' },
-        { value: 'inativa', label: 'Inativa' },
+        { value: 'revogada', label: 'Revogada' },
+        { value: 'em_rotacao', label: 'Em Rotação' },
       ]
     },
     {
@@ -297,7 +292,7 @@ export default function AtivosChaves() {
         { value: 'producao', label: 'Produção' },
         { value: 'homologacao', label: 'Homologação' },
         { value: 'desenvolvimento', label: 'Desenvolvimento' },
-        { value: 'teste', label: 'Teste' },
+        { value: 'qa', label: 'QA' },
       ]
     },
     {
@@ -307,10 +302,11 @@ export default function AtivosChaves() {
       onChange: setTipoFilter,
       options: [
         { value: 'todos', label: 'Todos os tipos' },
-        { value: 'simetrica', label: 'Simétrica' },
-        { value: 'assimetrica', label: 'Assimétrica' },
-        { value: 'hash', label: 'Hash' },
-        { value: 'hmac', label: 'HMAC' },
+        { value: 'api_key', label: 'API Key' },
+        { value: 'certificado_ssl', label: 'Certificado SSL' },
+        { value: 'ssh_key', label: 'SSH Key' },
+        { value: 'token_acesso', label: 'Token de Acesso' },
+        { value: 'secret_key', label: 'Secret Key' },
         { value: 'outro', label: 'Outro' },
       ]
     }

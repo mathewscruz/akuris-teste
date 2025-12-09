@@ -977,6 +977,9 @@ const Ativos = () => {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Avatar className="h-8 w-8 cursor-pointer">
+                                {ativo.proprietario_avatar && (
+                                  <AvatarImage src={ativo.proprietario_avatar} alt={ativo.proprietario_nome} />
+                                )}
                                 <AvatarFallback className="bg-primary/10 text-primary">
                                   {ativo.proprietario_nome
                                     .split(' ')

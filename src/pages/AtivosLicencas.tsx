@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useLicencasStats } from '@/hooks/useLicencasStats';
+import { formatDateOnly } from '@/lib/date-utils';
 
 interface Licenca {
   id: string;
@@ -133,12 +134,6 @@ export default function AtivosLicencas() {
     );
   };
 
-  // Função para formatar data sem conversão de timezone
-  const formatDateOnly = (dateString: string) => {
-    if (!dateString) return '-';
-    const [year, month, day] = dateString.split('T')[0].split('-');
-    return `${day}/${month}/${year}`;
-  };
 
   // Filtrar e ordenar licenças
   const filteredAndSortedLicencas = useMemo(() => {
