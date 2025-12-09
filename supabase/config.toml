@@ -114,3 +114,9 @@ verify_jwt = false
 
 [functions.send-controle-notification]
 verify_jwt = true
+
+[functions.test-integration-connection]
+verify_jwt = true
+
+[functions.integration-webhook-dispatcher]
+verify_jwt = false
