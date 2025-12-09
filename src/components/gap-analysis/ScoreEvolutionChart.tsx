@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useScoreHistory, ScoreHistoryPeriod } from '@/hooks/useScoreHistory';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScoreType } from '@/lib/framework-configs';
 
 interface ScoreEvolutionChartProps {
   frameworkId: string;
+  scoreType?: ScoreType;
 }
 
-export const ScoreEvolutionChart = ({ frameworkId }: ScoreEvolutionChartProps) => {
+export const ScoreEvolutionChart = ({ frameworkId, scoreType = 'scale_0_5' }: ScoreEvolutionChartProps) => {
   const [period, setPeriod] = useState<ScoreHistoryPeriod>('monthly');
   const { history, loading } = useScoreHistory(frameworkId, period);
 
@@ -19,6 +21,19 @@ export const ScoreEvolutionChart = ({ frameworkId }: ScoreEvolutionChartProps) =
     { value: 'monthly', label: 'Mês' },
     { value: 'yearly', label: 'Ano' }
   ];
+
+  // Configurar domínio e ticks baseado no scoreType
+  const isPercentage = scoreType === 'percentage';
+  const domain: [number, number] = isPercentage ? [0, 100] : [0, 5];
+  const ticks = isPercentage ? [0, 20, 40, 60, 80, 100] : [0, 1, 2, 3, 4, 5];
+
+  // Formatar valor para exibição
+  const formatValue = (value: number) => {
+    if (isPercentage) {
+      return `${value.toFixed(0)}%`;
+    }
+    return value.toFixed(2);
+  };
 
   if (loading) {
     return (
@@ -66,10 +81,11 @@ export const ScoreEvolutionChart = ({ frameworkId }: ScoreEvolutionChartProps) =
                 tick={{ fill: 'hsl(var(--muted-foreground))' }}
               />
               <YAxis 
-                domain={[0, 5]}
-                ticks={[0, 1, 2, 3, 4, 5]}
+                domain={domain}
+                ticks={ticks}
                 className="text-xs"
                 tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tickFormatter={(value) => isPercentage ? `${value}%` : value.toString()}
               />
               <Tooltip
                 contentStyle={{
@@ -80,7 +96,7 @@ export const ScoreEvolutionChart = ({ frameworkId }: ScoreEvolutionChartProps) =
                 }}
                 labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
                 itemStyle={{ color: 'hsl(var(--popover-foreground))' }}
-                formatter={(value: number) => [value.toFixed(2), 'Score']}
+                formatter={(value: number) => [formatValue(value), 'Score']}
               />
               <Line 
                 type="monotone" 
