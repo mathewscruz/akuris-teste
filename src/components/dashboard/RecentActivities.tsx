@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { useNavigate } from 'react-router-dom';
-import { FileText, AlertTriangle, Shield, Users, Calendar, Building } from 'lucide-react';
+import { FileText, AlertTriangle, Shield, Users, Calendar, Building, MessageSquareWarning } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -33,13 +33,14 @@ export function RecentActivities() {
 
   const getIcon = (module: string) => {
     switch (module) {
-      case 'riscos': return <AlertTriangle className="h-4 w-4" />;
-      case 'controles': return <Shield className="h-4 w-4" />;
-      case 'documentos': return <FileText className="h-4 w-4" />;
-      case 'auditorias': return <Calendar className="h-4 w-4" />;
-      case 'usuarios': return <Users className="h-4 w-4" />;
-      case 'contratos': return <Building className="h-4 w-4" />;
-      default: return <FileText className="h-4 w-4" />;
+      case 'riscos': return <AlertTriangle className="h-4 w-4 text-destructive" />;
+      case 'controles': return <Shield className="h-4 w-4 text-primary" />;
+      case 'documentos': return <FileText className="h-4 w-4 text-info" />;
+      case 'auditorias': return <Calendar className="h-4 w-4 text-warning" />;
+      case 'usuarios': return <Users className="h-4 w-4 text-muted-foreground" />;
+      case 'contratos': return <Building className="h-4 w-4 text-secondary-foreground" />;
+      case 'denuncias': return <MessageSquareWarning className="h-4 w-4 text-orange-500" />;
+      default: return <FileText className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -88,26 +89,29 @@ export function RecentActivities() {
     const normalizedStatus = status.toLowerCase().trim();
     const statusInfo = statusMap[normalizedStatus] || { 
       variant: 'outline' as const, 
-      label: status.charAt(0).toUpperCase() + status.slice(1) // Capitalizar qualquer status desconhecido
+      label: status.charAt(0).toUpperCase() + status.slice(1)
     };
     
-    return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
+    return (
+      <Badge variant={statusInfo.variant} className="text-[10px] px-1.5 py-0 whitespace-nowrap">
+        {statusInfo.label}
+      </Badge>
+    );
   };
 
   const handleActivityClick = (activity: Activity) => {
+    // Navegação corrigida para Governança
     const routeMap: Record<string, string> = {
       'riscos': '/riscos',
-      'controles': '/controles',
+      'controles': '/governanca?tab=controles',
       'documentos': '/documentos',
-      'auditorias': '/auditorias',
+      'auditorias': '/governanca?tab=auditorias',
       'denuncias': '/denuncia'
     };
 
     const route = routeMap[activity.module];
     if (route) {
-      // Extrair o ID real do formato "module-id"
-      const itemId = activity.id.split('-')[1];
-      navigate(route, { state: { itemId } });
+      navigate(route);
     }
   };
 
@@ -210,7 +214,7 @@ export function RecentActivities() {
           description: 'Nova denúncia recebida',
           created_at: denuncia.created_at,
           module: 'denuncias',
-          icon: getIcon('usuarios'),
+          icon: getIcon('denuncias'),
           status: denuncia.status
         });
       });
@@ -259,19 +263,20 @@ export function RecentActivities() {
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && handleActivityClick(activity)}
               >
-                <div className="flex-shrink-0 mt-1">
+                <div className="flex-shrink-0 mt-1 h-8 w-8 rounded-full bg-muted flex items-center justify-center">
                   {activity.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-medium text-foreground truncate">
                       {activity.title}
                     </p>
+                    {getStatusBadge(activity.module, activity.status)}
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {activity.description}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground/70 mt-1">
                     {formatDistanceToNow(new Date(activity.created_at), {
                       addSuffix: true,
                       locale: ptBR
