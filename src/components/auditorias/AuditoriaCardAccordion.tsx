@@ -1,36 +1,24 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Progress } from "@/components/ui/progress";
 import { 
   FileText, 
-  ClipboardList, 
-  AlertTriangle, 
-  FileCheck, 
-  Image as ImageIcon,
   Edit, 
   Trash2,
   Calendar,
   User,
-  ChevronDown,
-  Plus,
-  Shield,
   ClipboardCheck
 } from "lucide-react";
 import { capitalizeText } from "@/lib/text-utils";
 
 interface AuditoriaCardAccordionProps {
   auditoria: any;
-  counts: { trabalhos: number; achados: number; recomendacoes: number; controles?: number; itens?: number };
+  counts: { itens: number; itensConcluidos: number };
   onEdit: () => void;
   onDelete: () => void;
-  onOpenTrabalhos: () => void;
-  onOpenAchados: () => void;
-  onOpenRecomendacoes: () => void;
-  onOpenEvidencias: () => void;
   onOpenControles: () => void;
-  onOpenItens: () => void;
   auditorNome?: string;
 }
 
@@ -72,20 +60,15 @@ export function AuditoriaCardAccordion({
   counts,
   onEdit,
   onDelete,
-  onOpenTrabalhos,
-  onOpenAchados,
-  onOpenRecomendacoes,
-  onOpenEvidencias,
   onOpenControles,
-  onOpenItens,
   auditorNome
 }: AuditoriaCardAccordionProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const progressPercent = counts.itens > 0 ? Math.round((counts.itensConcluidos / counts.itens) * 100) : 0;
 
   return (
     <Card className="hover:shadow-sm transition-shadow">
       <CardContent className="p-3">
-        {/* Linha principal - tudo horizontal */}
+        {/* Linha principal */}
         <div className="flex items-center justify-between gap-3">
           {/* Nome */}
           <div className="flex items-center gap-2 min-w-0 flex-shrink-0" style={{ width: '200px' }}>
@@ -93,7 +76,7 @@ export function AuditoriaCardAccordion({
             <span className="font-medium text-sm truncate">{auditoria.nome}</span>
           </div>
 
-          {/* Badges - todos na mesma linha */}
+          {/* Badges */}
           <div className="flex items-center gap-1.5 flex-1 flex-wrap">
             <Badge variant="outline" className="text-[11px] py-0 h-5 px-2">
               {capitalizeText(auditoria.tipo)}
@@ -111,52 +94,27 @@ export function AuditoriaCardAccordion({
               {capitalizeText(auditoria.prioridade)}
             </Badge>
             
-            {/* Contadores clicáveis */}
-            <Badge 
-              variant="secondary" 
-              className="cursor-pointer hover:bg-secondary/80 text-[11px] py-0 h-5 px-2"
-              onClick={onOpenTrabalhos}
-              title="Gerenciar Trabalhos"
-            >
-              <ClipboardList className="h-3 w-3 mr-1" />
-              {counts.trabalhos}
-            </Badge>
-            <Badge 
-              variant="secondary" 
-              className="cursor-pointer hover:bg-secondary/80 text-[11px] py-0 h-5 px-2"
-              onClick={onOpenAchados}
-              title="Gerenciar Achados"
-            >
-              <AlertTriangle className="h-3 w-3 mr-1" />
-              {counts.achados}
-            </Badge>
-            <Badge 
-              variant="secondary" 
-              className="cursor-pointer hover:bg-secondary/80 text-[11px] py-0 h-5 px-2"
-              onClick={onOpenRecomendacoes}
-              title="Gerenciar Recomendações"
-            >
-              <FileCheck className="h-3 w-3 mr-1" />
-              {counts.recomendacoes}
-            </Badge>
-            <Badge 
-              variant="secondary" 
-              className="cursor-pointer hover:bg-secondary/80 text-[11px] py-0 h-5 px-2"
+            {/* Botão Controles com progresso */}
+            <Button
+              variant="outline"
+              size="sm"
               onClick={onOpenControles}
-              title="Gerenciar Controles"
+              className="h-6 px-2 text-[11px] gap-1.5"
             >
-              <Shield className="h-3 w-3 mr-1" />
-              {counts.controles || 0}
-            </Badge>
-            <Badge 
-              variant="default" 
-              className="cursor-pointer hover:bg-primary/80 text-[11px] py-0 h-5 px-2"
-              onClick={onOpenItens}
-              title="Itens de Verificação"
-            >
-              <ClipboardCheck className="h-3 w-3 mr-1" />
-              {counts.itens || 0}
-            </Badge>
+              <ClipboardCheck className="h-3 w-3" />
+              <span>Controles</span>
+              <Badge variant="secondary" className="h-4 px-1 text-[10px] ml-1">
+                {counts.itensConcluidos}/{counts.itens}
+              </Badge>
+            </Button>
+
+            {/* Barra de progresso compacta */}
+            {counts.itens > 0 && (
+              <div className="flex items-center gap-1.5 min-w-[80px]">
+                <Progress value={progressPercent} className="h-1.5 flex-1" />
+                <span className="text-[10px] text-muted-foreground">{progressPercent}%</span>
+              </div>
+            )}
 
             {/* Data e Auditor */}
             {auditoria.data_inicio && (
@@ -196,80 +154,12 @@ export function AuditoriaCardAccordion({
           </div>
         </div>
 
-        {/* Accordion discreto para detalhes - SEMPRE visível */}
-        <Accordion type="single" collapsible value={isExpanded ? "details" : ""} onValueChange={(value) => setIsExpanded(!!value)} className="mt-2">
-          <AccordionItem value="details" className="border-none">
-            <AccordionTrigger className="py-1 px-0 hover:no-underline text-muted-foreground">
-              <span className="text-[11px]">
-                {isExpanded ? "Ocultar" : "Ver"} detalhes
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="pt-2 pb-0">
-              <div className="space-y-1.5 text-xs">
-                {auditoria.descricao && (
-                  <p className="text-muted-foreground text-[11px] leading-relaxed">
-                    {auditoria.descricao}
-                  </p>
-                )}
-                
-                {/* Seções compactas - sempre clicáveis */}
-                <div className="grid grid-cols-2 gap-1.5 mt-2">
-                  <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer" onClick={onOpenTrabalhos}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        <ClipboardList className="h-3 w-3 text-blue-600" />
-                        <span className="text-[11px] font-medium">Trabalhos</span>
-                      </div>
-                      {counts.trabalhos > 0 ? (
-                        <Badge variant="outline" className="text-[10px] py-0 h-4 px-1.5">{counts.trabalhos}</Badge>
-                      ) : (
-                        <span className="text-[10px] text-muted-foreground">Nenhum</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer border-l-2 border-l-orange-500" onClick={onOpenAchados}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3 text-orange-600" />
-                        <span className="text-[11px] font-medium">Achados</span>
-                      </div>
-                      {counts.achados > 0 ? (
-                        <Badge variant="outline" className="text-[10px] py-0 h-4 px-1.5">{counts.achados}</Badge>
-                      ) : (
-                        <span className="text-[10px] text-muted-foreground">Nenhum</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer border-l-2 border-l-green-500" onClick={onOpenRecomendacoes}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        <FileCheck className="h-3 w-3 text-green-600" />
-                        <span className="text-[11px] font-medium">Recomendações</span>
-                      </div>
-                      {counts.recomendacoes > 0 ? (
-                        <Badge variant="outline" className="text-[10px] py-0 h-4 px-1.5">{counts.recomendacoes}</Badge>
-                      ) : (
-                        <span className="text-[10px] text-muted-foreground">Nenhum</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer" onClick={onOpenEvidencias}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        <ImageIcon className="h-3 w-3 text-purple-600" />
-                        <span className="text-[11px] font-medium">Evidências</span>
-                      </div>
-                      <Plus className="h-3 w-3 text-muted-foreground" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+        {/* Descrição se houver */}
+        {auditoria.descricao && (
+          <p className="text-[11px] text-muted-foreground mt-2 line-clamp-1">
+            {auditoria.descricao}
+          </p>
+        )}
       </CardContent>
     </Card>
   );
