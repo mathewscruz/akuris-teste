@@ -670,9 +670,16 @@ const LandingPage = () => {
           <div className="grid md:grid-cols-3 gap-8">
             {howItWorks.map((item, index) => (
               <div key={index} className="relative">
-                {/* Connector line */}
+                {/* Connector line with flow animation */}
                 {index < howItWorks.length - 1 && (
-                  <div className="hidden md:block absolute top-16 left-1/2 w-full h-0.5 bg-gradient-to-r from-blue-500/50 to-cyan-500/50" />
+                  <div className="hidden md:block absolute top-16 left-1/2 w-full h-1 flow-line-container rounded-full">
+                    {/* Base line */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 via-cyan-500/40 to-blue-500/30 rounded-full" />
+                    {/* Animated particles */}
+                    <div className="flow-particle" style={{ animationDelay: '0s' }} />
+                    <div className="flow-particle" style={{ animationDelay: '0.7s' }} />
+                    <div className="flow-particle" style={{ animationDelay: '1.4s' }} />
+                  </div>
                 )}
                 
                 <div className="relative landing-glass rounded-2xl p-8 text-center landing-border-gradient hover:transform hover:scale-105 transition-all duration-300">
