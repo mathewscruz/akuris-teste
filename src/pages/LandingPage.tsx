@@ -19,12 +19,14 @@ import {
   CheckCircle2,
   Zap,
   Globe,
-  Award,
   ChevronRight,
-  Sparkles,
   TrendingUp,
   Clock,
   Target,
+  Settings,
+  BarChart3,
+  Workflow,
+  Building2,
 } from "lucide-react";
 
 const LandingPage = () => {
@@ -124,11 +126,12 @@ const LandingPage = () => {
     },
   ];
 
+  // Indicadores reais da plataforma
   const stats = [
-    { value: "99.9%", label: "Uptime Garantido", icon: Zap },
-    { value: "50%", label: "Redução de Tempo", icon: Clock },
-    { value: "100%", label: "Conformidade LGPD", icon: Target },
-    { value: "24/7", label: "Suporte Disponível", icon: Globe },
+    { value: "20+", label: "Frameworks Suportados", icon: Shield },
+    { value: "8", label: "Módulos Integrados", icon: Zap },
+    { value: "Multi", label: "Empresas Isoladas", icon: Building2 },
+    { value: "Auto", label: "Workflows Inteligentes", icon: Workflow },
   ];
 
   const benefits = [
@@ -140,7 +143,7 @@ const LandingPage = () => {
     {
       title: "Automação Inteligente",
       description: "Workflows automatizados, notificações proativas e lembretes para nunca perder prazos.",
-      icon: Sparkles,
+      icon: Zap,
     },
     {
       title: "Conformidade Simplificada",
@@ -151,6 +154,52 @@ const LandingPage = () => {
       title: "Segurança em Primeiro Lugar",
       description: "Isolamento de dados por empresa, criptografia ponta-a-ponta e logs de auditoria completos.",
       icon: Lock,
+    },
+  ];
+
+  // Todos os 20 frameworks da plataforma
+  const frameworks = [
+    "NIST CSF 2.0",
+    "ISO 27001",
+    "ISO 27701",
+    "ISO 9001",
+    "ISO 14001",
+    "ISO 31000",
+    "ISO 37301",
+    "ISO/IEC 20000",
+    "LGPD",
+    "GDPR",
+    "CCPA",
+    "HIPAA",
+    "PCI DSS 4.0",
+    "SOC 2 Type II",
+    "SOX",
+    "COBIT 2019",
+    "COSO ERM",
+    "COSO IC",
+    "CIS Controls v8",
+    "ITIL v4",
+  ];
+
+  // Passos do "Como Funciona"
+  const howItWorks = [
+    {
+      step: 1,
+      icon: Settings,
+      title: "Configure seus Frameworks",
+      description: "Selecione os frameworks e regulamentações que sua empresa precisa atender: LGPD, ISO 27001, SOC 2, NIST e mais de 20 outros.",
+    },
+    {
+      step: 2,
+      icon: BarChart3,
+      title: "Avalie sua Conformidade",
+      description: "Responda aos requisitos, anexe evidências e visualize seu score de aderência em tempo real com dashboards interativos.",
+    },
+    {
+      step: 3,
+      icon: Target,
+      title: "Gerencie e Evolua",
+      description: "Crie planos de ação, atribua responsáveis, monitore prazos e acompanhe a evolução da maturidade da sua governança.",
     },
   ];
 
@@ -198,16 +247,16 @@ const LandingPage = () => {
                 Módulos
               </button>
               <button
+                onClick={() => scrollToSection("como-funciona")}
+                className="text-sm text-gray-300 hover:text-white transition-colors"
+              >
+                Como Funciona
+              </button>
+              <button
                 onClick={() => scrollToSection("beneficios")}
                 className="text-sm text-gray-300 hover:text-white transition-colors"
               >
                 Benefícios
-              </button>
-              <button
-                onClick={() => scrollToSection("seguranca")}
-                className="text-sm text-gray-300 hover:text-white transition-colors"
-              >
-                Segurança
               </button>
               <button
                 onClick={() => scrollToSection("contato")}
@@ -241,16 +290,16 @@ const LandingPage = () => {
                 Módulos
               </button>
               <button
+                onClick={() => scrollToSection("como-funciona")}
+                className="block w-full text-left text-gray-300 hover:text-white py-2"
+              >
+                Como Funciona
+              </button>
+              <button
                 onClick={() => scrollToSection("beneficios")}
                 className="block w-full text-left text-gray-300 hover:text-white py-2"
               >
                 Benefícios
-              </button>
-              <button
-                onClick={() => scrollToSection("seguranca")}
-                className="block w-full text-left text-gray-300 hover:text-white py-2"
-              >
-                Segurança
               </button>
               <button
                 onClick={() => scrollToSection("contato")}
@@ -268,13 +317,12 @@ const LandingPage = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center pt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      {/* Hero Section - Reduced spacing */}
+      <section className="relative min-h-[85vh] flex items-center pt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
-            <div className="space-y-8">
-
+            <div className="space-y-6">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight landing-fade-in-up landing-stagger-2">
                 Transforme sua{" "}
                 <span className="landing-gradient-text">Governança</span>
@@ -305,12 +353,13 @@ const LandingPage = () => {
                 </Link>
               </div>
 
-              {/* Stats */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-8 landing-fade-in-up landing-stagger-5">
+              {/* Stats - Indicadores reais */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 landing-fade-in-up landing-stagger-5">
                 {stats.map((stat, index) => (
-                  <div key={index} className="text-center">
-                    <div className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</div>
-                    <div className="text-xs sm:text-sm text-gray-500">{stat.label}</div>
+                  <div key={index} className="text-center p-3 rounded-lg bg-white/5 border border-white/10">
+                    <stat.icon className="h-5 w-5 text-blue-400 mx-auto mb-2" />
+                    <div className="text-xl sm:text-2xl font-bold text-white">{stat.value}</div>
+                    <div className="text-xs text-gray-500">{stat.label}</div>
                   </div>
                 ))}
               </div>
@@ -384,31 +433,52 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Social Proof */}
-      <section className="relative py-16 border-y border-white/5">
+      {/* Frameworks Carousel - Reduced padding */}
+      <section className="relative py-8 border-y border-white/5 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-sm text-gray-500 mb-8">
+          <p className="text-center text-sm text-gray-500 mb-6">
             Frameworks e regulamentações suportados
           </p>
-          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
-            {["NIST CSF 2.0", "ISO 27001", "LGPD", "GDPR", "SOC 2", "PCI DSS", "COBIT"].map(
-              (framework, index) => (
+        </div>
+        
+        {/* Infinite Carousel */}
+        <div className="relative">
+          {/* Gradient masks */}
+          <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#0A1628] to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#0A1628] to-transparent z-10 pointer-events-none" />
+          
+          {/* Scrolling content */}
+          <div className="flex animate-scroll-left">
+            {/* First set */}
+            <div className="flex gap-8 shrink-0 px-4">
+              {frameworks.map((framework, index) => (
                 <div
-                  key={index}
-                  className="text-gray-500 hover:text-white transition-colors text-sm md:text-base font-medium"
+                  key={`first-${index}`}
+                  className="shrink-0 px-6 py-3 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-blue-500/50 transition-all text-sm font-medium whitespace-nowrap"
                 >
                   {framework}
                 </div>
-              )
-            )}
+              ))}
+            </div>
+            {/* Duplicate for seamless loop */}
+            <div className="flex gap-8 shrink-0 px-4">
+              {frameworks.map((framework, index) => (
+                <div
+                  key={`second-${index}`}
+                  className="shrink-0 px-6 py-3 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-blue-500/50 transition-all text-sm font-medium whitespace-nowrap"
+                >
+                  {framework}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="modulos" className="relative py-24">
+      <section id="modulos" className="relative py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
               Módulos <span className="landing-gradient-text">Integrados</span>
             </h2>
@@ -417,18 +487,18 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="group landing-glass-light rounded-2xl p-6 hover:bg-white/5 transition-all duration-300 landing-card-glow"
+                className="group landing-glass-light rounded-2xl p-5 hover:bg-white/5 transition-all duration-300 landing-card-glow"
               >
                 <div
                   className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${feature.color} mb-4 group-hover:scale-110 transition-transform`}
                 >
-                  <feature.icon className="h-6 w-6 text-white" />
+                  <feature.icon className="h-5 w-5 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2 text-white">{feature.title}</h3>
+                <h3 className="text-lg font-semibold mb-2 text-white">{feature.title}</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">{feature.description}</p>
                 <div className="mt-4 flex items-center text-blue-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                   Saiba mais <ChevronRight className="h-4 w-4 ml-1" />
@@ -439,8 +509,65 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* How It Works Section - Replaces Security Section */}
+      <section id="como-funciona" className="relative py-20 bg-[#0F2340]/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              Como <span className="landing-gradient-text">Funciona</span>
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Em três passos simples, transforme sua gestão de governança e compliance
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {howItWorks.map((item, index) => (
+              <div key={index} className="relative">
+                {/* Connector line */}
+                {index < howItWorks.length - 1 && (
+                  <div className="hidden md:block absolute top-16 left-1/2 w-full h-0.5 bg-gradient-to-r from-blue-500/50 to-cyan-500/50" />
+                )}
+                
+                <div className="relative landing-glass rounded-2xl p-8 text-center landing-border-gradient hover:transform hover:scale-105 transition-all duration-300">
+                  {/* Step number */}
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                    {item.step}
+                  </div>
+                  
+                  <div className="inline-flex p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 mb-6 mt-2">
+                    <item.icon className="h-8 w-8 text-blue-400" />
+                  </div>
+                  
+                  <h3 className="text-xl font-semibold text-white mb-3">{item.title}</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">{item.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Diferenciais */}
+          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { icon: Zap, text: "Avaliação com IA" },
+              { icon: FileCheck, text: "Templates Prontos" },
+              { icon: BarChart3, text: "Relatórios Executivos" },
+              { icon: Shield, text: "Canal de Denúncia Externo" },
+            ].map((item, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10"
+              >
+                <item.icon className="h-5 w-5 text-green-400 shrink-0" />
+                <span className="text-sm text-gray-300">{item.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Benefits Section */}
-      <section id="beneficios" className="relative py-24 bg-[#0F2340]/50">
+      <section id="beneficios" className="relative py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-8">
@@ -488,55 +615,8 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Security Section */}
-      <section id="seguranca" className="relative py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="landing-glass rounded-3xl p-8 md:p-12 landing-border-gradient text-center">
-            <div className="inline-flex p-4 rounded-2xl bg-blue-500/10 mb-6">
-              <Lock className="h-10 w-10 text-blue-400" />
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Segurança de <span className="landing-gradient-text">Nível Empresarial</span>
-            </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto mb-8">
-              Seus dados protegidos com as melhores práticas de segurança do mercado.
-              Isolamento completo entre empresas, criptografia e logs de auditoria.
-            </p>
-
-            <div className="flex flex-wrap justify-center gap-4 mb-8">
-              {["Criptografia AES-256", "Isolamento de Dados", "Backup Automático", "MFA Disponível", "Logs de Auditoria"].map(
-                (item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full text-sm text-gray-300"
-                  >
-                    <CheckCircle2 className="h-4 w-4 text-green-400" />
-                    {item}
-                  </div>
-                )
-              )}
-            </div>
-
-            <div className="flex flex-wrap justify-center items-center gap-6">
-              <div className="flex items-center gap-2 text-gray-400">
-                <Award className="h-5 w-5" />
-                <span className="text-sm">Em conformidade com LGPD</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-400">
-                <Shield className="h-5 w-5" />
-                <span className="text-sm">SOC 2 Type II Ready</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-400">
-                <Globe className="h-5 w-5" />
-                <span className="text-sm">Infraestrutura no Brasil</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Contact Section */}
-      <section id="contato" className="relative py-24 bg-[#0F2340]/50">
+      <section id="contato" className="relative py-20 bg-[#0F2340]/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16">
             <div className="space-y-8">
@@ -690,18 +770,18 @@ const LandingPage = () => {
                 </li>
                 <li>
                   <button
-                    onClick={() => scrollToSection("beneficios")}
+                    onClick={() => scrollToSection("como-funciona")}
                     className="text-gray-400 hover:text-white text-sm transition-colors"
                   >
-                    Benefícios
+                    Como Funciona
                   </button>
                 </li>
                 <li>
                   <button
-                    onClick={() => scrollToSection("seguranca")}
+                    onClick={() => scrollToSection("beneficios")}
                     className="text-gray-400 hover:text-white text-sm transition-colors"
                   >
-                    Segurança
+                    Benefícios
                   </button>
                 </li>
               </ul>
@@ -726,6 +806,14 @@ const LandingPage = () => {
                     Acessar Plataforma
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    to="/politica-privacidade"
+                    className="text-gray-400 hover:text-white text-sm transition-colors"
+                  >
+                    Política de Privacidade
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
@@ -741,6 +829,24 @@ const LandingPage = () => {
           </div>
         </div>
       </footer>
+
+      {/* CSS for carousel animation */}
+      <style>{`
+        @keyframes scroll-left {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+        .animate-scroll-left {
+          animation: scroll-left 30s linear infinite;
+        }
+        .animate-scroll-left:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
     </div>
   );
 };
