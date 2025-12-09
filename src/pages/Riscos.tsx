@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { capitalizeText, formatStatus, getRiscoStatusColor } from '@/lib/text-utils';
+import { capitalizeText, formatStatus, getRiscoStatusColor, getNivelRiscoColor } from '@/lib/text-utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
@@ -318,44 +318,6 @@ export function Riscos() {
     fetchRiscos();
   };
 
-  const getNivelBadgeVariant = (nivel: string) => {
-    if (matrizConfig) {
-      const nivelConfig = matrizConfig.niveis_risco.find(n => n.nivel === nivel);
-      if (nivelConfig?.cor) {
-        return 'default';
-      }
-    }
-
-    // Fallback para cores padrão se não houver configuração
-    switch (nivel) {
-      case 'Crítico':
-      case 'Muito Alto':
-        return 'destructive';
-      case 'Alto':
-        return 'destructive';
-      case 'Médio':
-        return 'secondary';
-      case 'Baixo':
-      case 'Muito Baixo':
-        return 'outline';
-      default:
-        return 'secondary';
-    }
-  };
-
-  const getNivelBadgeStyle = (nivel: string) => {
-    if (matrizConfig) {
-      const nivelConfig = matrizConfig.niveis_risco.find(n => n.nivel === nivel);
-      if (nivelConfig?.cor) {
-        return {
-          backgroundColor: nivelConfig.cor,
-          color: 'white',
-          borderColor: nivelConfig.cor
-        };
-      }
-    }
-    return {};
-  };
 
 
   const handleSort = (field: string) => {
@@ -444,10 +406,7 @@ export function Riscos() {
       label: 'Nível Inicial',
       className: undefined,
       render: (value: string) => (
-        <Badge 
-          variant={getNivelBadgeVariant(value)}
-          style={getNivelBadgeStyle(value)}
-        >
+        <Badge className={`${getNivelRiscoColor(value)} border whitespace-nowrap`}>
           {value}
         </Badge>
       )
@@ -457,13 +416,10 @@ export function Riscos() {
       label: 'Nível Residual',
       className: undefined,
       render: (value: string) => value ? (
-        <Badge 
-          variant={getNivelBadgeVariant(value)}
-          style={getNivelBadgeStyle(value)}
-        >
+        <Badge className={`${getNivelRiscoColor(value)} border whitespace-nowrap`}>
           {value}
         </Badge>
-      ) : <Badge variant="outline">Não avaliado</Badge>
+      ) : <Badge className="bg-gray-100 text-gray-800 border-gray-200 border whitespace-nowrap">Não avaliado</Badge>
     },
     {
       key: 'status',

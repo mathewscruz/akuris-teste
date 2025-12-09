@@ -322,6 +322,32 @@ export const getRiscoStatusColor = (status: string): string => {
 };
 
 /**
+ * Cores para nível de risco (Crítico, Muito Alto, Alto, Médio, Baixo, Muito Baixo)
+ * Usado em: Riscos - badges de nível de risco inicial e residual
+ */
+export const getNivelRiscoColor = (nivel: string): string => {
+  const value = nivel?.toLowerCase() || '';
+  switch (value) {
+    case 'critico':
+    case 'crítico':
+      return 'bg-red-100 text-red-800 border-red-200';
+    case 'muito alto':
+      return 'bg-red-100 text-red-800 border-red-200';
+    case 'alto':
+      return 'bg-orange-100 text-orange-800 border-orange-200';
+    case 'medio':
+    case 'médio':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case 'baixo':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case 'muito baixo':
+      return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
+/**
  * Cores para status de Due Diligence (Pendente, Ativo, Em Andamento, Concluído, Expirado)
  * Usado em: Due Diligence Assessments
  */

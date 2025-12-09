@@ -357,45 +357,9 @@ export default function Documentos() {
     });
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { className: string; label: string }> = {
-      'ativo': {
-        className: 'border-green-500 bg-green-50 text-green-700',
-        label: 'Ativo'
-      },
-      'inativo': {
-        className: 'border-gray-500 bg-gray-50 text-gray-700',
-        label: 'Inativo'
-      },
-      'arquivado': {
-        className: 'border-blue-500 bg-blue-50 text-blue-700',
-        label: 'Arquivado'
-      },
-      'pendente': {
-        className: 'border-yellow-500 bg-yellow-50 text-yellow-700',
-        label: 'Pendente'
-      },
-      'vencido': {
-        className: 'border-red-500 bg-red-50 text-red-700',
-        label: 'Vencido'
-      }
-    };
-
-    const config = statusConfig[status] || statusConfig.ativo;
-
-    return (
-      <Badge className={`border ${config.className} whitespace-nowrap`}>
-        {config.label}
-      </Badge>
-    );
-  };
-
   const getTipoBadge = (tipo: string) => {
     return (
-      <Badge 
-        variant="secondary" 
-        className={`border ${getTipoColor(tipo)} whitespace-nowrap`}
-      >
+      <Badge className={`border ${getTipoColor(tipo)} whitespace-nowrap`}>
         {capitalizeText(tipo)}
       </Badge>
     );
@@ -695,7 +659,11 @@ export default function Documentos() {
                           {capitalizeText(documento.classificacao || 'interna')}
                         </Badge>
                       </TableCell>
-                      <TableCell>{getStatusBadge(documento.status)}</TableCell>
+                      <TableCell>
+                        <Badge className={`${getItemStatusColor(documento.status)} border whitespace-nowrap`}>
+                          {formatStatus(documento.status)}
+                        </Badge>
+                      </TableCell>
                       <TableCell>v{documento.versao}</TableCell>
                       <TableCell>
                         <div className="flex items-center whitespace-nowrap">
