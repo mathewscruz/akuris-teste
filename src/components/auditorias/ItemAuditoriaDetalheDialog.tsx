@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -8,11 +8,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Edit,
   Paperclip,
@@ -25,6 +29,7 @@ import {
   Download,
   FileText,
   Loader2,
+  AtSign,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateOnly } from "@/lib/date-utils";
@@ -63,6 +68,26 @@ export function ItemAuditoriaDetalheDialog({
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ type: "evidencia" | "comentario"; id: string } | null>(null);
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionSearch, setMentionSearch] = useState("");
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Buscar usuários da empresa para menções
+  const { data: usuarios } = useQuery({
+    queryKey: ["usuarios-empresa"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, nome, email")
+        .eq("ativo", true)
+        .order("nome");
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open,
+  });
 
   // Buscar comentários
   const { data: comentarios, refetch: refetchComentarios } = useQuery({
@@ -76,7 +101,6 @@ export function ItemAuditoriaDetalheDialog({
 
       if (error) throw error;
 
-      // Buscar nomes dos usuários
       const userIds = [...new Set(data?.map(c => c.user_id) || [])];
       const { data: users } = await supabase
         .from("profiles")
@@ -110,20 +134,97 @@ export function ItemAuditoriaDetalheDialog({
     enabled: open && !!item?.id,
   });
 
+  // Filtrar usuários para menção
+  const filteredUsers = usuarios?.filter(u => 
+    u.nome?.toLowerCase().includes(mentionSearch.toLowerCase()) ||
+    u.email?.toLowerCase().includes(mentionSearch.toLowerCase())
+  ).slice(0, 5);
+
+  // Detectar @ no texto
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const position = e.target.selectionStart || 0;
+    setNovoComentario(value);
+    setCursorPosition(position);
+
+    // Verificar se está digitando uma menção
+    const textBeforeCursor = value.substring(0, position);
+    const atIndex = textBeforeCursor.lastIndexOf("@");
+    
+    if (atIndex !== -1) {
+      const textAfterAt = textBeforeCursor.substring(atIndex + 1);
+      // Se não tem espaço depois do @, está buscando uma menção
+      if (!textAfterAt.includes(" ")) {
+        setMentionSearch(textAfterAt);
+        setShowMentions(true);
+        return;
+      }
+    }
+    setShowMentions(false);
+  };
+
+  // Inserir menção
+  const insertMention = (user: { user_id: string; nome: string }) => {
+    const textBeforeCursor = novoComentario.substring(0, cursorPosition);
+    const atIndex = textBeforeCursor.lastIndexOf("@");
+    const textAfterCursor = novoComentario.substring(cursorPosition);
+    
+    const newText = 
+      novoComentario.substring(0, atIndex) + 
+      `@${user.nome} ` + 
+      textAfterCursor;
+    
+    setNovoComentario(newText);
+    setShowMentions(false);
+    textareaRef.current?.focus();
+  };
+
+  // Extrair menções do comentário
+  const extractMentions = (text: string): string[] => {
+    const mentionRegex = /@(\w+(?:\s+\w+)?)/g;
+    const mentions: string[] = [];
+    let match;
+    
+    while ((match = mentionRegex.exec(text)) !== null) {
+      const mentionName = match[1];
+      const user = usuarios?.find(u => u.nome?.includes(mentionName));
+      if (user) {
+        mentions.push(user.user_id);
+      }
+    }
+    
+    return mentions;
+  };
+
   const handleAddComentario = async () => {
     if (!novoComentario.trim()) return;
 
     setIsSubmittingComment(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
+      const mencoes = extractMentions(novoComentario);
 
       const { error } = await supabase.from("auditoria_itens_comentarios").insert({
         item_id: item.id,
         user_id: userData.user?.id,
         comentario: novoComentario.trim(),
+        mencoes: mencoes.length > 0 ? mencoes : null,
       });
 
       if (error) throw error;
+
+      // Notificar usuários mencionados
+      if (mencoes.length > 0) {
+        for (const userId of mencoes) {
+          await supabase.from("notifications").insert({
+            user_id: userId,
+            title: "Você foi mencionado",
+            message: `Você foi mencionado em um comentário no controle "${item.titulo}"`,
+            type: "info",
+            link_to: "/auditorias",
+          });
+        }
+      }
 
       setNovoComentario("");
       refetchComentarios();
@@ -220,6 +321,21 @@ export function ItemAuditoriaDetalheDialog({
     }
   };
 
+  // Renderizar comentário com menções destacadas
+  const renderCommentWithMentions = (text: string) => {
+    const parts = text.split(/(@\w+(?:\s+\w+)?)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith("@")) {
+        return (
+          <span key={index} className="text-primary font-medium">
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   if (!item) return null;
 
   const statusInfo = statusOptions[item.status] || statusOptions.pendente;
@@ -287,15 +403,47 @@ export function ItemAuditoriaDetalheDialog({
             </TabsList>
 
             <TabsContent value="comentarios" className="flex-1 overflow-hidden flex flex-col mt-4">
-              {/* Input de novo comentário */}
-              <div className="flex gap-2 mb-4 flex-shrink-0">
-                <Textarea
-                  placeholder="Adicione um comentário..."
-                  value={novoComentario}
-                  onChange={(e) => setNovoComentario(e.target.value)}
-                  rows={2}
-                  className="flex-1"
-                />
+              {/* Input de novo comentário com menções */}
+              <div className="flex gap-2 mb-4 flex-shrink-0 relative">
+                <div className="flex-1 relative">
+                  <Textarea
+                    ref={textareaRef}
+                    placeholder="Adicione um comentário... Use @ para mencionar alguém"
+                    value={novoComentario}
+                    onChange={handleCommentChange}
+                    rows={2}
+                    className="w-full pr-10"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-2 h-6 w-6 p-0"
+                    onClick={() => {
+                      setNovoComentario(prev => prev + "@");
+                      setShowMentions(true);
+                      textareaRef.current?.focus();
+                    }}
+                    title="Mencionar usuário"
+                  >
+                    <AtSign className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                  
+                  {/* Popover de menções */}
+                  {showMentions && filteredUsers && filteredUsers.length > 0 && (
+                    <div className="absolute left-0 top-full mt-1 w-64 bg-popover border rounded-md shadow-lg z-50">
+                      {filteredUsers.map((user) => (
+                        <button
+                          key={user.user_id}
+                          className="w-full px-3 py-2 text-left hover:bg-muted flex items-center gap-2 text-sm"
+                          onClick={() => insertMention(user)}
+                        >
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span>{user.nome}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <Button
                   onClick={handleAddComentario}
                   disabled={!novoComentario.trim() || isSubmittingComment}
@@ -341,7 +489,9 @@ export function ItemAuditoriaDetalheDialog({
                             </Button>
                           </div>
                         </div>
-                        <p className="text-sm whitespace-pre-wrap">{c.comentario}</p>
+                        <p className="text-sm whitespace-pre-wrap">
+                          {renderCommentWithMentions(c.comentario)}
+                        </p>
                       </div>
                     ))
                   )}

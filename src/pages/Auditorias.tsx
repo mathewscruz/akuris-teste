@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Plus, FileText, AlertTriangle, CheckCircle, Clock, Filter } from "lucide-react";
@@ -14,11 +13,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
 import { useUsuariosEmpresa } from "@/hooks/useAuditoriaData";
 import AuditoriaDialog from "@/components/auditorias/AuditoriaDialog";
-import TrabalhosDialog from "@/components/auditorias/TrabalhosDialog";
-import AchadosDialog from "@/components/auditorias/AchadosDialog";
-import RecomendacoesDialog from "@/components/auditorias/RecomendacoesDialog";
-import EvidenciasDialog from "@/components/auditorias/EvidenciasDialog";
-import ControlesAuditoriaDialog from "@/components/auditorias/ControlesAuditoriaDialog";
 import { ItensAuditoriaDialog } from "@/components/auditorias/ItensAuditoriaDialog";
 import { AuditoriaCardAccordion } from "@/components/auditorias/AuditoriaCardAccordion";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -31,12 +25,7 @@ const Auditorias = () => {
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
   const [selectedAuditoria, setSelectedAuditoria] = useState<any>(null);
   const [showAuditoriaDialog, setShowAuditoriaDialog] = useState(false);
-  const [showTrabalhosDialog, setShowTrabalhosDialog] = useState(false);
-  const [showAchadosDialog, setShowAchadosDialog] = useState(false);
-  const [showRecomendacoesDialog, setShowRecomendacoesDialog] = useState(false);
-  const [showEvidenciasDialog, setShowEvidenciasDialog] = useState(false);
   const [showControlesDialog, setShowControlesDialog] = useState(false);
-  const [showItensDialog, setShowItensDialog] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; nome?: string }>({ open: false, id: '' });
 
@@ -77,46 +66,27 @@ const Auditorias = () => {
     },
   });
 
-  // Buscar contagens para todas as auditorias de uma vez
+  // Buscar contagens de itens para todas as auditorias
   const { data: auditoriasCounts } = useQuery({
     queryKey: ['auditorias-counts', auditorias?.map(a => a.id)],
     queryFn: async () => {
       if (!auditorias || auditorias.length === 0) return {};
       
-      const counts: any = {};
+      const counts: Record<string, { itens: number; itensConcluidos: number }> = {};
       
       for (const auditoria of auditorias) {
-        const trabalhosRes = await supabase
-          .from('auditoria_trabalhos')
-          .select('id', { count: 'exact', head: true })
-          .eq('auditoria_id', auditoria.id);
-          
-        const achadosRes = await supabase
-          .from('auditoria_achados')
-          .select('id', { count: 'exact', head: true })
-          .eq('auditoria_id', auditoria.id);
-          
-        const recomendacoesRes = await supabase
-          .from('auditoria_recomendacoes')
-          .select('*, auditoria_achados!inner(auditoria_id)', { count: 'exact', head: true })
-          .eq('auditoria_achados.auditoria_id', auditoria.id);
-        
-        const controlesRes = await supabase
-          .from('controles_auditorias')
-          .select('id', { count: 'exact', head: true })
-          .eq('auditoria_id', auditoria.id);
-
+        // Total de itens
         const itensRes = await supabase
           .from('auditoria_itens')
-          .select('id', { count: 'exact', head: true })
+          .select('id, status', { count: 'exact' })
           .eq('auditoria_id', auditoria.id);
         
+        const itensTotal = itensRes.data?.length || 0;
+        const itensConcluidos = itensRes.data?.filter(i => i.status === 'concluido').length || 0;
+        
         counts[auditoria.id] = {
-          trabalhos: trabalhosRes.count ?? 0,
-          achados: achadosRes.count ?? 0,
-          recomendacoes: recomendacoesRes.count ?? 0,
-          controles: controlesRes.count ?? 0,
-          itens: itensRes.count ?? 0,
+          itens: itensTotal,
+          itensConcluidos,
         };
       }
       
@@ -160,34 +130,9 @@ const Auditorias = () => {
     refetch();
   };
 
-  const handleOpenTrabalhos = (auditoria: any) => {
-    setSelectedAuditoria(auditoria);
-    setShowTrabalhosDialog(true);
-  };
-
-  const handleOpenAchados = (auditoria: any) => {
-    setSelectedAuditoria(auditoria);
-    setShowAchadosDialog(true);
-  };
-
-  const handleOpenRecomendacoes = (auditoria: any) => {
-    setSelectedAuditoria(auditoria);
-    setShowRecomendacoesDialog(true);
-  };
-
-  const handleOpenEvidencias = (auditoria: any) => {
-    setSelectedAuditoria(auditoria);
-    setShowEvidenciasDialog(true);
-  };
-
   const handleOpenControles = (auditoria: any) => {
     setSelectedAuditoria(auditoria);
     setShowControlesDialog(true);
-  };
-
-  const handleOpenItens = (auditoria: any) => {
-    setSelectedAuditoria(auditoria);
-    setShowItensDialog(true);
   };
 
   // Detectar se veio com itemId do dashboard
@@ -198,11 +143,14 @@ const Auditorias = () => {
       if (auditoria) {
         setSelectedAuditoria(auditoria);
         setShowAuditoriaDialog(true);
-        // Limpar o state para evitar reaberturas
         window.history.replaceState({}, document.title);
       }
     }
   }, [location.state, auditorias]);
+
+  // Calcular estatísticas
+  const totalItens = Object.values(auditoriasCounts || {}).reduce((acc, c) => acc + c.itens, 0);
+  const totalConcluidos = Object.values(auditoriasCounts || {}).reduce((acc, c) => acc + c.itensConcluidos, 0);
 
   const statsCards = [
     {
@@ -218,9 +166,9 @@ const Auditorias = () => {
       icon: Clock,
     },
     {
-      title: "Concluídas",
-      value: auditorias?.filter(a => a.status === 'concluida').length || 0,
-      description: "Auditorias finalizadas",
+      title: "Controles Atendidos",
+      value: `${totalConcluidos}/${totalItens}`,
+      description: totalItens > 0 ? `${Math.round((totalConcluidos / totalItens) * 100)}% concluídos` : "Nenhum controle",
       icon: CheckCircle,
     },
     {
@@ -332,7 +280,7 @@ const Auditorias = () => {
           ) : (
             <div className="space-y-1 px-4 pb-4">
               {auditorias.map((auditoria) => {
-                const counts = auditoriasCounts?.[auditoria.id] || { trabalhos: 0, achados: 0, recomendacoes: 0, controles: 0, itens: 0 };
+                const counts = auditoriasCounts?.[auditoria.id] || { itens: 0, itensConcluidos: 0 };
                 const auditorResponsavel = usuarios?.find((u: any) => u.user_id === auditoria.auditor_responsavel);
                 
                 return (
@@ -342,12 +290,7 @@ const Auditorias = () => {
                     counts={counts}
                     onEdit={() => handleEdit(auditoria)}
                     onDelete={() => handleDelete(auditoria.id, auditoria.nome)}
-                    onOpenTrabalhos={() => handleOpenTrabalhos(auditoria)}
-                    onOpenAchados={() => handleOpenAchados(auditoria)}
-                    onOpenRecomendacoes={() => handleOpenRecomendacoes(auditoria)}
-                    onOpenEvidencias={() => handleOpenEvidencias(auditoria)}
                     onOpenControles={() => handleOpenControles(auditoria)}
-                    onOpenItens={() => handleOpenItens(auditoria)}
                     auditorNome={auditorResponsavel?.nome}
                   />
                 );
@@ -367,39 +310,9 @@ const Auditorias = () => {
         }}
       />
 
-      <TrabalhosDialog
-        open={showTrabalhosDialog}
-        onOpenChange={setShowTrabalhosDialog}
-        auditoria={selectedAuditoria}
-      />
-
-      <AchadosDialog
-        open={showAchadosDialog}
-        onOpenChange={setShowAchadosDialog}
-        auditoria={selectedAuditoria}
-      />
-
-      <RecomendacoesDialog
-        open={showRecomendacoesDialog}
-        onOpenChange={setShowRecomendacoesDialog}
-        auditoria={selectedAuditoria}
-      />
-
-      <EvidenciasDialog
-        open={showEvidenciasDialog}
-        onOpenChange={setShowEvidenciasDialog}
-        auditoria={selectedAuditoria}
-      />
-
-      <ControlesAuditoriaDialog
+      <ItensAuditoriaDialog
         open={showControlesDialog}
         onOpenChange={setShowControlesDialog}
-        auditoria={selectedAuditoria}
-      />
-
-      <ItensAuditoriaDialog
-        open={showItensDialog}
-        onOpenChange={setShowItensDialog}
         auditoriaId={selectedAuditoria?.id}
         auditoriaNome={selectedAuditoria?.nome}
       />

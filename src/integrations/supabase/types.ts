@@ -812,6 +812,47 @@ export type Database = {
           },
         ]
       }
+      auditoria_areas_sistemas: {
+        Row: {
+          auditoria_id: string | null
+          created_at: string
+          descricao: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          tipo: string | null
+          updated_at: string
+        }
+        Insert: {
+          auditoria_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          tipo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auditoria_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          tipo?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_areas_sistemas_auditoria_id_fkey"
+            columns: ["auditoria_id"]
+            isOneToOne: false
+            referencedRelation: "auditorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auditoria_evidencias: {
         Row: {
           achado_id: string | null
@@ -884,6 +925,7 @@ export type Database = {
       }
       auditoria_itens: {
         Row: {
+          area_sistema_id: string | null
           auditoria_id: string
           codigo: string
           controle_vinculado_id: string | null
@@ -900,6 +942,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          area_sistema_id?: string | null
           auditoria_id: string
           codigo: string
           controle_vinculado_id?: string | null
@@ -916,6 +959,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          area_sistema_id?: string | null
           auditoria_id?: string
           codigo?: string
           controle_vinculado_id?: string | null
@@ -932,6 +976,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "auditoria_itens_area_sistema_id_fkey"
+            columns: ["area_sistema_id"]
+            isOneToOne: false
+            referencedRelation: "auditoria_areas_sistemas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "auditoria_itens_auditoria_id_fkey"
             columns: ["auditoria_id"]
@@ -961,6 +1012,7 @@ export type Database = {
           created_at: string
           id: string
           item_id: string
+          mencoes: string[] | null
           user_id: string
         }
         Insert: {
@@ -968,6 +1020,7 @@ export type Database = {
           created_at?: string
           id?: string
           item_id: string
+          mencoes?: string[] | null
           user_id: string
         }
         Update: {
@@ -975,6 +1028,7 @@ export type Database = {
           created_at?: string
           id?: string
           item_id?: string
+          mencoes?: string[] | null
           user_id?: string
         }
         Relationships: [
