@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { Gauge } from "lucide-react";
 
 interface GovernanceGaugeProps {
   overallScore: number;
@@ -20,7 +21,10 @@ export const GovernanceGauge: React.FC<GovernanceGaugeProps> = ({
   maxScore = 100,
   title = "Nível de Governança" 
 }) => {
-  const percentage = (overallScore / maxScore) * 100;
+  // Validar score - garantir que é um número válido
+  const validScore = typeof overallScore === 'number' && !isNaN(overallScore) ? overallScore : 0;
+  const validMaxScore = typeof maxScore === 'number' && maxScore > 0 ? maxScore : 100;
+  const percentage = Math.min(Math.max((validScore / validMaxScore) * 100, 0), 100);
   
   const getGaugeColor = () => {
     for (const level of GAUGE_COLORS) {
@@ -32,6 +36,36 @@ export const GovernanceGauge: React.FC<GovernanceGaugeProps> = ({
   };
 
   const { color, label } = getGaugeColor();
+
+  // Estado vazio quando score é 0 e não há dados
+  if (validScore === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground">
+            <Gauge className="h-12 w-12 mb-4 opacity-50" />
+            <p className="text-sm">Nenhuma avaliação realizada</p>
+            <p className="text-xs mt-1">Avalie os requisitos para ver o nível de governança</p>
+          </div>
+          {/* Legend */}
+          <div className="flex flex-wrap gap-3 mt-6 justify-center">
+            {GAUGE_COLORS.map((level) => (
+              <div key={level.label} className="flex items-center gap-1">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ backgroundColor: level.color }}
+                />
+                <span className="text-xs text-muted-foreground">{level.label}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Create gauge data (semicircle)
   const gaugeData = [
@@ -67,7 +101,7 @@ export const GovernanceGauge: React.FC<GovernanceGaugeProps> = ({
           
           <div className="text-center -mt-8">
             <div className="text-4xl font-bold" style={{ color }}>
-              {overallScore.toFixed(1)}
+              {validScore.toFixed(1)}
             </div>
             <div className="text-sm text-muted-foreground mt-1">
               {label}

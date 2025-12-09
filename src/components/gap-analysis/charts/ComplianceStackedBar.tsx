@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { BarChart3 } from "lucide-react";
 
 interface CategoryScore {
   category: string;
@@ -24,55 +25,82 @@ export const ComplianceStackedBar: React.FC<ComplianceStackedBarProps> = ({
   categoryScores, 
   title = "Status de Conformidade por Categoria" 
 }) => {
-  // Transform data to show status breakdown
-  const chartData = categoryScores.map(cat => {
-    const conformePercent = cat.score;
-    const evaluatedPercent = (cat.evaluated / cat.total) * 100;
-    const naoAvaliadoPercent = 100 - evaluatedPercent;
+  // Validar dados antes de processar
+  const validScores = categoryScores?.filter(cat => cat && cat.category) || [];
+  
+  if (validScores.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
+            <BarChart3 className="h-12 w-12 mb-4 opacity-50" />
+            <p className="text-sm">Nenhum requisito avaliado ainda</p>
+            <p className="text-xs mt-1">Avalie os requisitos para ver o gráfico de conformidade</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Transform data to show status breakdown with safe division
+  const chartData = validScores.map(cat => {
+    const total = cat.total || 0;
+    const evaluated = cat.evaluated || 0;
+    const score = cat.score || 0;
+    
+    // Evitar divisão por zero
+    const evaluatedPercent = total > 0 ? (evaluated / total) * 100 : 0;
+    const conformePercent = Math.min(score, evaluatedPercent);
+    const naoAvaliadoPercent = Math.max(100 - evaluatedPercent, 0);
     
     // Estimate partial/non-compliant from evaluated but not fully compliant
-    const remainingEvaluated = evaluatedPercent - conformePercent;
-    const parcialPercent = remainingEvaluated * 0.5; // rough estimate
+    const remainingEvaluated = Math.max(evaluatedPercent - conformePercent, 0);
+    const parcialPercent = remainingEvaluated * 0.5;
     const naoConformePercent = remainingEvaluated * 0.5;
 
+    const categoryName = String(cat.category || '');
+    
     return {
-      name: cat.category.length > 15 ? cat.category.substring(0, 15) + '...' : cat.category,
-      fullName: cat.category,
+      name: categoryName.length > 15 ? categoryName.substring(0, 15) + '...' : categoryName,
+      fullName: categoryName,
       conforme: conformePercent,
       parcial: parcialPercent,
       naoConforme: naoConformePercent,
       naoAvaliado: naoAvaliadoPercent,
-      total: cat.total,
-      evaluated: cat.evaluated
+      total: total,
+      evaluated: evaluated
     };
   });
 
   const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
+    if (active && payload && payload.length && payload[0]?.payload) {
       const data = payload[0].payload;
       return (
         <div className="bg-background border border-border rounded-md p-3 shadow-lg">
-          <p className="font-semibold mb-2">{data.fullName}</p>
+          <p className="font-semibold mb-2">{data.fullName || '-'}</p>
           <div className="space-y-1 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded" style={{ backgroundColor: STATUS_COLORS.conforme }} />
-              <span>Conforme: {data.conforme.toFixed(1)}%</span>
+              <span>Conforme: {(data.conforme || 0).toFixed(1)}%</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded" style={{ backgroundColor: STATUS_COLORS.parcial }} />
-              <span>Parcial: {data.parcial.toFixed(1)}%</span>
+              <span>Parcial: {(data.parcial || 0).toFixed(1)}%</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded" style={{ backgroundColor: STATUS_COLORS.naoConforme }} />
-              <span>Não Conforme: {data.naoConforme.toFixed(1)}%</span>
+              <span>Não Conforme: {(data.naoConforme || 0).toFixed(1)}%</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded" style={{ backgroundColor: STATUS_COLORS.naoAvaliado }} />
-              <span>Não Avaliado: {data.naoAvaliado.toFixed(1)}%</span>
+              <span>Não Avaliado: {(data.naoAvaliado || 0).toFixed(1)}%</span>
             </div>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            {data.evaluated}/{data.total} requisitos avaliados
+            {data.evaluated || 0}/{data.total || 0} requisitos avaliados
           </p>
         </div>
       );

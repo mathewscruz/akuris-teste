@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Treemap, ResponsiveContainer, Tooltip } from "recharts";
+import { FileText } from "lucide-react";
 
 interface CategoryScore {
   category: string;
@@ -13,28 +14,27 @@ interface PrivacyTreemapProps {
   title?: string;
 }
 
-const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-  'hsl(var(--primary))',
-  'hsl(var(--accent))',
-];
+const getScoreColor = (score: number): string => {
+  if (score >= 80) return "#16a34a"; // green
+  if (score >= 60) return "#2563eb"; // blue
+  if (score >= 40) return "#eab308"; // yellow
+  if (score >= 20) return "#f97316"; // orange
+  return "#dc2626"; // red
+};
 
 const CustomizedContent = (props: any) => {
   const { x, y, width, height, name, score, total } = props;
   
+  // Validar props antes de renderizar - crítico para evitar erros
+  if (name === undefined || name === null || score === undefined || total === undefined) {
+    return null;
+  }
+  
   if (width < 60 || height < 40) return null;
   
-  const getScoreColor = (score: number): string => {
-    if (score >= 80) return "#16a34a"; // green
-    if (score >= 60) return "#2563eb"; // blue
-    if (score >= 40) return "#eab308"; // yellow
-    if (score >= 20) return "#f97316"; // orange
-    return "#dc2626"; // red
-  };
+  const displayName = String(name);
+  const displayScore = Number(score) || 0;
+  const displayTotal = Number(total) || 0;
 
   return (
     <g>
@@ -44,7 +44,7 @@ const CustomizedContent = (props: any) => {
         width={width}
         height={height}
         style={{
-          fill: getScoreColor(score),
+          fill: getScoreColor(displayScore),
           stroke: 'hsl(var(--background))',
           strokeWidth: 2,
           fillOpacity: 0.7,
@@ -58,7 +58,7 @@ const CustomizedContent = (props: any) => {
         fontSize={12}
         fontWeight="600"
       >
-        {name.length > 20 ? name.substring(0, 20) + '...' : name}
+        {displayName.length > 20 ? displayName.substring(0, 20) + '...' : displayName}
       </text>
       <text
         x={x + width / 2}
@@ -68,7 +68,7 @@ const CustomizedContent = (props: any) => {
         fontSize={16}
         fontWeight="bold"
       >
-        {score.toFixed(0)}%
+        {displayScore.toFixed(0)}%
       </text>
       <text
         x={x + width / 2}
@@ -77,7 +77,7 @@ const CustomizedContent = (props: any) => {
         fill="white"
         fontSize={10}
       >
-        {total} itens
+        {displayTotal} itens
       </text>
     </g>
   );
@@ -87,13 +87,32 @@ export const PrivacyTreemap: React.FC<PrivacyTreemapProps> = ({
   categoryScores, 
   title = "Mapa de Conformidade por Capítulo" 
 }) => {
-  const data = categoryScores.map((cat, index) => ({
+  // Validar dados antes de processar
+  const validScores = categoryScores?.filter(cat => cat && cat.category && cat.total > 0) || [];
+  
+  if (validScores.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
+            <FileText className="h-12 w-12 mb-4 opacity-50" />
+            <p className="text-sm">Nenhum requisito avaliado ainda</p>
+            <p className="text-xs mt-1">Avalie os requisitos para ver o mapa de conformidade</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const data = validScores.map((cat, index) => ({
     name: cat.category,
-    size: cat.total,
+    size: Math.max(cat.total, 1), // Evitar size 0
     score: cat.score,
     total: cat.total,
     evaluated: cat.evaluated,
-    fill: COLORS[index % COLORS.length]
   }));
 
   return (
@@ -116,10 +135,14 @@ export const PrivacyTreemap: React.FC<PrivacyTreemapProps> = ({
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '6px'
               }}
-              formatter={(value: any, name: string, props: any) => [
-                `${props.payload.score.toFixed(1)}% (${props.payload.evaluated}/${props.payload.total} avaliados)`,
-                props.payload.name
-              ]}
+              formatter={(value: any, name: string, props: any) => {
+                if (!props?.payload) return ['-', '-'];
+                const payload = props.payload;
+                return [
+                  `${(payload.score || 0).toFixed(1)}% (${payload.evaluated || 0}/${payload.total || 0} avaliados)`,
+                  payload.name || '-'
+                ];
+              }}
             />
           </Treemap>
         </ResponsiveContainer>
