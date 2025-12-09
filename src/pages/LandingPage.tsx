@@ -18,7 +18,6 @@ import {
   X,
   CheckCircle2,
   Zap,
-  Globe,
   ChevronRight,
   TrendingUp,
   Clock,
@@ -27,6 +26,13 @@ import {
   BarChart3,
   Workflow,
   Building2,
+  TableProperties,
+  RefreshCw,
+  XCircle,
+  CheckCircle,
+  Headphones,
+  Rocket,
+  GraduationCap,
 } from "lucide-react";
 
 const LandingPage = () => {
@@ -126,12 +132,20 @@ const LandingPage = () => {
     },
   ];
 
-  // Indicadores reais da plataforma
+  // Indicadores reais da plataforma - Hero section
   const stats = [
     { value: "20+", label: "Frameworks Suportados", icon: Shield },
     { value: "8", label: "Módulos Integrados", icon: Zap },
     { value: "Multi", label: "Empresas Isoladas", icon: Building2 },
     { value: "Auto", label: "Workflows Inteligentes", icon: Workflow },
+  ];
+
+  // Indicadores diferentes para Benefits section
+  const benefitStats = [
+    { value: "99.9%", label: "Uptime Garantido", icon: TrendingUp },
+    { value: "24h", label: "Suporte Especializado", icon: Headphones },
+    { value: "48h", label: "Implantação Rápida", icon: Rocket },
+    { value: "100%", label: "Treinamento Incluído", icon: GraduationCap },
   ];
 
   const benefits = [
@@ -203,6 +217,15 @@ const LandingPage = () => {
     },
   ];
 
+  // Problemas das planilhas vs GovernAII
+  const spreadsheetProblems = [
+    { icon: XCircle, problem: "Informações espalhadas em dezenas de arquivos", solution: "Tudo centralizado em um único lugar" },
+    { icon: XCircle, problem: "Sem controle de versão e histórico", solution: "Versionamento automático completo" },
+    { icon: XCircle, problem: "Erros manuais e dados inconsistentes", solution: "Validações e integridade nativas" },
+    { icon: XCircle, problem: "Sem trilha de auditoria", solution: "Logs completos de todas as ações" },
+    { icon: XCircle, problem: "Notificações manuais e esquecidas", solution: "Alertas e lembretes automáticos" },
+  ];
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -234,7 +257,7 @@ const LandingPage = () => {
               <img
                 src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/empresa-logos/Governiaa%20(500%20x%20200%20px).png"
                 alt="GovernAII"
-                className="h-14 w-auto"
+                className="h-20 w-auto"
               />
             </div>
 
@@ -317,7 +340,7 @@ const LandingPage = () => {
         </div>
       </header>
 
-      {/* Hero Section - Reduced spacing */}
+      {/* Hero Section */}
       <section className="relative min-h-[85vh] flex items-center pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -433,7 +456,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Frameworks Carousel - Reduced padding */}
+      {/* Frameworks Carousel */}
       <section className="relative py-8 border-y border-white/5 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-center text-sm text-gray-500 mb-6">
@@ -475,41 +498,124 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="modulos" className="relative py-20">
+      {/* Esqueça as Planilhas Section - NEW */}
+      <section className="relative py-20 bg-gradient-to-b from-[#0A1628] via-[#0F2340] to-[#0A1628]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Módulos <span className="landing-gradient-text">Integrados</span>
+              Esqueça as <span className="landing-gradient-text">Planilhas</span>
             </h2>
             <p className="text-gray-400 max-w-2xl mx-auto">
-              Uma plataforma completa para gestão de governança, riscos e conformidade
+              Centralize toda a governança da sua empresa em um único lugar. 
+              Chega de arquivos espalhados, versões desatualizadas e erros manuais.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="group landing-glass-light rounded-2xl p-5 hover:bg-white/5 transition-all duration-300 landing-card-glow"
-              >
-                <div
-                  className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${feature.color} mb-4 group-hover:scale-110 transition-transform`}
-                >
-                  <feature.icon className="h-5 w-5 text-white" />
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left - Visual Transition */}
+            <div className="relative">
+              <div className="flex items-center justify-center gap-8">
+                {/* Spreadsheet Chaos */}
+                <div className="relative">
+                  <div className="w-48 h-56 bg-gradient-to-br from-red-900/30 to-red-800/20 rounded-2xl border border-red-500/30 p-4 transform -rotate-6 shadow-2xl">
+                    <div className="flex items-center gap-2 mb-3">
+                      <TableProperties className="h-5 w-5 text-red-400" />
+                      <span className="text-xs text-red-400 font-medium">planilha_v23_final.xlsx</span>
+                    </div>
+                    <div className="space-y-2">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="h-4 bg-red-500/10 rounded animate-pulse" style={{ width: `${60 + Math.random() * 40}%` }} />
+                      ))}
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 bg-red-500 text-white text-[10px] px-2 py-1 rounded-full">
+                      DESATUALIZADO
+                    </div>
+                  </div>
+                  <div className="absolute -top-4 -left-4 w-40 h-48 bg-gradient-to-br from-orange-900/30 to-orange-800/20 rounded-2xl border border-orange-500/30 p-3 transform rotate-3 -z-10">
+                    <div className="space-y-2">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="h-3 bg-orange-500/10 rounded" style={{ width: `${50 + Math.random() * 50}%` }} />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="absolute -top-8 left-8 w-36 h-44 bg-gradient-to-br from-yellow-900/30 to-yellow-800/20 rounded-2xl border border-yellow-500/30 p-3 transform -rotate-12 -z-20 opacity-60" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2 text-white">{feature.title}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">{feature.description}</p>
-                <div className="mt-4 flex items-center text-blue-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                  Saiba mais <ChevronRight className="h-4 w-4 ml-1" />
+
+                {/* Arrow */}
+                <div className="flex flex-col items-center gap-2">
+                  <RefreshCw className="h-8 w-8 text-blue-400 animate-spin-slow" />
+                  <ArrowRight className="h-12 w-12 text-blue-400" />
+                  <span className="text-xs text-blue-400 font-medium">TRANSFORME</span>
+                </div>
+
+                {/* GovernAII System */}
+                <div className="relative">
+                  <div className="w-52 h-60 bg-gradient-to-br from-blue-900/40 to-cyan-800/30 rounded-2xl border border-blue-500/50 p-4 shadow-2xl shadow-blue-500/20">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Shield className="h-5 w-5 text-blue-400" />
+                      <span className="text-xs text-blue-400 font-medium">GovernAII</span>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                        <span className="text-xs text-gray-300">Riscos</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                        <span className="text-xs text-gray-300">Controles</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                        <span className="text-xs text-gray-300">Gap Analysis</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                        <span className="text-xs text-gray-300">Documentos</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                        <span className="text-xs text-gray-300">Auditorias</span>
+                      </div>
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 bg-green-500 text-white text-[10px] px-2 py-1 rounded-full">
+                      INTEGRADO
+                    </div>
+                  </div>
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* Right - Problems vs Solutions */}
+            <div className="space-y-4">
+              {spreadsheetProblems.map((item, index) => (
+                <div key={index} className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-blue-500/30 transition-colors">
+                  <div className="flex items-center gap-3 flex-1">
+                    <XCircle className="h-5 w-5 text-red-400 shrink-0" />
+                    <span className="text-sm text-gray-400 line-through">{item.problem}</span>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-gray-600 shrink-0" />
+                  <div className="flex items-center gap-3 flex-1">
+                    <CheckCircle className="h-5 w-5 text-green-400 shrink-0" />
+                    <span className="text-sm text-white font-medium">{item.solution}</span>
+                  </div>
+                </div>
+              ))}
+
+              <div className="mt-6 p-6 rounded-2xl bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-500/30">
+                <p className="text-lg text-white font-medium mb-2">
+                  Mais de 500 horas economizadas por ano
+                </p>
+                <p className="text-sm text-gray-400">
+                  Empresas que migram de planilhas para o GovernAII relatam redução significativa 
+                  no tempo gasto com gestão manual e retrabalho.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works Section - Replaces Security Section */}
+      {/* How It Works Section */}
       <section id="como-funciona" className="relative py-20 bg-[#0F2340]/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -566,8 +672,42 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Features Section */}
+      <section id="modulos" className="relative py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              Módulos <span className="landing-gradient-text">Integrados</span>
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Uma plataforma completa para gestão de governança, riscos e conformidade
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {features.map((feature, index) => (
+              <div
+                key={index}
+                className="group landing-glass-light rounded-2xl p-5 hover:bg-white/5 transition-all duration-300 landing-card-glow"
+              >
+                <div
+                  className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${feature.color} mb-4 group-hover:scale-110 transition-transform`}
+                >
+                  <feature.icon className="h-5 w-5 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2 text-white">{feature.title}</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">{feature.description}</p>
+                <div className="mt-4 flex items-center text-blue-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                  Saiba mais <ChevronRight className="h-4 w-4 ml-1" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Benefits Section */}
-      <section id="beneficios" className="relative py-20">
+      <section id="beneficios" className="relative py-20 bg-[#0F2340]/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-8">
@@ -598,12 +738,12 @@ const LandingPage = () => {
             <div className="relative">
               <div className="landing-glass rounded-2xl p-8 landing-border-gradient">
                 <div className="grid grid-cols-2 gap-6">
-                  {stats.map((stat, index) => (
+                  {benefitStats.map((stat, index) => (
                     <div
                       key={index}
                       className="text-center p-6 bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
                     >
-                      <stat.icon className="h-8 w-8 text-blue-400 mx-auto mb-3" />
+                      <stat.icon className="h-8 w-8 text-cyan-400 mx-auto mb-3" />
                       <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
                       <div className="text-sm text-gray-400">{stat.label}</div>
                     </div>
@@ -753,7 +893,6 @@ const LandingPage = () => {
               </div>
               <p className="text-gray-400 text-sm max-w-sm">
                 Plataforma completa para gestão de governança, riscos e conformidade.
-                Desenvolvida no Brasil para atender às necessidades do mercado nacional.
               </p>
             </div>
 
@@ -822,10 +961,6 @@ const LandingPage = () => {
             <p className="text-gray-500 text-sm">
               © {new Date().getFullYear()} GovernAII. Todos os direitos reservados.
             </p>
-            <div className="flex items-center gap-2 text-gray-500 text-sm">
-              <Globe className="h-4 w-4" />
-              <span>Feito no Brasil 🇧🇷</span>
-            </div>
           </div>
         </div>
       </footer>
@@ -845,6 +980,17 @@ const LandingPage = () => {
         }
         .animate-scroll-left:hover {
           animation-play-state: paused;
+        }
+        @keyframes spin-slow {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 8s linear infinite;
         }
       `}</style>
     </div>
