@@ -6,6 +6,10 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Mail } from 'lucide-react';
+import { z } from 'zod';
+import { logger } from '@/lib/logger';
+
+const emailSchema = z.string().min(1, 'Email é obrigatório').email('Email inválido');
 
 interface ForgotPasswordDialogProps {
   open: boolean;
@@ -15,47 +19,50 @@ interface ForgotPasswordDialogProps {
 export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialogProps) {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setEmailError(null);
     
-    if (!email) {
-      toast.error('Por favor, digite seu e-mail');
+    // Validação com Zod
+    const validation = emailSchema.safeParse(email.trim());
+    if (!validation.success) {
+      setEmailError(validation.error.errors[0].message);
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Buscar o usuário pelo email
-      const { data: profile, error: profileError } = await supabase
+      // Buscar o usuário pelo email (sem revelar se existe ou não)
+      const { data: profile } = await supabase
         .from('profiles')
         .select('user_id, nome, email')
-        .eq('email', email)
+        .eq('email', email.trim())
         .single();
 
-      if (profileError || !profile) {
-        toast.error('E-mail não encontrado no sistema');
-        return;
+      // Se o perfil existir, enviar o reset
+      if (profile) {
+        const { error } = await supabase.functions.invoke('send-password-reset', {
+          body: { userId: profile.user_id }
+        });
+
+        if (error) {
+          logger.error('Erro ao enviar reset de senha', { module: 'Auth', action: 'password-reset' });
+        }
       }
 
-      // Chamar a edge function para enviar o reset
-      const { error } = await supabase.functions.invoke('send-password-reset', {
-        body: { userId: profile.user_id }
-      });
-
-      if (error) {
-        console.error('Erro ao enviar reset:', error);
-        toast.error('Erro ao enviar e-mail de recuperação');
-        return;
-      }
-
-      toast.success('E-mail de recuperação enviado com sucesso!');
+      // SEMPRE mostrar mensagem de sucesso (proteção contra enumeração de emails)
+      toast.success('Se o e-mail estiver cadastrado, você receberá as instruções de recuperação.');
       setEmail('');
       onOpenChange(false);
     } catch (error: any) {
-      console.error('Erro:', error);
-      toast.error('Erro interno. Tente novamente.');
+      logger.error('Erro no processo de recuperação de senha', { module: 'Auth', action: 'password-reset' });
+      // Mesmo em caso de erro, mostrar mensagem genérica
+      toast.success('Se o e-mail estiver cadastrado, você receberá as instruções de recuperação.');
+      setEmail('');
+      onOpenChange(false);
     } finally {
       setIsLoading(false);
     }
@@ -76,15 +83,22 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
+            <Label htmlFor="forgot-email">E-mail</Label>
             <Input
-              id="email"
+              id="forgot-email"
               type="email"
               placeholder="seu.email@empresa.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError(null);
+              }}
+              autoFocus
+              className={emailError ? 'border-destructive' : ''}
             />
+            {emailError && (
+              <p className="text-sm text-destructive">{emailError}</p>
+            )}
           </div>
           
           <div className="flex gap-3 pt-4">
@@ -92,6 +106,7 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={isLoading}
               className="flex-1"
             >
               Cancelar
