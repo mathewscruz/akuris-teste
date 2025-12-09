@@ -1,16 +1,21 @@
-
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Calendar, DollarSign, User } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDateOnly } from '@/lib/date-utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { TratamentoDialog } from './TratamentoDialog';
+
+interface ResponsavelProfile {
+  user_id: string;
+  nome: string;
+  foto_url?: string;
+}
 
 interface Tratamento {
   id: string;
@@ -23,6 +28,7 @@ interface Tratamento {
   status: string;
   eficacia?: string;
   created_at: string;
+  responsavel_profile?: ResponsavelProfile;
 }
 
 interface TratamentosListProps {
@@ -53,7 +59,27 @@ export function TratamentosList({ riscoId, riscoNome, riscoData }: TratamentosLi
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTratamentos(data || []);
+      
+      // Buscar perfis dos responsáveis (que são user_id)
+      const tratamentosComPerfis = await Promise.all(
+        (data || []).map(async (tratamento) => {
+          if (tratamento.responsavel) {
+            // Tentar buscar como UUID (user_id)
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('user_id, nome, foto_url')
+              .eq('user_id', tratamento.responsavel)
+              .single();
+            
+            if (profile) {
+              return { ...tratamento, responsavel_profile: profile };
+            }
+          }
+          return tratamento;
+        })
+      );
+      
+      setTratamentos(tratamentosComPerfis);
     } catch (error: any) {
       toast.error('Erro ao carregar tratamentos: ' + error.message);
     } finally {
@@ -209,11 +235,18 @@ export function TratamentosList({ riscoId, riscoNome, riscoData }: TratamentosLi
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {tratamento.responsavel ? (
-                        <div className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {tratamento.responsavel}
+                      {tratamento.responsavel_profile ? (
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={tratamento.responsavel_profile.foto_url || ''} />
+                            <AvatarFallback className="text-xs">
+                              {tratamento.responsavel_profile.nome?.charAt(0)?.toUpperCase() || '?'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm">{tratamento.responsavel_profile.nome}</span>
                         </div>
+                      ) : tratamento.responsavel ? (
+                        <span className="text-sm text-muted-foreground">{tratamento.responsavel}</span>
                       ) : (
                         <span className="text-muted-foreground">-</span>
                       )}
@@ -222,7 +255,7 @@ export function TratamentosList({ riscoId, riscoNome, riscoData }: TratamentosLi
                       {tratamento.prazo ? (
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {format(new Date(tratamento.prazo), "dd/MM/yyyy", { locale: ptBR })}
+                          {formatDateOnly(tratamento.prazo)}
                         </div>
                       ) : (
                         <span className="text-muted-foreground">-</span>

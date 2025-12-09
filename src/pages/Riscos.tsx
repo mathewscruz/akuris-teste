@@ -515,38 +515,44 @@ export function Riscos() {
       label: 'Status',
       type: 'select' as const,
       options: [
+        { value: 'all', label: 'Todos' },
         { value: 'identificado', label: 'Identificado' },
         { value: 'analisado', label: 'Analisado' },
+        { value: 'em_tratamento', label: 'Em Tratamento' },
         { value: 'tratado', label: 'Tratado' },
         { value: 'monitorado', label: 'Monitorado' },
         { value: 'aceito', label: 'Aceito' }
       ],
       value: statusFilter,
-      onChange: setStatusFilter
+      onChange: (value: string) => setStatusFilter(value === 'all' ? '' : value)
     },
     {
       key: 'nivel',
       label: 'Nível',
       type: 'select' as const,
       options: [
+        { value: 'all', label: 'Todos' },
         { value: 'Crítico', label: 'Crítico' },
+        { value: 'Muito Alto', label: 'Muito Alto' },
         { value: 'Alto', label: 'Alto' },
         { value: 'Médio', label: 'Médio' },
-        { value: 'Baixo', label: 'Baixo' }
+        { value: 'Baixo', label: 'Baixo' },
+        { value: 'Muito Baixo', label: 'Muito Baixo' }
       ],
       value: nivelFilter,
-      onChange: setNivelFilter
+      onChange: (value: string) => setNivelFilter(value === 'all' ? '' : value)
     },
     {
       key: 'aceito',
       label: 'Aceito',
       type: 'select' as const,
       options: [
+        { value: 'all', label: 'Todos' },
         { value: 'aceito', label: 'Aceitos' },
         { value: 'nao_aceito', label: 'Não Aceitos' }
       ],
       value: aceitoFilter,
-      onChange: setAceitoFilter
+      onChange: (value: string) => setAceitoFilter(value === 'all' ? '' : value)
     }
   ];
 
