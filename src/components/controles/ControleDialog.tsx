@@ -163,6 +163,9 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
       };
 
       let controleId: string;
+      const previousResponsavelId = controle?.responsavel_id;
+      const isNewResponsavel = data.responsavel_id && 
+        ((!controle && data.responsavel_id) || (controle && previousResponsavelId !== data.responsavel_id));
 
       if (controle) {
         const { error } = await supabase
@@ -212,6 +215,31 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
         await supabase
           .from('controles_auditorias')
           .insert(auditoriasInserts);
+      }
+
+      // Send notification to new responsible user
+      if (isNewResponsavel && data.responsavel_id) {
+        try {
+          console.log("Sending controle notification to:", data.responsavel_id);
+          const { error: notificationError } = await supabase.functions.invoke('send-controle-notification', {
+            body: {
+              controle_id: controleId,
+              controle_nome: data.nome,
+              controle_descricao: data.descricao,
+              proxima_avaliacao: data.proxima_avaliacao,
+              responsavel_id: data.responsavel_id
+            }
+          });
+          
+          if (notificationError) {
+            console.error("Error sending notification:", notificationError);
+          } else {
+            console.log("Controle notification sent successfully");
+          }
+        } catch (notifyError) {
+          console.error("Failed to send controle notification:", notifyError);
+          // Don't throw - notification failure shouldn't block the save
+        }
       }
     },
     onSuccess: () => {

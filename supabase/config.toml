@@ -111,3 +111,6 @@ verify_jwt = true
 
 [functions.send-review-notification]
 verify_jwt = false
+
+[functions.send-controle-notification]
+verify_jwt = true

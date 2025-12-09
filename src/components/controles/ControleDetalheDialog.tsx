@@ -24,6 +24,7 @@ import {
   Shield,
   Activity,
   Link2,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateOnly } from "@/lib/date-utils";
@@ -296,22 +297,22 @@ export function ControleDetalheDialog({
           </DialogHeader>
 
           {/* Metadados do controle - linha separada */}
-          <div className="flex-shrink-0 flex flex-wrap gap-4 items-center text-sm border-b pb-4">
+          <div className="flex-shrink-0 flex flex-wrap gap-4 items-center text-sm bg-muted/30 rounded-lg p-3">
             {controle.responsavel_nome && (
               <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
+                <User className="h-4 w-4 text-primary" />
                 <span className="font-medium">{controle.responsavel_nome}</span>
               </div>
             )}
             {controle.frequencia && (
-              <div className="flex items-center gap-1.5">
-                <Activity className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Activity className="h-4 w-4" />
                 <span>{capitalizeText(controle.frequencia)}</span>
               </div>
             )}
             {controle.proxima_avaliacao && (
-              <div className="flex items-center gap-1.5">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Calendar className="h-4 w-4" />
                 <span>{formatDateOnly(controle.proxima_avaliacao)}</span>
               </div>
             )}
@@ -327,10 +328,16 @@ export function ControleDetalheDialog({
 
           {/* Descrição separada com suporte a quebras de linha */}
           {controle.descricao && (
-            <div className="flex-shrink-0 bg-muted/50 rounded-lg p-4">
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {controle.descricao}
-              </p>
+            <div className="flex-shrink-0 mt-4">
+              <h4 className="text-sm font-medium mb-2 text-foreground flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Descrição
+              </h4>
+              <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                  {controle.descricao}
+                </p>
+              </div>
             </div>
           )}
 
