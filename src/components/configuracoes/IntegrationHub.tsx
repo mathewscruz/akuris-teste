@@ -2,11 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { 
-  MessageSquare, 
-  Video, 
-  Cloud, 
   Webhook, 
   Zap, 
   FolderOpen,
@@ -14,23 +10,15 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
-  ExternalLink,
   Info
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { SlackConfigDialog } from './integrations/SlackConfigDialog';
+import { TeamsConfigDialog } from './integrations/TeamsConfigDialog';
+import { WebhooksConfigDialog } from './integrations/WebhooksConfigDialog';
+import { JiraConfigDialog } from './integrations/JiraConfigDialog';
 
 interface Integration {
   id: string;
@@ -38,7 +26,8 @@ interface Integration {
   nome: string;
   descricao: string;
   categoria: 'comunicacao' | 'armazenamento' | 'automacao' | 'itsm' | 'identidade';
-  icon: React.ElementType;
+  logoUrl?: string;
+  icon?: React.ElementType;
   cor: string;
   disponivel: boolean;
   documentacaoUrl?: string;
@@ -55,14 +44,13 @@ interface IntegrationConfig {
 }
 
 const INTEGRACOES_DISPONIVEIS: Integration[] = [
-  // Comunicação
   {
     id: 'slack',
     tipo: 'slack',
     nome: 'Slack',
     descricao: 'Envie notificações para canais do Slack quando ocorrerem eventos importantes.',
     categoria: 'comunicacao',
-    icon: MessageSquare,
+    logoUrl: 'https://cdn.worldvectorlogo.com/logos/slack-new-logo.svg',
     cor: '#4A154B',
     disponivel: true,
     documentacaoUrl: 'https://api.slack.com/messaging/webhooks'
@@ -73,19 +61,18 @@ const INTEGRACOES_DISPONIVEIS: Integration[] = [
     nome: 'Microsoft Teams',
     descricao: 'Integre com canais do Teams para alertas e notificações em tempo real.',
     categoria: 'comunicacao',
-    icon: Video,
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c9/Microsoft_Office_Teams_%282018%E2%80%93present%29.svg',
     cor: '#6264A7',
     disponivel: true,
     documentacaoUrl: 'https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook'
   },
-  // Armazenamento
   {
     id: 'google_drive',
     tipo: 'google_drive',
     nome: 'Google Drive',
     descricao: 'Sincronize documentos aprovados automaticamente com o Google Drive.',
     categoria: 'armazenamento',
-    icon: Cloud,
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg',
     cor: '#4285F4',
     disponivel: false,
     documentacaoUrl: 'https://developers.google.com/drive'
@@ -96,11 +83,11 @@ const INTEGRACOES_DISPONIVEIS: Integration[] = [
     nome: 'OneDrive / SharePoint',
     descricao: 'Integre com OneDrive e SharePoint para gerenciamento de documentos.',
     categoria: 'armazenamento',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Microsoft_Office_OneDrive_%282019%E2%80%93present%29.svg',
     icon: FolderOpen,
     cor: '#0078D4',
     disponivel: false
   },
-  // Automação
   {
     id: 'webhooks',
     tipo: 'webhooks',
@@ -117,21 +104,22 @@ const INTEGRACOES_DISPONIVEIS: Integration[] = [
     nome: 'Zapier',
     descricao: 'Conecte com mais de 5.000 aplicativos através do Zapier.',
     categoria: 'automacao',
+    logoUrl: 'https://cdn.worldvectorlogo.com/logos/zapier.svg',
     icon: Zap,
     cor: '#FF4A00',
     disponivel: false,
     documentacaoUrl: 'https://zapier.com/developer'
   },
-  // ITSM
   {
     id: 'jira',
     tipo: 'jira',
     nome: 'Jira Service Management',
     descricao: 'Crie tickets automaticamente a partir de incidentes e riscos.',
     categoria: 'itsm',
+    logoUrl: 'https://cdn.worldvectorlogo.com/logos/jira-1.svg',
     icon: Settings,
     cor: '#0052CC',
-    disponivel: false,
+    disponivel: true,
     documentacaoUrl: 'https://developer.atlassian.com/cloud/jira/platform/'
   }
 ];
@@ -148,11 +136,13 @@ export function IntegrationHub() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [configuredIntegrations, setConfiguredIntegrations] = useState<IntegrationConfig[]>([]);
-  const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
-  const [configDialogOpen, setConfigDialogOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [webhookUrl, setWebhookUrl] = useState('');
   const [empresaId, setEmpresaId] = useState<string | null>(null);
+  
+  // Dialog states
+  const [slackDialogOpen, setSlackDialogOpen] = useState(false);
+  const [teamsDialogOpen, setTeamsDialogOpen] = useState(false);
+  const [webhooksDialogOpen, setWebhooksDialogOpen] = useState(false);
+  const [jiraDialogOpen, setJiraDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchIntegrations();
@@ -160,7 +150,6 @@ export function IntegrationHub() {
 
   const fetchIntegrations = async () => {
     try {
-      // Buscar empresa_id do usuário
       const { data: profile } = await supabase
         .from('profiles')
         .select('empresa_id')
@@ -169,7 +158,6 @@ export function IntegrationHub() {
 
       if (profile?.empresa_id) {
         setEmpresaId(profile.empresa_id);
-
         const { data, error } = await supabase
           .from('integracoes_config')
           .select('*')
@@ -191,6 +179,10 @@ export function IntegrationHub() {
     return config.status as 'conectado' | 'desconectado' | 'erro';
   };
 
+  const getExistingConfig = (tipo: string) => {
+    return configuredIntegrations.find(c => c.tipo_integracao === tipo);
+  };
+
   const handleConfigureClick = (integration: Integration) => {
     if (!integration.disponivel) {
       toast.info('Em breve', {
@@ -198,98 +190,20 @@ export function IntegrationHub() {
       });
       return;
     }
-    
-    setSelectedIntegration(integration);
-    const existingConfig = configuredIntegrations.find(c => c.tipo_integracao === integration.tipo);
-    setWebhookUrl(existingConfig?.webhook_url || '');
-    setConfigDialogOpen(true);
-  };
 
-  const handleSaveIntegration = async () => {
-    if (!selectedIntegration || !empresaId) return;
-
-    setSaving(true);
-    try {
-      const existingConfig = configuredIntegrations.find(
-        c => c.tipo_integracao === selectedIntegration.tipo
-      );
-
-      if (existingConfig) {
-        // Atualizar
-        const { error } = await supabase
-          .from('integracoes_config')
-          .update({
-            webhook_url: webhookUrl || null,
-            status: webhookUrl ? 'conectado' : 'desconectado',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingConfig.id);
-
-        if (error) throw error;
-      } else {
-        // Inserir novo
-        const { error } = await supabase
-          .from('integracoes_config')
-          .insert({
-            empresa_id: empresaId,
-            tipo_integracao: selectedIntegration.tipo,
-            nome_exibicao: selectedIntegration.nome,
-            webhook_url: webhookUrl || null,
-            status: webhookUrl ? 'conectado' : 'desconectado',
-            created_by: user?.id
-          });
-
-        if (error) throw error;
-      }
-
-      toast.success('Integração salva', {
-        description: `${selectedIntegration.nome} foi configurado com sucesso.`
-      });
-
-      setConfigDialogOpen(false);
-      fetchIntegrations();
-    } catch (error) {
-      console.error('Erro ao salvar integração:', error);
-      toast.error('Erro ao salvar', {
-        description: 'Não foi possível salvar a configuração da integração.'
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDisconnect = async () => {
-    if (!selectedIntegration) return;
-
-    const existingConfig = configuredIntegrations.find(
-      c => c.tipo_integracao === selectedIntegration.tipo
-    );
-
-    if (!existingConfig) return;
-
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('integracoes_config')
-        .delete()
-        .eq('id', existingConfig.id);
-
-      if (error) throw error;
-
-      toast.success('Integração removida', {
-        description: `${selectedIntegration.nome} foi desconectado.`
-      });
-
-      setConfigDialogOpen(false);
-      setWebhookUrl('');
-      fetchIntegrations();
-    } catch (error) {
-      console.error('Erro ao remover integração:', error);
-      toast.error('Erro ao remover', {
-        description: 'Não foi possível remover a integração.'
-      });
-    } finally {
-      setSaving(false);
+    switch (integration.tipo) {
+      case 'slack':
+        setSlackDialogOpen(true);
+        break;
+      case 'teams':
+        setTeamsDialogOpen(true);
+        break;
+      case 'webhooks':
+        setWebhooksDialogOpen(true);
+        break;
+      case 'jira':
+        setJiraDialogOpen(true);
+        break;
     }
   };
 
@@ -305,10 +219,7 @@ export function IntegrationHub() {
         }`}
       >
         {!integration.disponivel && (
-          <Badge 
-            variant="secondary" 
-            className="absolute top-3 right-3 text-xs"
-          >
+          <Badge variant="secondary" className="absolute top-3 right-3 text-xs">
             Em breve
           </Badge>
         )}
@@ -316,13 +227,21 @@ export function IntegrationHub() {
         <CardHeader className="pb-3">
           <div className="flex items-start gap-3">
             <div 
-              className="p-2.5 rounded-lg" 
+              className="p-2.5 rounded-lg flex items-center justify-center" 
               style={{ backgroundColor: `${integration.cor}15` }}
             >
-              <Icon 
-                className="h-6 w-6" 
-                style={{ color: integration.cor }} 
-              />
+              {integration.logoUrl ? (
+                <img 
+                  src={integration.logoUrl} 
+                  alt={integration.nome}
+                  className="h-6 w-6 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : Icon ? (
+                <Icon className="h-6 w-6" style={{ color: integration.cor }} />
+              ) : null}
             </div>
             <div className="flex-1 min-w-0">
               <CardTitle className="text-base flex items-center gap-2">
@@ -371,18 +290,14 @@ export function IntegrationHub() {
     );
   }
 
-  // Agrupar por categoria
   const integracoesPorCategoria = INTEGRACOES_DISPONIVEIS.reduce((acc, int) => {
-    if (!acc[int.categoria]) {
-      acc[int.categoria] = [];
-    }
+    if (!acc[int.categoria]) acc[int.categoria] = [];
     acc[int.categoria].push(int);
     return acc;
   }, {} as Record<string, Integration[]>);
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border">
         <Info className="h-5 w-5 text-primary" />
         <p className="text-sm text-muted-foreground">
@@ -390,7 +305,6 @@ export function IntegrationHub() {
         </p>
       </div>
 
-      {/* Categorias */}
       {Object.entries(integracoesPorCategoria).map(([categoria, integracoes]) => (
         <div key={categoria} className="space-y-4">
           <div>
@@ -399,104 +313,44 @@ export function IntegrationHub() {
               {CATEGORIAS[categoria as keyof typeof CATEGORIAS]?.descricao}
             </p>
           </div>
-          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {integracoes.map(renderIntegrationCard)}
           </div>
         </div>
       ))}
 
-      {/* Dialog de Configuração */}
-      <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {selectedIntegration && (
-                <>
-                  <selectedIntegration.icon 
-                    className="h-5 w-5" 
-                    style={{ color: selectedIntegration.cor }} 
-                  />
-                  Configurar {selectedIntegration.nome}
-                </>
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedIntegration?.tipo === 'slack' && (
-                'Configure um Incoming Webhook do Slack para receber notificações.'
-              )}
-              {selectedIntegration?.tipo === 'teams' && (
-                'Configure um Incoming Webhook do Microsoft Teams.'
-              )}
-              {selectedIntegration?.tipo === 'webhooks' && (
-                'Configure uma URL para receber webhooks de eventos do sistema.'
-              )}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="webhook-url">
-                {selectedIntegration?.tipo === 'webhooks' ? 'URL do Webhook' : 'URL do Incoming Webhook'}
-              </Label>
-              <Input
-                id="webhook-url"
-                placeholder="https://..."
-                value={webhookUrl}
-                onChange={(e) => setWebhookUrl(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                {selectedIntegration?.tipo === 'slack' && (
-                  'Obtenha a URL em: Slack App > Incoming Webhooks > Add New Webhook'
-                )}
-                {selectedIntegration?.tipo === 'teams' && (
-                  'Obtenha a URL em: Canal Teams > Conectores > Incoming Webhook'
-                )}
-                {selectedIntegration?.tipo === 'webhooks' && (
-                  'Eventos serão enviados via POST com payload JSON'
-                )}
-              </p>
-            </div>
-
-            {selectedIntegration?.documentacaoUrl && (
-              <a
-                href={selectedIntegration.documentacaoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-              >
-                Ver documentação
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
-          </div>
-
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            {getIntegrationStatus(selectedIntegration?.tipo || '') === 'conectado' && (
-              <Button
-                variant="destructive"
-                onClick={handleDisconnect}
-                disabled={saving}
-              >
-                Desconectar
-              </Button>
-            )}
-            <div className="flex gap-2 ml-auto">
-              <Button 
-                variant="outline" 
-                onClick={() => setConfigDialogOpen(false)}
-                disabled={saving}
-              >
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveIntegration} disabled={saving}>
-                {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Salvar
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {empresaId && (
+        <>
+          <SlackConfigDialog
+            open={slackDialogOpen}
+            onOpenChange={setSlackDialogOpen}
+            empresaId={empresaId}
+            existingConfig={getExistingConfig('slack') as any}
+            onSaved={fetchIntegrations}
+          />
+          <TeamsConfigDialog
+            open={teamsDialogOpen}
+            onOpenChange={setTeamsDialogOpen}
+            empresaId={empresaId}
+            existingConfig={getExistingConfig('teams') as any}
+            onSaved={fetchIntegrations}
+          />
+          <WebhooksConfigDialog
+            open={webhooksDialogOpen}
+            onOpenChange={setWebhooksDialogOpen}
+            empresaId={empresaId}
+            existingConfig={getExistingConfig('webhooks') as any}
+            onSaved={fetchIntegrations}
+          />
+          <JiraConfigDialog
+            open={jiraDialogOpen}
+            onOpenChange={setJiraDialogOpen}
+            empresaId={empresaId}
+            existingConfig={getExistingConfig('jira') as any}
+            onSaved={fetchIntegrations}
+          />
+        </>
+      )}
     </div>
   );
 }
