@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, Edit, Copy, Trash2, FileText, Settings as SettingsIcon, Star, RefreshCw, Filter, X } from 'lucide-react';
+import { Plus, Edit, Copy, Trash2, FileText, Settings as SettingsIcon, Star, Filter, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -314,16 +314,7 @@ export function TemplatesManager() {
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => refetch()}
-                    disabled={isLoading}
-                  >
-                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''} mr-2`} />
-                    Atualizar
-                  </Button>
-                  <Button 
+                  <Button
                     variant="outline" 
                     size="sm"
                     onClick={() => setShowFilters(!showFilters)}

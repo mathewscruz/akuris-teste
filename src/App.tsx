@@ -20,6 +20,7 @@ import Controles from '@/pages/Controles';
 import Contratos from '@/pages/Contratos';
 import Auditorias from '@/pages/Auditorias';
 import Governanca from '@/pages/Governanca';
+import Sistemas from '@/pages/Sistemas';
 import Documentos from '@/pages/Documentos';
 import ContasPrivilegiadas from '@/pages/ContasPrivilegiadas';
 import Incidentes from '@/pages/Incidentes';
@@ -132,6 +133,13 @@ function App() {
               <Layout>
                 <ProtectedRoute moduleName="controles" fallbackToRoleCheck={false}>
                   <Governanca />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/sistemas" element={
+              <Layout>
+                <ProtectedRoute moduleName="controles" fallbackToRoleCheck={false}>
+                  <Sistemas />
                 </ProtectedRoute>
               </Layout>
             } />
