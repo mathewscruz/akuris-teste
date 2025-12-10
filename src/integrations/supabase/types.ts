@@ -5463,6 +5463,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -5556,6 +5577,15 @@ export type Database = {
         }[]
       }
       get_user_empresa_id: { Args: never; Returns: string }
+      has_admin_role: { Args: never; Returns: boolean }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      has_super_admin_role: { Args: never; Returns: boolean }
       incidente_pertence_empresa: {
         Args: { incidente_id: string }
         Returns: boolean
@@ -5605,6 +5635,7 @@ export type Database = {
       ropa_pertence_empresa: { Args: { ropa_id: string }; Returns: boolean }
     }
     Enums: {
+      app_role: "user" | "admin" | "super_admin"
       user_role: "super_admin" | "admin" | "user" | "readonly"
     }
     CompositeTypes: {
@@ -5733,6 +5764,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["user", "admin", "super_admin"],
       user_role: ["super_admin", "admin", "user", "readonly"],
     },
   },
