@@ -23,7 +23,7 @@ import Governanca from '@/pages/Governanca';
 import Documentos from '@/pages/Documentos';
 import ContasPrivilegiadas from '@/pages/ContasPrivilegiadas';
 import Incidentes from '@/pages/Incidentes';
-import Dados from '@/pages/Dados';
+import Privacidade from '@/pages/Privacidade';
 import DueDiligence from '@/pages/DueDiligence';
 import Assessment from '@/pages/Assessment';
 import RevisaoAcessos from '@/pages/RevisaoAcessos';
@@ -178,13 +178,15 @@ function App() {
                 </ProtectedRoute>
               </Layout>
             } />
-            <Route path="/dados" element={
+            <Route path="/privacidade" element={
               <Layout>
                 <ProtectedRoute moduleName="dados" fallbackToRoleCheck={false}>
-                  <Dados />
+                  <Privacidade />
                 </ProtectedRoute>
               </Layout>
             } />
+            {/* Redirect antigo /dados para /privacidade */}
+            <Route path="/dados" element={<Navigate to="/privacidade" replace />} />
             <Route path="/due-diligence" element={
               <Layout>
                 <ProtectedRoute moduleName="due-diligence" fallbackToRoleCheck={false}>

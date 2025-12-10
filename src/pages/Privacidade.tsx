@@ -22,7 +22,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
 import { formatStatus, getSensibilidadeColor, getItemStatusColor, getWorkflowStatusColor } from '@/lib/text-utils';
 
-export default function Dados() {
+export default function Privacidade() {
   const [activeTab, setActiveTab] = useState("catalogo");
   const [dadosPessoais, setDadosPessoais] = useState<any[]>([]);
   const [ropaRegistros, setRopaRegistros] = useState<any[]>([]);
@@ -346,8 +346,8 @@ export default function Dados() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Proteção de Dados"
-        description="Mapeamento de dados e ROPA (LGPD)"
+        title="Privacidade"
+        description="Proteção de dados pessoais, mapeamento e ROPA (LGPD)"
       />
 
       {/* KPI Cards */}

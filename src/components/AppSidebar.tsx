@@ -84,14 +84,19 @@ const menuItems = [
     ],
   },
   {
-    title: 'Segurança e Privacidade',
+    title: 'Segurança',
     icon: Lock,
     subItems: [
       { title: 'Contas Privilegiadas', url: '/contas-privilegiadas', icon: Users, moduleName: 'contas-privilegiadas' },
       { title: 'Revisão de Acessos', url: '/revisao-acessos', icon: CheckSquare, moduleName: 'contas-privilegiadas' },
       { title: 'Incidentes', url: '/incidentes', icon: AlertCircle, moduleName: 'incidentes' },
-      { title: 'Dados', url: '/dados', icon: HardDrive, moduleName: 'dados' },
     ],
+  },
+  {
+    title: 'Privacidade',
+    url: '/privacidade',
+    icon: Shield,
+    moduleName: 'dados',
   },
   {
     title: 'Compliance',
