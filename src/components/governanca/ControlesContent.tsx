@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp, Edit, Trash2, Filter, TestTube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +67,7 @@ interface Categoria {
 
 export default function ControlesContent() {
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [controleDialogOpen, setControleDialogOpen] = useState(false);
   const [categoriasDialogOpen, setCategoriasDialogOpen] = useState(false);
   const [testesDialogOpen, setTestesDialogOpen] = useState(false);
@@ -211,6 +212,21 @@ export default function ControlesContent() {
       }
     }
   }, [location.state, controles]);
+
+  // Detectar parâmetro de controle na URL (deep link do e-mail)
+  useEffect(() => {
+    const controleId = searchParams.get('controle');
+    if (controleId && controles.length > 0) {
+      const controle = controles.find(c => c.id === controleId);
+      if (controle) {
+        setSelectedControleForDetail(controle);
+        setDetalheDialogOpen(true);
+        // Limpar o parâmetro da URL para evitar reabrir em refresh
+        searchParams.delete('controle');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, controles, setSearchParams]);
 
   // Buscar categorias
   const { data: categorias = [] } = useQuery({
