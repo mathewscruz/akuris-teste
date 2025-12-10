@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
+import { UserSelect } from '@/components/riscos/UserSelect';
 
 const sistemaSchema = z.object({
   nome_sistema: z.string().min(1, 'Nome do sistema é obrigatório'),
@@ -227,7 +228,11 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
                   <FormItem>
                     <FormLabel>Responsável pelo Sistema</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome do responsável" {...field} />
+                      <UserSelect
+                        value={field.value || ''}
+                        onValueChange={field.onChange}
+                        placeholder="Selecionar responsável..."
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
