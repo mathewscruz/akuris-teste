@@ -34,7 +34,7 @@ export default function Governanca() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Governança"
+        title="Controles Internos"
         description="Gerencie controles internos e auditorias"
         actions={undefined}
       />
