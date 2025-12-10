@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,41 +64,52 @@ interface AssessmentData {
   };
 }
 
-// ETAPA 1: Função de requisição Supabase mais robusta
-const supabaseRequest = async (endpoint: string, options: any = {}) => {
-  const url = `https://lnlkahtugwmkznasapfd.supabase.co/rest/v1/${endpoint}`;
-  const headers = {
-    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubGthaHR1Z3dta3puYXNhcGZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxOTk4MjcsImV4cCI6MjA2ODc3NTgyN30.DRHZ_55_8aH8fEDghoY84fl3rChFNgVyPA9UM3y-KCY',
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation',
-    ...options.headers
-  };
+// ETAPA 1: Função de requisição Supabase com token de segurança
+// SECURITY FIX: Passa o token de assessment no header x-assessment-token para RLS
+const createSupabaseRequest = (assessmentToken: string | undefined) => {
+  return async (endpoint: string, options: any = {}) => {
+    const url = `https://lnlkahtugwmkznasapfd.supabase.co/rest/v1/${endpoint}`;
+    const headers: Record<string, string> = {
+      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubGthaHR1Z3dta3puYXNhcGZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxOTk4MjcsImV4cCI6MjA2ODc3NTgyN30.DRHZ_55_8aH8fEDghoY84fl3rChFNgVyPA9UM3y-KCY',
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...options.headers
+    };
 
-  assessmentLogger.info(`Fazendo requisição para: ${endpoint}`);
-
-  try {
-    const response = await fetch(url, { ...options, headers });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      assessmentLogger.error(`Erro na requisição ${endpoint}:`, {
-        status: response.status,
-        error: errorText
-      });
-      throw new Error(`Erro ${response.status}: ${errorText}`);
+    // SECURITY: Include assessment token in header for RLS policy validation
+    if (assessmentToken) {
+      headers['x-assessment-token'] = assessmentToken;
     }
 
-    const data = await response.json();
-    assessmentLogger.info(`Sucesso na requisição ${endpoint}`);
-    return data;
-  } catch (error) {
-    assessmentLogger.error(`Falha na requisição ${endpoint}:`, error);
-    throw error;
-  }
+    assessmentLogger.info(`Fazendo requisição para: ${endpoint}`);
+
+    try {
+      const response = await fetch(url, { ...options, headers });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        assessmentLogger.error(`Erro na requisição ${endpoint}:`, {
+          status: response.status,
+          error: errorText
+        });
+        throw new Error(`Erro ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      assessmentLogger.info(`Sucesso na requisição ${endpoint}`);
+      return data;
+    } catch (error) {
+      assessmentLogger.error(`Falha na requisição ${endpoint}:`, error);
+      throw error;
+    }
+  };
 };
 
 export default function Assessment() {
   const { token } = useParams();
+  
+  // SECURITY: Create request function with token for RLS validation
+  const supabaseRequest = useMemo(() => createSupabaseRequest(token), [token]);
   
   // Estados principais
   const [assessment, setAssessment] = useState<AssessmentData | null>(null);
@@ -327,7 +338,7 @@ export default function Assessment() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, supabaseRequest]);
 
   // Função para salvar resposta
   const saveResponse = useCallback(async (questionId: string, value: any) => {
@@ -438,7 +449,7 @@ export default function Assessment() {
     } catch (error) {
       assessmentLogger.error('Erro ao salvar resposta:', error);
     }
-  }, [assessment, questions]);
+  }, [assessment, questions, supabaseRequest]);
 
   // Handler para mudança de resposta
   const handleResponseChange = useCallback((questionId: string, value: any) => {
