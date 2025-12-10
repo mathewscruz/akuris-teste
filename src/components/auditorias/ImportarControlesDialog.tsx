@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Shield, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { formatStatus, getControleTipoColor, getItemStatusColor, getCriticidadeColor } from "@/lib/text-utils";
 
 interface ImportarControlesDialogProps {
   open: boolean;
@@ -126,13 +127,11 @@ export function ImportarControlesDialog({
   };
 
   const getCriticidadeBadge = (criticidade: string) => {
-    const colors: Record<string, string> = {
-      critico: "bg-red-100 text-red-800",
-      alto: "bg-orange-100 text-orange-800",
-      medio: "bg-yellow-100 text-yellow-800",
-      baixo: "bg-green-100 text-green-800",
-    };
-    return <Badge className={`${colors[criticidade] || ""} border-0 text-xs`}>{criticidade}</Badge>;
+    return (
+      <Badge className={`text-xs border whitespace-nowrap ${getCriticidadeColor(criticidade)}`}>
+        {formatStatus(criticidade)}
+      </Badge>
+    );
   };
 
   return (
@@ -200,11 +199,11 @@ export function ImportarControlesDialog({
                         </p>
                       )}
                       <div className="flex gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
-                          {controle.tipo}
+                        <Badge className={`text-xs border whitespace-nowrap ${getControleTipoColor(controle.tipo)}`}>
+                          {formatStatus(controle.tipo)}
                         </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {controle.status}
+                        <Badge className={`text-xs border whitespace-nowrap ${getItemStatusColor(controle.status)}`}>
+                          {formatStatus(controle.status)}
                         </Badge>
                       </div>
                     </div>

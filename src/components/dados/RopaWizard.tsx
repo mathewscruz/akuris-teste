@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { formatStatus, getSensibilidadeColorSimple, getCriticidadeColor } from "@/lib/text-utils";
 
 interface RopaWizardProps {
   isOpen: boolean;
@@ -206,8 +207,8 @@ export function RopaWizard({ isOpen, onClose, onSave, preSelectedDadoId }: RopaW
                       <div className="font-medium">{dado.nome}</div>
                       <div className="text-sm text-muted-foreground">{dado.categoria_dados}</div>
                     </div>
-                    <Badge variant={dado.sensibilidade === 'sensivel' ? 'destructive' : 'outline'}>
-                      {dado.sensibilidade}
+                    <Badge className={`border whitespace-nowrap ${getSensibilidadeColorSimple(dado.sensibilidade)}`}>
+                      {formatStatus(dado.sensibilidade)}
                     </Badge>
                   </div>
                 ))}
@@ -314,9 +315,11 @@ export function RopaWizard({ isOpen, onClose, onSave, preSelectedDadoId }: RopaW
                     <Checkbox checked={selectedAtivos.includes(ativo.id)} />
                     <div className="flex-1">
                       <div className="font-medium">{ativo.nome}</div>
-                      <div className="text-sm text-muted-foreground">{ativo.tipo} - {ativo.localizacao}</div>
+                      <div className="text-sm text-muted-foreground">{formatStatus(ativo.tipo)} - {ativo.localizacao}</div>
                     </div>
-                    <Badge variant="outline">{ativo.criticidade}</Badge>
+                    <Badge className={`border whitespace-nowrap ${getCriticidadeColor(ativo.criticidade)}`}>
+                      {formatStatus(ativo.criticidade)}
+                    </Badge>
                   </div>
                 ))}
               </div>

@@ -367,3 +367,68 @@ export const getDueDiligenceStatusColor = (status: string): string => {
       return 'bg-gray-100 text-gray-800 border-gray-200';
   }
 };
+
+/**
+ * Cores para tipo de tratamento de risco (Mitigar, Transferir, Aceitar, Evitar)
+ * Usado em: Riscos - TratamentosList
+ */
+export const getTratamentoTipoColor = (tipo: string): string => {
+  const value = tipo?.toLowerCase() || '';
+  switch (value) {
+    case 'mitigar':
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'transferir':
+      return 'bg-purple-100 text-purple-800 border-purple-200';
+    case 'aceitar':
+      return 'bg-amber-100 text-amber-800 border-amber-200';
+    case 'evitar':
+      return 'bg-green-100 text-green-800 border-green-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
+/**
+ * Cores para status de tratamento de risco (Pendente, Em Andamento, Concluído, Cancelado)
+ * Usado em: Riscos - TratamentosList
+ */
+export const getTratamentoStatusColor = (status: string): string => {
+  const value = status?.toLowerCase() || '';
+  switch (value) {
+    case 'pendente':
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'em andamento':
+    case 'em_andamento':
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'concluído':
+    case 'concluido':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case 'cancelado':
+      return 'bg-red-100 text-red-800 border-red-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
+/**
+ * Cores para sensibilidade de dados (versão simplificada com 1 argumento)
+ * Usado em: Dados Pessoais, ROPA
+ */
+export const getSensibilidadeColorSimple = (sensibilidade: string): string => {
+  const value = sensibilidade?.toLowerCase() || '';
+  switch (value) {
+    case 'sensivel':
+    case 'muito_sensivel':
+    case 'crítico':
+    case 'critico':
+      return 'bg-red-100 text-red-800 border-red-200';
+    case 'moderado':
+    case 'medio':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case 'comum':
+    case 'baixo':
+      return 'bg-green-100 text-green-800 border-green-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};

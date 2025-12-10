@@ -14,6 +14,7 @@ import { EvidenceDialog } from './EvidenceDialog';
 import { AssignmentDialog } from './AssignmentDialog';
 import { AreaResponsavelInlineSelect } from './AreaResponsavelInlineSelect';
 import { useDebounce } from '@/hooks/useDebounce';
+import { formatStatus } from '@/lib/text-utils';
 import {
   Pagination,
   PaginationContent,
@@ -385,7 +386,7 @@ export const AssessmentEvaluationView = ({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{requirement.categoria}</Badge>
+                        <Badge variant="secondary" className="whitespace-nowrap">{formatStatus(requirement.categoria)}</Badge>
                       </TableCell>
                       <TableCell>
                         <AreaResponsavelInlineSelect

@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
+import { formatStatus, getCriticidadeColor } from '@/lib/text-utils';
 
 interface ImportacaoAtivosProps {
   open: boolean;
@@ -407,10 +408,10 @@ const ImportacaoAtivos: React.FC<ImportacaoAtivosProps> = ({ open, onOpenChange,
                           )}
                         </TableCell>
                         <TableCell>{ativo.nome}</TableCell>
-                        <TableCell>{ativo.tipo}</TableCell>
+                        <TableCell>{formatStatus(ativo.tipo)}</TableCell>
                         <TableCell>
-                          <Badge variant={ativo.criticidade === 'critico' ? 'destructive' : 'default'}>
-                            {ativo.criticidade}
+                          <Badge className={`border whitespace-nowrap ${getCriticidadeColor(ativo.criticidade)}`}>
+                            {formatStatus(ativo.criticidade)}
                           </Badge>
                         </TableCell>
                         <TableCell>

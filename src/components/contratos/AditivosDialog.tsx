@@ -22,6 +22,7 @@ import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { formatStatus } from '@/lib/text-utils';
 
 const aditivoSchema = z.object({
   numero_aditivo: z.string().min(1, 'Número do aditivo é obrigatório'),
@@ -331,7 +332,7 @@ export const AditivosDialog: React.FC<AditivosDialogProps> = ({
                         {aditivos.map((aditivo) => (
                           <TableRow key={aditivo.id}>
                             <TableCell className="font-medium">{aditivo.numero_aditivo}</TableCell>
-                            <TableCell className="capitalize">{aditivo.tipo}</TableCell>
+                            <TableCell>{formatStatus(aditivo.tipo)}</TableCell>
                             <TableCell>{aditivo.motivo}</TableCell>
                             <TableCell>
                               {aditivo.valor_anterior && aditivo.valor_novo ? (
