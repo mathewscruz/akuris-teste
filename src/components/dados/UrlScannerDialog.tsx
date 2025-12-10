@@ -1,0 +1,412 @@
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Search, Globe, FileText, AlertTriangle, Shield, Plus, Loader2, ExternalLink } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+interface FormField {
+  name: string;
+  type: string;
+  id: string;
+  placeholder: string;
+  label: string;
+  required: boolean;
+  dataType: string;
+  lgpdCategory: string;
+  sensitivity: string;
+}
+
+interface DetectedForm {
+  formId: string;
+  formName: string;
+  action: string;
+  method: string;
+  fields: FormField[];
+}
+
+interface ScanResult {
+  url: string;
+  title: string;
+  forms: DetectedForm[];
+  totalFields: number;
+  sensitiveFieldsCount: number;
+  criticalFieldsCount: number;
+}
+
+interface UrlScannerDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onImport: (fields: FormField[]) => void;
+}
+
+const getSensitivityBadge = (sensitivity: string) => {
+  switch (sensitivity) {
+    case 'critico':
+      return <Badge variant="destructive" className="text-xs">Crítico</Badge>;
+    case 'sensivel':
+      return <Badge className="bg-amber-500/20 text-amber-600 border-amber-500/30 text-xs">Sensível</Badge>;
+    default:
+      return <Badge variant="secondary" className="text-xs">Comum</Badge>;
+  }
+};
+
+const getCategoryLabel = (category: string) => {
+  const labels: Record<string, string> = {
+    identificacao: 'Identificação',
+    contato: 'Contato',
+    localizacao: 'Localização',
+    financeiro: 'Financeiro',
+    credenciais: 'Credenciais',
+    saude: 'Saúde',
+    documentos: 'Documentos',
+    texto_livre: 'Texto Livre',
+    outros: 'Outros'
+  };
+  return labels[category] || category;
+};
+
+const getDataTypeLabel = (dataType: string) => {
+  const labels: Record<string, string> = {
+    email: 'E-mail',
+    nome: 'Nome',
+    cpf: 'CPF',
+    rg: 'RG',
+    cnpj: 'CNPJ',
+    telefone: 'Telefone',
+    endereco: 'Endereço',
+    data_nascimento: 'Data de Nascimento',
+    senha: 'Senha',
+    cartao_credito: 'Cartão de Crédito',
+    conta_bancaria: 'Conta Bancária',
+    saude: 'Dados de Saúde',
+    genero: 'Gênero',
+    arquivo: 'Arquivo',
+    comentario: 'Comentário/Mensagem',
+    desconhecido: 'Não Classificado'
+  };
+  return labels[dataType] || dataType;
+};
+
+export const UrlScannerDialog = ({ isOpen, onClose, onImport }: UrlScannerDialogProps) => {
+  const { toast } = useToast();
+  const [url, setUrl] = useState('');
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set());
+
+  const handleScan = async () => {
+    if (!url.trim()) {
+      toast({
+        title: "URL obrigatória",
+        description: "Insira uma URL válida para escanear",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsScanning(true);
+    setScanResult(null);
+    setSelectedFields(new Set());
+
+    try {
+      const { data, error } = await supabase.functions.invoke('scan-url-forms', {
+        body: { url }
+      });
+
+      if (error) throw error;
+
+      if (!data.success) {
+        throw new Error(data.error || 'Erro ao escanear URL');
+      }
+
+      setScanResult(data.data);
+      
+      if (data.data.forms.length === 0) {
+        toast({
+          title: "Nenhum formulário encontrado",
+          description: "A página não contém formulários com campos de entrada de dados",
+        });
+      } else {
+        toast({
+          title: "Scan concluído",
+          description: `Encontrados ${data.data.forms.length} formulário(s) com ${data.data.totalFields} campo(s)`,
+        });
+      }
+    } catch (error) {
+      console.error('Scan error:', error);
+      toast({
+        title: "Erro ao escanear",
+        description: error instanceof Error ? error.message : "Não foi possível escanear a URL",
+        variant: "destructive"
+      });
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleFieldToggle = (fieldKey: string) => {
+    const newSelected = new Set(selectedFields);
+    if (newSelected.has(fieldKey)) {
+      newSelected.delete(fieldKey);
+    } else {
+      newSelected.add(fieldKey);
+    }
+    setSelectedFields(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (!scanResult) return;
+    
+    const allKeys = new Set<string>();
+    scanResult.forms.forEach((form, formIndex) => {
+      form.fields.forEach((_, fieldIndex) => {
+        allKeys.add(`${formIndex}-${fieldIndex}`);
+      });
+    });
+    
+    if (selectedFields.size === allKeys.size) {
+      setSelectedFields(new Set());
+    } else {
+      setSelectedFields(allKeys);
+    }
+  };
+
+  const handleImport = () => {
+    if (!scanResult || selectedFields.size === 0) return;
+
+    const fieldsToImport: FormField[] = [];
+    scanResult.forms.forEach((form, formIndex) => {
+      form.fields.forEach((field, fieldIndex) => {
+        if (selectedFields.has(`${formIndex}-${fieldIndex}`)) {
+          fieldsToImport.push(field);
+        }
+      });
+    });
+
+    onImport(fieldsToImport);
+    handleClose();
+  };
+
+  const handleClose = () => {
+    setUrl('');
+    setScanResult(null);
+    setSelectedFields(new Set());
+    onClose();
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Globe className="h-5 w-5 text-primary" />
+            Scanner de Formulários Web
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* URL Input */}
+          <div className="space-y-2">
+            <Label htmlFor="url">URL para escanear</Label>
+            <div className="flex gap-2">
+              <Input
+                id="url"
+                type="url"
+                placeholder="https://exemplo.com.br/contato"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleScan()}
+                disabled={isScanning}
+              />
+              <Button onClick={handleScan} disabled={isScanning}>
+                {isScanning ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Escaneando...
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-4 w-4 mr-2" />
+                    Escanear
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Insira a URL de uma página com formulários para detectar automaticamente os tipos de dados coletados
+            </p>
+          </div>
+
+          {/* Scan Results */}
+          {scanResult && (
+            <div className="space-y-4">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      <div>
+                        <p className="text-2xl font-bold">{scanResult.forms.length}</p>
+                        <p className="text-xs text-muted-foreground">Formulários</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center gap-2">
+                      <Search className="h-4 w-4 text-blue-500" />
+                      <div>
+                        <p className="text-2xl font-bold">{scanResult.totalFields}</p>
+                        <p className="text-xs text-muted-foreground">Campos</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-amber-500" />
+                      <div>
+                        <p className="text-2xl font-bold">{scanResult.sensitiveFieldsCount}</p>
+                        <p className="text-xs text-muted-foreground">Sensíveis</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-destructive" />
+                      <div>
+                        <p className="text-2xl font-bold">{scanResult.criticalFieldsCount}</p>
+                        <p className="text-xs text-muted-foreground">Críticos</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Page Info */}
+              <Card>
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <ExternalLink className="h-4 w-4" />
+                    {scanResult.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 pb-3">
+                  <a 
+                    href={scanResult.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline"
+                  >
+                    {scanResult.url}
+                  </a>
+                </CardContent>
+              </Card>
+
+              {/* Forms Accordion */}
+              {scanResult.forms.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Formulários Detectados</Label>
+                    <Button variant="outline" size="sm" onClick={handleSelectAll}>
+                      {selectedFields.size === scanResult.totalFields ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                    </Button>
+                  </div>
+
+                  <Accordion type="multiple" className="w-full">
+                    {scanResult.forms.map((form, formIndex) => (
+                      <AccordionItem key={formIndex} value={`form-${formIndex}`}>
+                        <AccordionTrigger className="hover:no-underline">
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-4 w-4" />
+                            <span className="font-medium">{form.formName}</span>
+                            <Badge variant="secondary" className="text-xs">
+                              {form.fields.length} campos
+                            </Badge>
+                            {form.method && (
+                              <Badge variant="outline" className="text-xs">
+                                {form.method}
+                              </Badge>
+                            )}
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-12"></TableHead>
+                                <TableHead>Campo</TableHead>
+                                <TableHead>Tipo HTML</TableHead>
+                                <TableHead>Tipo de Dado</TableHead>
+                                <TableHead>Categoria LGPD</TableHead>
+                                <TableHead>Sensibilidade</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {form.fields.map((field, fieldIndex) => {
+                                const fieldKey = `${formIndex}-${fieldIndex}`;
+                                return (
+                                  <TableRow key={fieldIndex}>
+                                    <TableCell>
+                                      <Checkbox
+                                        checked={selectedFields.has(fieldKey)}
+                                        onCheckedChange={() => handleFieldToggle(fieldKey)}
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <div>
+                                        <p className="font-medium">{field.label || field.name || field.id || 'Sem nome'}</p>
+                                        {field.placeholder && (
+                                          <p className="text-xs text-muted-foreground">"{field.placeholder}"</p>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <code className="text-xs bg-muted px-1 py-0.5 rounded">{field.type}</code>
+                                    </TableCell>
+                                    <TableCell>{getDataTypeLabel(field.dataType)}</TableCell>
+                                    <TableCell>{getCategoryLabel(field.lgpdCategory)}</TableCell>
+                                    <TableCell>{getSensitivityBadge(field.sensitivity)}</TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose}>
+            Fechar
+          </Button>
+          {scanResult && selectedFields.size > 0 && (
+            <Button onClick={handleImport}>
+              <Plus className="h-4 w-4 mr-2" />
+              Importar {selectedFields.size} Campo(s) para Catálogo
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};

@@ -132,3 +132,6 @@ verify_jwt = false
 
 [functions.send-risco-notification]
 verify_jwt = true
+
+[functions.scan-url-forms]
+verify_jwt = true
