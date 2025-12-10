@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, RefreshCw, Download, Eye, Edit, Trash2 } from "lucide-react";
+import { Plus, Download, Eye, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -352,10 +352,6 @@ export default function RevisaoAcessos() {
             }}>
               <Plus className="mr-2 h-4 w-4" />
               Nova Revisão
-            </Button>
-            <Button variant="outline" onClick={() => refetch()}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Atualizar
             </Button>
             <Button variant="outline">
               <Download className="mr-2 h-4 w-4" />

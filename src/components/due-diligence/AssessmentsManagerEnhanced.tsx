@@ -595,15 +595,7 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
                 </div>
                 <div className="flex gap-2">
                   <ReportsSidebar />
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={fetchAssessments}
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Atualizar
-                  </Button>
-                  <Button 
+                  <Button
                     variant="outline" 
                     size="sm"
                     onClick={() => setShowFilters(!showFilters)}
