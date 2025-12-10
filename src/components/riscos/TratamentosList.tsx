@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { formatDateOnly } from '@/lib/date-utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { TratamentoDialog } from './TratamentoDialog';
+import { formatStatus, getTratamentoTipoColor, getTratamentoStatusColor } from '@/lib/text-utils';
 
 interface ResponsavelProfile {
   user_id: string;
@@ -220,8 +221,8 @@ export function TratamentosList({ riscoId, riscoNome, riscoData }: TratamentosLi
                 {tratamentos.map((tratamento) => (
                   <TableRow key={tratamento.id}>
                     <TableCell>
-                      <Badge variant={getTipoTratamentoBadgeVariant(tratamento.tipo_tratamento)}>
-                        {tratamento.tipo_tratamento}
+                      <Badge className={`border whitespace-nowrap ${getTratamentoTipoColor(tratamento.tipo_tratamento)}`}>
+                        {formatStatus(tratamento.tipo_tratamento)}
                       </Badge>
                     </TableCell>
                     <TableCell className="max-w-xs">
@@ -230,8 +231,8 @@ export function TratamentosList({ riscoId, riscoNome, riscoData }: TratamentosLi
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusBadgeVariant(tratamento.status)}>
-                        {tratamento.status}
+                      <Badge className={`border whitespace-nowrap ${getTratamentoStatusColor(tratamento.status)}`}>
+                        {formatStatus(tratamento.status)}
                       </Badge>
                     </TableCell>
                     <TableCell>

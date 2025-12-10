@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link2, Shield, FileText, AlertTriangle, Database, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { formatStatus, getItemStatusColor, getCriticidadeColor, getNivelRiscoColor, getAuditoriaTipoColor } from '@/lib/text-utils';
 
 interface IntegracaoData {
   contrato: {
@@ -171,36 +172,27 @@ export default function IntegracaoModulos({ contratoId, trigger }: IntegracaoMod
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, any> = {
-      ativo: "default",
-      ativa: "default",
-      identificado: "secondary",
-      pendente: "outline",
-      concluido: "default",
-      encerrado: "secondary"
-    };
-    return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
+    return (
+      <Badge className={`border whitespace-nowrap ${getItemStatusColor(status)}`}>
+        {formatStatus(status)}
+      </Badge>
+    );
   };
 
   const getCriticidadeBadge = (criticidade: string) => {
-    const variants: Record<string, any> = {
-      alta: "destructive",
-      alto: "destructive",
-      media: "outline",
-      medio: "outline",
-      baixa: "secondary",
-      baixo: "secondary"
-    };
-    return <Badge variant={variants[criticidade] || "outline"}>{criticidade}</Badge>;
+    return (
+      <Badge className={`border whitespace-nowrap ${getCriticidadeColor(criticidade)}`}>
+        {formatStatus(criticidade)}
+      </Badge>
+    );
   };
 
   const getRiscoBadge = (nivel: string) => {
-    const variants: Record<string, any> = {
-      alto: "destructive",
-      medio: "outline",
-      baixo: "secondary"
-    };
-    return <Badge variant={variants[nivel] || "outline"}>{nivel}</Badge>;
+    return (
+      <Badge className={`border whitespace-nowrap ${getNivelRiscoColor(nivel)}`}>
+        {formatStatus(nivel)}
+      </Badge>
+    );
   };
 
   return (
@@ -276,7 +268,7 @@ export default function IntegracaoModulos({ contratoId, trigger }: IntegracaoMod
                             <div className="space-y-1">
                               <div className="font-medium">{ativo.nome}</div>
                               <div className="text-sm text-muted-foreground">
-                                Tipo: {ativo.tipo}
+                                Tipo: {formatStatus(ativo.tipo)}
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -359,7 +351,7 @@ export default function IntegracaoModulos({ contratoId, trigger }: IntegracaoMod
                             <div className="space-y-1">
                               <div className="font-medium">{controle.nome}</div>
                               <div className="text-sm text-muted-foreground">
-                                Tipo: {controle.tipo}
+                                Tipo: {formatStatus(controle.tipo)}
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -404,7 +396,7 @@ export default function IntegracaoModulos({ contratoId, trigger }: IntegracaoMod
                             <div className="space-y-1">
                               <div className="font-medium">{auditoria.nome}</div>
                               <div className="text-sm text-muted-foreground">
-                                Tipo: {auditoria.tipo}
+                                Tipo: {formatStatus(auditoria.tipo)}
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
