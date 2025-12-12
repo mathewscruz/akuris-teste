@@ -1,17 +1,246 @@
 // Funções utilitárias para formatação de texto
 
+// Mapa de traduções para português correto com acentos
+const STATUS_LABELS: Record<string, string> = {
+  // Tipos de Ativos/Sistemas
+  'aplicacao': 'Aplicação',
+  'banco_dados': 'Banco de Dados',
+  'sistema_operacional': 'Sistema Operacional',
+  'hardware': 'Hardware',
+  'software': 'Software',
+  'rede': 'Rede',
+  'nuvem': 'Nuvem',
+  'servidor': 'Servidor',
+  'dispositivo': 'Dispositivo',
+  'seguranca': 'Segurança',
+  'comunicacao': 'Comunicação',
+  
+  // Tipos de Documentos
+  'politica': 'Política',
+  'procedimento': 'Procedimento',
+  'instrucao': 'Instrução',
+  'formulario': 'Formulário',
+  'relatorio': 'Relatório',
+  'certificado': 'Certificado',
+  'contrato': 'Contrato',
+  'documento': 'Documento',
+  'manual': 'Manual',
+  'norma': 'Norma',
+  'registro': 'Registro',
+  
+  // Classificações
+  'publica': 'Pública',
+  'interna': 'Interna',
+  'restrita': 'Restrita',
+  'confidencial': 'Confidencial',
+  
+  // Criticidade/Prioridade
+  'critico': 'Crítico',
+  'critica': 'Crítica',
+  'alto': 'Alto',
+  'alta': 'Alta',
+  'medio': 'Médio',
+  'media': 'Média',
+  'baixo': 'Baixo',
+  'baixa': 'Baixa',
+  'muito_alto': 'Muito Alto',
+  'muito_baixo': 'Muito Baixo',
+  
+  // Status de Workflow
+  'pendente': 'Pendente',
+  'pendente_aprovacao': 'Pendente Aprovação',
+  'em_andamento': 'Em Andamento',
+  'em_analise': 'Em Análise',
+  'em_revisao': 'Em Revisão',
+  'em_investigacao': 'Em Investigação',
+  'concluido': 'Concluído',
+  'concluida': 'Concluída',
+  'cancelado': 'Cancelado',
+  'cancelada': 'Cancelada',
+  'aprovado': 'Aprovado',
+  'aprovada': 'Aprovada',
+  'rejeitado': 'Rejeitado',
+  'rejeitada': 'Rejeitada',
+  'nao_aplicavel': 'Não Aplicável',
+  'arquivado': 'Arquivado',
+  'arquivada': 'Arquivada',
+  'rascunho': 'Rascunho',
+  'planejamento': 'Planejamento',
+  'contido': 'Contido',
+  'resolvido': 'Resolvido',
+  'resolvida': 'Resolvida',
+  'atendida': 'Atendida',
+  'fechado': 'Fechado',
+  'aberto': 'Aberto',
+  'nova': 'Nova',
+  'novo': 'Novo',
+  
+  // Tipos de Auditoria
+  'ti': 'TI',
+  'compliance': 'Compliance',
+  'operacional': 'Operacional',
+  'externa': 'Externa',
+  'financeira': 'Financeira',
+  
+  // Tipos de Controle
+  'preventivo': 'Preventivo',
+  'detectivo': 'Detectivo',
+  'corretivo': 'Corretivo',
+  'compensatorio': 'Compensatório',
+  
+  // Sistemas e Tecnologia
+  'erp': 'ERP',
+  'crm': 'CRM',
+  'bi': 'BI',
+  'siem': 'SIEM',
+  'iam': 'IAM',
+  'vpn': 'VPN',
+  'api': 'API',
+  'saas': 'SaaS',
+  'paas': 'PaaS',
+  'iaas': 'IaaS',
+  
+  // Status de Itens
+  'ativo': 'Ativo',
+  'ativa': 'Ativa',
+  'inativo': 'Inativo',
+  'inativa': 'Inativa',
+  'vencido': 'Vencido',
+  'vencida': 'Vencida',
+  'expirado': 'Expirado',
+  'expirada': 'Expirada',
+  'revogado': 'Revogado',
+  'revogada': 'Revogada',
+  'suspenso': 'Suspenso',
+  'suspensa': 'Suspensa',
+  'a_vencer': 'A Vencer',
+  'em_renovacao': 'Em Renovação',
+  'em_rotacao': 'Em Rotação',
+  'descontinuado': 'Descontinuado',
+  
+  // Riscos
+  'identificado': 'Identificado',
+  'analisado': 'Analisado',
+  'tratado': 'Tratado',
+  'monitorado': 'Monitorado',
+  'aceito': 'Aceito',
+  'mitigado': 'Mitigado',
+  
+  // Tratamentos de Risco
+  'mitigar': 'Mitigar',
+  'transferir': 'Transferir',
+  'aceitar': 'Aceitar',
+  'evitar': 'Evitar',
+  
+  // Frequências
+  'diaria': 'Diária',
+  'diario': 'Diário',
+  'semanal': 'Semanal',
+  'quinzenal': 'Quinzenal',
+  'mensal': 'Mensal',
+  'bimestral': 'Bimestral',
+  'trimestral': 'Trimestral',
+  'semestral': 'Semestral',
+  'anual': 'Anual',
+  'sob_demanda': 'Sob Demanda',
+  
+  // Níveis de privilégio
+  'administrativo': 'Administrativo',
+  'leitura': 'Leitura',
+  'escrita': 'Escrita',
+  'total': 'Total',
+  'elevado': 'Elevado',
+  'padrao': 'Padrão',
+  
+  // Dados e Privacidade
+  'sensivel': 'Sensível',
+  'muito_sensivel': 'Muito Sensível',
+  'comum': 'Comum',
+  'moderado': 'Moderado',
+  
+  // Contratos
+  'negociacao': 'Negociação',
+  'aprovacao': 'Aprovação',
+  'encerrado': 'Encerrado',
+  'renovacao': 'Renovação',
+  
+  // Status de Revisão de Acessos
+  'aguardando_inicio': 'Aguardando Início',
+  'aguardando': 'Aguardando',
+  'iniciada': 'Iniciada',
+  'iniciado': 'Iniciado',
+  'finalizada': 'Finalizada',
+  'finalizado': 'Finalizado',
+  
+  // Due Diligence
+  'enviado': 'Enviado',
+  'respondido': 'Respondido',
+  'avaliado': 'Avaliado',
+  
+  // Gap Analysis / Conformidade
+  'conforme': 'Conforme',
+  'nao_conforme': 'Não Conforme',
+  'parcial': 'Parcial',
+  'parcialmente_conforme': 'Parcialmente Conforme',
+  
+  // Incidentes
+  'investigacao': 'Investigação',
+  'contencao': 'Contenção',
+  'erradicacao': 'Erradicação',
+  'recuperacao': 'Recuperação',
+  'licoes_aprendidas': 'Lições Aprendidas',
+};
+
+// Palavras que devem permanecer em maiúsculas
+const UPPERCASE_WORDS = new Set(['ti', 'erp', 'crm', 'bi', 'siem', 'iam', 'vpn', 'api', 'saas', 'paas', 'iaas', 'rls', 'jwt', 'sql', 'css', 'html', 'url', 'uri', 'xml', 'json', 'http', 'https', 'ftp', 'ssh', 'ssl', 'tls', 'dns', 'ip', 'tcp', 'udp', 'smtp', 'imap', 'pop', 'ldap', 'oauth', 'sso', 'mfa', 'otp', 'pdf', 'csv', 'xlsx', 'docx', 'pptx', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'mp3', 'mp4', 'avi', 'mov', 'iso', 'nist', 'lgpd', 'gdpr', 'ccpa', 'hipaa', 'sox', 'soc', 'pci', 'dss', 'cobit', 'coso', 'itil', 'cis']);
+
 export const capitalizeText = (text: string): string => {
   if (!text) return '';
+  const lower = text.toLowerCase();
+  
+  // Verificar se é uma sigla conhecida
+  if (UPPERCASE_WORDS.has(lower)) {
+    return text.toUpperCase();
+  }
+  
+  // Verificar se há tradução no mapa
+  if (STATUS_LABELS[lower]) {
+    return STATUS_LABELS[lower];
+  }
+  
   return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
 };
 
 // Formata status dinâmicos: substitui underscores, capitaliza cada palavra
 export const formatStatus = (status: string): string => {
   if (!status) return '';
+  
+  const lowerStatus = status.toLowerCase();
+  
+  // Primeiro, verificar se há uma tradução direta no mapa
+  if (STATUS_LABELS[lowerStatus]) {
+    return STATUS_LABELS[lowerStatus];
+  }
+  
+  // Se não encontrar no mapa, aplicar formatação padrão
   return status
     .replace(/_/g, ' ')
     .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map(word => {
+      const lowerWord = word.toLowerCase();
+      
+      // Verificar se é uma sigla conhecida
+      if (UPPERCASE_WORDS.has(lowerWord)) {
+        return word.toUpperCase();
+      }
+      
+      // Verificar cada palavra individualmente no mapa
+      if (STATUS_LABELS[lowerWord]) {
+        return STATUS_LABELS[lowerWord];
+      }
+      
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
     .join(' ');
 };
 
