@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { HardDrive, Shield, AlertCircle, Bell, RefreshCw, Clock } from 'lucide-react';
+import { HardDrive, Shield, AlertCircle, Bell, RefreshCw, Clock, FileText, Scale, Target } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { useNavigate } from 'react-router-dom';
 import { MultiDimensionalRadar } from '@/components/dashboard/MultiDimensionalRadar';
@@ -17,6 +17,9 @@ import { useAtivosStats } from '@/hooks/useAtivosStats';
 import { useControlesStats } from '@/hooks/useControlesStats';
 import { useIncidentesStats } from '@/hooks/useIncidentesStats';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useContratosStats } from '@/hooks/useContratosStats';
+import { useDocumentosStats } from '@/hooks/useDocumentosStats';
+import { useGapAnalysisStats } from '@/hooks/useGapAnalysisStats';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useState } from 'react';
@@ -29,6 +32,9 @@ export default function Dashboard() {
   const ativosStats = useAtivosStats();
   const controlesStats = useControlesStats();
   const incidentesStats = useIncidentesStats();
+  const contratosStats = useContratosStats();
+  const documentosStats = useDocumentosStats();
+  const gapStats = useGapAnalysisStats();
   const { data: dashboardData, isLoading: dashboardLoading, refetch: refetchDashboard, dataUpdatedAt } = useDashboardStats();
   const { data: trends } = useTrendData();
 
@@ -250,6 +256,121 @@ export default function Dashboard() {
             </TooltipTrigger>
             <TooltipContent><p>Incidentes abertos ou em investigação</p></TooltipContent>
           </Tooltip>
+        </div>
+
+        {/* KPIs Secundários */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-6 w-full">
+          {/* Card 5: Contratos */}
+          <Card 
+            interactive 
+            className="group"
+            onClick={() => navigate('/contratos')}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && navigate('/contratos')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                Contratos
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <Scale className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl sm:text-2xl font-bold tracking-tight">{contratosStats.data?.ativos || 0}</div>
+              <div className="flex items-center gap-2 flex-wrap mt-1">
+                {(contratosStats.data?.vencendo30Dias || 0) > 0 && (
+                  <Badge variant="warning" icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}>
+                    {contratosStats.data?.vencendo30Dias} vencendo
+                  </Badge>
+                )}
+                {(contratosStats.data?.vencidos || 0) > 0 && (
+                  <Badge variant="destructive" icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}>
+                    {contratosStats.data?.vencidos} vencidos
+                  </Badge>
+                )}
+                {(contratosStats.data?.vencendo30Dias || 0) === 0 && (contratosStats.data?.vencidos || 0) === 0 && (
+                  <Badge variant="success" icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}>
+                    Em dia
+                  </Badge>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 6: Documentos */}
+          <Card 
+            interactive 
+            className="group"
+            onClick={() => navigate('/documentos')}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && navigate('/documentos')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                Documentos
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl sm:text-2xl font-bold tracking-tight">{documentosStats.data?.ativos || 0}</div>
+              <div className="flex items-center gap-2 flex-wrap mt-1">
+                {(documentosStats.data?.vencendo30Dias || 0) > 0 && (
+                  <Badge variant="warning" icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}>
+                    {documentosStats.data?.vencendo30Dias} vencendo
+                  </Badge>
+                )}
+                {(documentosStats.data?.pendentesAprovacao || 0) > 0 && (
+                  <Badge variant="info" icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}>
+                    {documentosStats.data?.pendentesAprovacao} pendentes
+                  </Badge>
+                )}
+                {(documentosStats.data?.vencendo30Dias || 0) === 0 && (documentosStats.data?.pendentesAprovacao || 0) === 0 && (
+                  <Badge variant="success" icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}>
+                    Em dia
+                  </Badge>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 7: Conformidade */}
+          <Card 
+            interactive 
+            className="group col-span-2 lg:col-span-1"
+            onClick={() => navigate('/gap-analysis')}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && navigate('/gap-analysis')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                Conformidade
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl sm:text-2xl font-bold tracking-tight">
+                {gapStats.data?.averageCompliance || 0}%
+              </div>
+              <div className="flex items-center gap-2 flex-wrap mt-1">
+                <Badge variant="soft" icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}>
+                  {gapStats.data?.totalFrameworks || 0} frameworks
+                </Badge>
+                {(gapStats.data?.pendingItems || 0) > 0 && (
+                  <Badge variant="warning" icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}>
+                    {gapStats.data?.pendingItems} pendentes
+                  </Badge>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Resumo Executivo com IA */}

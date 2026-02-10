@@ -8,6 +8,8 @@ import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbP
 import UserProfile from '@/components/UserProfile';
 import NotificationCenter from '@/components/NotificationCenter';
 import PasswordChangeRequired from '@/components/PasswordChangeRequired';
+import { CommandPalette } from '@/components/CommandPalette';
+import { ChangelogPopover } from '@/components/ChangelogPopover';
 import PageTransition from '@/components/PageTransition';
 import TrialBanner from '@/components/TrialBanner';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
@@ -175,7 +177,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </Breadcrumb>
             </div>
 
-            <div className="flex items-center gap-4 flex-shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <ChangelogPopover />
               <NotificationCenter />
               <UserProfile />
             </div>
@@ -190,6 +193,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         
         {/* Onboarding Wizard */}
         <OnboardingWizard />
+        
+        {/* Command Palette (Cmd+K) */}
+        <CommandPalette />
         
         {/* Bottom Navigation Mobile */}
         {isMobile && <MobileBottomNav />}
