@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { useIncidentesStats } from '@/hooks/useIncidentesStats';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -179,7 +180,7 @@ export default function Incidentes() {
       loadIncidentes();
       setDeleteConfirm({ open: false, incidenteId: '' });
     } catch (error: any) {
-      console.error('Erro ao excluir incidente:', error);
+      logger.error('Erro ao excluir incidente', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: "Erro",
         description: error.message || "Erro ao excluir incidente",
@@ -410,7 +411,6 @@ export default function Incidentes() {
             sortField={sortField}
             sortDirection={sortDirection}
             onSort={handleSort}
-            onRefresh={loadIncidentes}
             emptyState={{
               icon: <AlertTriangle className="h-8 w-8" />,
               title: 'Nenhum incidente encontrado',
