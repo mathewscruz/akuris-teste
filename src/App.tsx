@@ -40,6 +40,8 @@ import NotFound from '@/pages/NotFound';
 import LandingPage from '@/pages/LandingPage';
 import PoliticaPrivacidade from '@/pages/PoliticaPrivacidade';
 import PlanosAcao from '@/pages/PlanosAcao';
+import Relatorios from '@/pages/Relatorios';
+import Politicas from '@/pages/Politicas';
 
 const queryClient = new QueryClient();
 
@@ -71,6 +73,20 @@ function App() {
               <Layout>
                 <ProtectedRoute moduleName="planos-acao" fallbackToRoleCheck={false}>
                   <PlanosAcao />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/relatorios" element={
+              <Layout>
+                <ProtectedRoute moduleName="relatorios" fallbackToRoleCheck={false}>
+                  <Relatorios />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/politicas" element={
+              <Layout>
+                <ProtectedRoute moduleName="politicas" fallbackToRoleCheck={false}>
+                  <Politicas />
                 </ProtectedRoute>
               </Layout>
             } />
