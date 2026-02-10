@@ -4775,6 +4775,214 @@ export type Database = {
           },
         ]
       }
+      politica_aceites: {
+        Row: {
+          aceito: boolean
+          created_at: string
+          data_aceite: string | null
+          empresa_id: string
+          id: string
+          ip_address: unknown
+          politica_id: string
+          user_id: string
+          versao_politica: number
+        }
+        Insert: {
+          aceito?: boolean
+          created_at?: string
+          data_aceite?: string | null
+          empresa_id: string
+          id?: string
+          ip_address?: unknown
+          politica_id: string
+          user_id: string
+          versao_politica?: number
+        }
+        Update: {
+          aceito?: boolean
+          created_at?: string
+          data_aceite?: string | null
+          empresa_id?: string
+          id?: string
+          ip_address?: unknown
+          politica_id?: string
+          user_id?: string
+          versao_politica?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "politica_aceites_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "politica_aceites_politica_id_fkey"
+            columns: ["politica_id"]
+            isOneToOne: false
+            referencedRelation: "politicas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      politica_questionarios: {
+        Row: {
+          created_at: string
+          id: string
+          opcoes: Json
+          ordem: number
+          pergunta: string
+          politica_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          opcoes?: Json
+          ordem?: number
+          pergunta: string
+          politica_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          opcoes?: Json
+          ordem?: number
+          pergunta?: string
+          politica_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "politica_questionarios_politica_id_fkey"
+            columns: ["politica_id"]
+            isOneToOne: false
+            referencedRelation: "politicas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      politica_respostas: {
+        Row: {
+          aprovado: boolean
+          created_at: string
+          empresa_id: string
+          id: string
+          nota: number
+          politica_id: string
+          respostas: Json
+          tentativa: number
+          user_id: string
+        }
+        Insert: {
+          aprovado?: boolean
+          created_at?: string
+          empresa_id: string
+          id?: string
+          nota?: number
+          politica_id: string
+          respostas?: Json
+          tentativa?: number
+          user_id: string
+        }
+        Update: {
+          aprovado?: boolean
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          nota?: number
+          politica_id?: string
+          respostas?: Json
+          tentativa?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "politica_respostas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "politica_respostas_politica_id_fkey"
+            columns: ["politica_id"]
+            isOneToOne: false
+            referencedRelation: "politicas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      politicas: {
+        Row: {
+          arquivo_nome: string | null
+          arquivo_url: string | null
+          categoria: string
+          conteudo: string | null
+          created_at: string
+          created_by: string | null
+          data_publicacao: string | null
+          data_validade: string | null
+          descricao: string | null
+          empresa_id: string
+          id: string
+          nota_minima_aprovacao: number | null
+          requer_aceite: boolean
+          requer_questionario: boolean
+          status: string
+          titulo: string
+          updated_at: string
+          versao: number
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          categoria?: string
+          conteudo?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_publicacao?: string | null
+          data_validade?: string | null
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          nota_minima_aprovacao?: number | null
+          requer_aceite?: boolean
+          requer_questionario?: boolean
+          status?: string
+          titulo: string
+          updated_at?: string
+          versao?: number
+        }
+        Update: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          categoria?: string
+          conteudo?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_publicacao?: string | null
+          data_validade?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          nota_minima_aprovacao?: number | null
+          requer_aceite?: boolean
+          requer_questionario?: boolean
+          status?: string
+          titulo?: string
+          updated_at?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "politicas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ativo: boolean
@@ -4815,6 +5023,116 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relatorio_agendamentos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          destinatarios: string[]
+          dia_envio: number | null
+          empresa_id: string
+          frequencia: string
+          id: string
+          proximo_envio: string | null
+          relatorio_id: string
+          ultimo_envio: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          destinatarios?: string[]
+          dia_envio?: number | null
+          empresa_id: string
+          frequencia: string
+          id?: string
+          proximo_envio?: string | null
+          relatorio_id: string
+          ultimo_envio?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          destinatarios?: string[]
+          dia_envio?: number | null
+          empresa_id?: string
+          frequencia?: string
+          id?: string
+          proximo_envio?: string | null
+          relatorio_id?: string
+          ultimo_envio?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorio_agendamentos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorio_agendamentos_relatorio_id_fkey"
+            columns: ["relatorio_id"]
+            isOneToOne: false
+            referencedRelation: "relatorios_customizados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relatorios_customizados: {
+        Row: {
+          configuracao: Json
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          status: string
+          template_base: string | null
+          tipo: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          configuracao?: Json
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          status?: string
+          template_base?: string | null
+          tipo?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          configuracao?: Json
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          status?: string
+          template_base?: string | null
+          tipo?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorios_customizados_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"

@@ -23,7 +23,9 @@ import {
   Server,
   FileKey,
   KeyRound,
-  ListTodo
+  ListTodo,
+  FileBarChart,
+  GraduationCap
 } from 'lucide-react';
 import logoMini from '@/assets/governaii-logo-mini.png';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -112,7 +114,14 @@ const menuItems = [
     subItems: [
       { title: 'Due Diligence', url: '/due-diligence', icon: BookOpen, moduleName: 'due-diligence' },
       { title: 'Canal de Denúncia', url: '/denuncia', icon: MessageSquare, moduleName: 'denuncia' },
+      { title: 'Políticas', url: '/politicas', icon: GraduationCap, moduleName: 'politicas' },
     ],
+  },
+  {
+    title: 'Relatórios',
+    url: '/relatorios',
+    icon: FileBarChart,
+    moduleName: 'relatorios',
   },
 ];
 
