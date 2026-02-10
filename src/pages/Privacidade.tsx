@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 import { Plus, Database, Users, AlertTriangle, Edit, Trash2, Link2, FileText, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -123,7 +124,7 @@ export default function Privacidade() {
         solicitacoesPendentes: pendentes
       });
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+      logger.error('Erro ao carregar dados de privacidade', { error: error instanceof Error ? error.message : String(error) });
       toast({ title: "Erro ao carregar dados", variant: "destructive" });
     }
   };
@@ -199,7 +200,7 @@ export default function Privacidade() {
       label: 'Mapeamentos',
       sortable: true,
       render: (value: number) => value > 0 ? (
-        <Badge className="bg-blue-500/20 text-blue-600 border-blue-500/30">{value}</Badge>
+        <Badge variant="secondary">{value}</Badge>
       ) : <span className="text-muted-foreground">0</span>
     },
     {
@@ -207,7 +208,7 @@ export default function Privacidade() {
       label: 'ROPAs',
       sortable: true,
       render: (value: number) => value > 0 ? (
-        <Badge className="bg-green-500/20 text-green-600 border-green-500/30">{value}</Badge>
+        <Badge variant="secondary">{value}</Badge>
       ) : <span className="text-muted-foreground">0</span>
     },
     {
@@ -334,25 +335,38 @@ export default function Privacidade() {
       key: 'actions',
       label: 'Ações',
       render: (value: any, ropa: any) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSelectedRopa(ropa);
-              setShowRopaDialog(true);
-            }}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDelete(ropa.id, 'ropa')}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        <TooltipProvider>
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedRopa(ropa);
+                    setShowRopaDialog(true);
+                  }}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Editar</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(ropa.id, 'ropa')}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Excluir</TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
       )
     }
   ];
@@ -425,25 +439,38 @@ export default function Privacidade() {
       key: 'actions',
       label: 'Ações',
       render: (value: any, solicitacao: any) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSelectedSolicitacao(solicitacao);
-              setShowSolicitacaoDialog(true);
-            }}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDelete(solicitacao.id, 'solicitacao')}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        <TooltipProvider>
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedSolicitacao(solicitacao);
+                    setShowSolicitacaoDialog(true);
+                  }}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Editar</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(solicitacao.id, 'solicitacao')}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Excluir</TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
       )
     }
   ];
@@ -518,7 +545,7 @@ export default function Privacidade() {
       loadData();
       setDeleteConfirm({ open: false, id: '', type: '' });
     } catch (error: any) {
-      console.error('Erro ao excluir:', error);
+      logger.error('Erro ao excluir item de privacidade', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: "Erro",
         description: error.message || "Erro ao excluir item",
@@ -650,7 +677,6 @@ export default function Privacidade() {
                     onClick: () => setShowRopaWizard(true)
                   }
                 }}
-                onRefresh={loadData}
               />
             </CardContent>
           </Card>
@@ -693,7 +719,6 @@ export default function Privacidade() {
                     onClick: () => setShowSolicitacaoDialog(true)
                   }
                 }}
-                onRefresh={loadData}
               />
             </CardContent>
           </Card>
