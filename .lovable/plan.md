@@ -1,161 +1,141 @@
 
-# Avaliacao Estrategica de Produto -- GovernAII GRC SaaS 2026
+# Validacao do Sistema de Autenticacao, Usuarios, Senhas e Notificacoes
 
-## Visao Geral do Sistema Atual
+## Resumo da Analise
 
-O GovernAII e uma plataforma GRC (Governance, Risk & Compliance) multi-tenant com 10+ modulos cobrindo: Gestao de Ativos, Riscos, Gap Analysis (20+ frameworks), Governanca (Controles, Auditorias, Sistemas), Contratos, Documentos, Seguranca (Contas Privilegiadas, Revisao de Acessos, Incidentes), Privacidade (LGPD/GDPR), Due Diligence, Canal de Denuncia, e integracao com Slack/Teams/Jira/Azure.
-
----
-
-## 1. FUNCIONALIDADES PARA ADICIONAR (Alto Impacto para 2026)
-
-### 1.1 Dashboard Executivo com IA Generativa (Prioridade: CRITICA)
-**Por que:** Em 2026, todo SaaS GRC precisa de insights acionaveis, nao apenas numeros. O dashboard atual mostra KPIs mas nao INTERPRETA os dados.
-
-**O que fazer:**
-- Resumo executivo em linguagem natural gerado por IA: "Sua empresa tem 3 riscos criticos sem tratamento ha mais de 30 dias. O framework ISO 27001 caiu 5% de aderencia este mes."
-- Recomendacoes automaticas priorizadas: "Priorize o tratamento do Risco X pois impacta 4 controles e 2 frameworks."
-- Score de saude organizacional unificado (0-100) combinando riscos, compliance, incidentes
-- Exportacao do resumo executivo em PDF para apresentacao a diretoria
-
-### 1.2 Modulo de Planos de Acao / Tarefas Transversais (Prioridade: ALTA)
-**Por que:** Hoje cada modulo gera necessidades de acao (gap no framework, risco para tratar, controle vencendo), mas nao existe um local centralizado para o gestor acompanhar TUDO que precisa ser feito.
-
-**O que fazer:**
-- Kanban/lista unificada com todas as pendencias do sistema
-- Vincular tarefas a qualquer modulo (risco, controle, framework, incidente)
-- Atribuicao de responsavel, prazo, prioridade
-- Dashboard "Meus Itens" para cada usuario ver suas pendencias
-- Integrar com notificacoes e lembretes
-
-### 1.3 Relatorios e Dashboards Customizaveis (Prioridade: ALTA)
-**Por que:** Clientes GRC precisam gerar relatorios para auditorias externas, diretoria e orgaos reguladores. Cada empresa tem necessidades diferentes.
-
-**O que fazer:**
-- Report Builder drag-and-drop com widgets (graficos, tabelas, textos)
-- Templates pre-definidos: "Relatorio LGPD para ANPD", "Status ISO 27001 para Auditoria", "Resumo Executivo Trimestral"
-- Agendamento de relatorios por email (semanal, mensal)
-- Exportacao em PDF e PowerPoint profissional
-
-### 1.4 Modulo de Politicas e Treinamentos (Prioridade: MEDIA-ALTA)
-**Por que:** Compliance exige que funcionarios leiam e aceitem politicas, e que passem por treinamentos. Isso e exigencia de ISO 27001, LGPD, SOX.
-
-**O que fazer:**
-- Upload de politicas com controle de versao (pode reaproveitar o modulo Documentos)
-- Fluxo de aceite: enviar politica para grupo de usuarios, rastrear quem leu/aceitou
-- Questionarios simples pos-leitura para validar compreensao
-- Dashboard de aderencia: "85% dos colaboradores aceitaram a Politica de Seguranca"
-- Certificados de conclusao automaticos
-
-### 1.5 API Publica e Webhooks Bidirecionais (Prioridade: MEDIA)
-**Por que:** Clientes enterprise em 2026 exigem que a ferramenta GRC se integre ao ecossistema deles (SIEM, ITSM, ERP). O sistema ja tem webhooks unidirecionais, mas falta uma API documentada.
-
-**O que fazer:**
-- REST API documentada com Swagger/OpenAPI
-- API Keys por empresa com rate limiting
-- Webhooks de entrada (receber eventos de SIEM, criar incidentes automaticamente)
-- Conectores prontos para ServiceNow, Splunk, Power BI
+Analisei todos os fluxos de autenticacao, registro de usuarios, troca de senhas, sistema de e-mails e notificacoes. O sistema esta **funcionalmente solido**, mas encontrei **8 problemas** que precisam ser corrigidos e **4 melhorias** recomendadas.
 
 ---
 
-## 2. FUNCIONALIDADES PARA MELHORAR (Otimizacoes de Impacto)
+## Problemas Encontrados
 
-### 2.1 IA em Todos os Modulos (Expandir o que ja existe)
-**Situacao atual:** A IA so e usada em sugestao de tratamento de riscos e avaliacao de aderencia de gap analysis. Existem 3 planos com 10/50/200 creditos.
+### 1. [CRITICO] Troca de senha no perfil NAO valida a senha atual
+**Arquivo:** `src/components/UserProfilePopover.tsx` (linhas 130-135)
 
-**O que melhorar:**
-- IA para classificacao automatica de riscos (com base na descricao, sugerir categoria, probabilidade, impacto)
-- IA para triagem de denuncias (classificar gravidade e categoria automaticamente)
-- IA para sugerir controles faltantes baseado nos frameworks ativos
-- IA para resumir incidentes e gerar timeline automatica
-- IA para analisar contratos e destacar clausulas criticas (SLA, penalidades, renovacao)
-- Aumentar a franquia de creditos ou criar modelo pay-per-use mais flexivel
+O formulario de troca de senha no perfil do usuario pede a "Senha Atual", mas **nunca a valida**. O Supabase `updateUser({ password })` aceita a nova senha sem verificar a antiga. Qualquer pessoa com sessao ativa pode trocar a senha sem saber a atual.
 
-### 2.2 Dashboard Atual -- Enriquecimento
-**O que melhorar:**
-- Adicionar trend indicators (setas indicando se piorou ou melhorou vs. mes anterior)
-- Widget de "Proximos Vencimentos" (contratos, controles, licencas, chaves -- tudo junto)
-- Mapa de calor de riscos interativo
-- OKRs/metas de compliance com progresso visual
+**Correcao:** Adicionar `reauthenticate` antes do `updateUser` usando `supabase.rpc` ou re-login com `signInWithPassword` para validar a senha atual.
 
-### 2.3 Onboarding Guiado (Wizard de Primeiro Uso)
-**Por que:** SaaS com 10+ modulos assusta novos clientes. Sem onboarding, o churn nos primeiros 30 dias e alto.
+### 2. [CRITICO] PasswordChangeRequired tambem NAO valida a senha atual
+**Arquivo:** `src/components/PasswordChangeRequired.tsx` (linhas 83-88)
 
-**O que fazer:**
-- Wizard interativo no primeiro login: "Vamos configurar sua empresa em 5 passos"
-- Checklist de ativacao por modulo com progresso visual
-- Templates pre-populados para cada modulo (riscos exemplo, controles exemplo)
-- Tours guiados por modulo com tooltips interativos
+Mesmo problema - pede a senha temporaria atual mas nao a valida. O campo "Senha Atual (Temporaria)" e apenas decorativo.
 
-### 2.4 Experiencia Mobile Responsiva
-**O que melhorar:**
-- Revisar todos os modulos para uso em tablet (cenario comum em auditorias presenciais)
-- Sidebar colapsavel com bottom navigation em mobile
-- Cards de aprovacao rapida para gestores aprovarem riscos e documentos pelo celular
+**Correcao:** Antes de chamar `updateUser`, fazer `signInWithPassword` com a senha atual para confirmar que o usuario realmente a possui.
+
+### 3. [MEDIO] Edge functions faltando no config.toml
+Sete edge functions existem no projeto mas nao estao configuradas no `supabase/config.toml`:
+- `process-invitation-reminders`
+- `daily-reminder-processor`
+- `check-trial-expiration`
+- `send-approval-notification`
+- `send-auditoria-item-notification`
+- `delete-user-complete`
+- `docgen-chat`
+
+Sem configuracao, essas funcoes usam `verify_jwt = true` por padrao. Funcoes como `delete-user-complete` e `send-approval-notification` precisam de JWT. Porem `process-invitation-reminders` e `daily-reminder-processor` sao chamadas por cron/service e precisam de `verify_jwt = false`.
+
+**Correcao:** Adicionar todas ao config.toml com o valor correto de `verify_jwt`.
+
+### 4. [MEDIO] Copyright desatualizado na pagina de login
+**Arquivo:** `src/pages/Auth.tsx` (linha 271)
+
+Exibe "2025" mas estamos em 2026.
+
+**Correcao:** Alterar para `{new Date().getFullYear()}` para manter dinamico.
+
+### 5. [BAIXO] Roles ainda lidos da tabela profiles no frontend
+**Arquivo:** `src/components/AuthProvider.tsx` (linha 13)
+
+O `user_roles` table foi criado para seguranca, mas o frontend continua lendo `role` diretamente de `profiles`. Isso funciona porque profiles ainda tem a coluna, mas nao e o padrao seguro.
+
+**Nota:** Este e um problema arquitetural conhecido. A migracao ja copiou os roles para `user_roles`, mas o frontend nao foi atualizado para consultar de la. Manter como esta por agora e funcional, pois o trigger `prevent_role_self_modification` ja protege contra escalacao de privilegios.
+
+### 6. [BAIXO] Funcao `create-user` usa senha hardcoded como fallback
+**Arquivo:** `supabase/functions/create-user/index.ts` (linha 153)
+
+Usa `password: 'temp123456'` como senha inicial antes de gerar a temporaria. Embora seja substituida logo depois pela senha gerada por `generate_temp_password`, se algum erro ocorrer entre as linhas 153-209, o usuario ficaria com essa senha fraca.
+
+**Correcao:** Gerar a senha temporaria ANTES de criar o usuario no Auth e usar diretamente.
+
+### 7. [BAIXO] `create-user` com verify_jwt = false
+**Arquivo:** `supabase/config.toml` (linha 58)
+
+A funcao `create-user` esta com `verify_jwt = false`, mas ela ja faz verificacao interna de autorizacao. Embora funcione, expoe o endpoint a chamadas sem token. Idealmente deveria ser `verify_jwt = true`.
+
+**Correcao:** Alterar para `verify_jwt = true`.
+
+### 8. [BAIXO] `listUsers()` na create-user e ineficiente
+**Arquivo:** `supabase/functions/create-user/index.ts` (linha 95)
+
+`listUsers()` busca TODOS os usuarios para verificar duplicidade. Em projetos com muitos usuarios, isso sera lento e pode falhar com timeout.
+
+**Correcao:** Usar `listUsers({ filter: email })` ou buscar diretamente na tabela `profiles` por email.
 
 ---
 
-## 3. FUNCIONALIDADES PARA REMOVER OU SIMPLIFICAR
+## Melhorias Recomendadas
 
-### 3.1 Simplificar a Navegacao de Governanca
-**Situacao:** "Governanca" agrupa Controles Internos, Sistemas, Contratos e Documentos. Para o usuario, Contratos e Documentos nao sao intuitivamente "Governanca".
+### A. Adicionar validacao de comprimento minimo na nova senha (UserProfilePopover)
+O schema Zod permite `nova_senha` opcional mas sem validacao de comprimento. Se informada, deveria exigir minimo 6 caracteres.
 
-**Recomendacao:** Mover Contratos e Documentos para o nivel raiz do sidebar, fora de Governanca. Governanca ficaria apenas com Controles e Auditorias (que sao naturalmente acoplados).
+### B. Adicionar "Marcar todas como lidas" no NotificationCenter
+O hook `useNotifications` ja tem `markAllAsRead`, mas o componente `NotificationCenter` nao expoe esse botao.
 
-### 3.2 Consolidar Tabs Redundantes
-**Situacao:** Alguns modulos tem tabs de "Relatorios" e "Configuracoes" internas que poderiam ser acessadas via botoes ou menus secundarios, liberando espaco para dados.
+### C. Limitar tentativas de login por rate limiting
+Atualmente o sistema depende apenas do Supabase para rate limiting. Considerar adicionar feedback visual apos 3 tentativas falhas.
 
-**Recomendacao:** Avaliar mover configuracoes de modulos (como "Categorias de Denuncia") para uma secao centralizada em Configuracoes.
+### D. Adicionar log de auditoria para operacoes senssiveis
+Troca de senha, reset de senha e exclusao de usuario nao geram registro de auditoria no banco.
 
 ---
 
-## 4. ESTRATEGIA DE DIFERENCIACAO COMPETITIVA 2026
+## Plano de Implementacao
 
-### 4.1 Posicionamento Sugerido
+### Fase 1 - Correcoes Criticas
+1. **Validar senha atual** no `PasswordChangeRequired` e no `UserProfilePopover` usando re-autenticacao via `signInWithPassword`
+2. **Atualizar copyright** para dinamico
+
+### Fase 2 - Correcoes de Configuracao
+3. **Adicionar edge functions faltantes** ao `config.toml` com valores corretos de `verify_jwt`
+4. **Alterar `create-user`** para `verify_jwt = true`
+5. **Gerar senha temporaria antes** de criar usuario no Auth (eliminar `temp123456`)
+
+### Fase 3 - Melhorias
+6. **Adicionar validacao de comprimento** para nova senha no `UserProfilePopover`
+7. **Adicionar botao "Marcar todas como lidas"** no `NotificationCenter`
+8. **Otimizar `listUsers`** na `create-user`
+
+---
+
+## Detalhes Tecnicos
+
+### Validacao de senha atual (Fases 1)
 ```text
-"Unico GRC SaaS com IA nativa que transforma dados de compliance 
-em acoes prioritizadas, reduzindo o tempo de gestao em 60%."
+Fluxo atual:
+  Usuario digita senha atual -> Campo ignorado -> updateUser(nova_senha) -> Sucesso
+
+Fluxo corrigido:
+  Usuario digita senha atual -> signInWithPassword(email, senha_atual)
+    -> Se erro: "Senha atual incorreta"
+    -> Se OK: updateUser(nova_senha) -> Sucesso
 ```
 
-### 4.2 Comparativo com Concorrentes
-
+### Config.toml - Funcoes faltantes
 ```text
-Funcionalidade            | GovernAII | Concorrentes Tipicos
---------------------------|-----------|---------------------
-Multi-framework (20+)     |    Sim    |   3-5 frameworks
-IA generativa integrada   |  Parcial  |   Nao / Add-on
-Canal de denuncia nativo  |    Sim    |   Integracao ext.
-Due Diligence nativo      |    Sim    |   Raro
-Multi-tenant isolado      |    Sim    |   Sim
-Planos de acao unificados |    Nao*   |   Sim (maioria)
-Relatorios customizaveis  |    Nao*   |   Sim (maioria)
-Onboarding guiado         |    Nao*   |   Sim (maioria)
-API publica               |    Nao*   |   Sim (enterprise)
-Treinamentos/politicas    |    Nao*   |   Add-on
-```
-*Itens marcados com * sao gaps criticos vs. concorrencia que devem ser priorizados.*
-
-### 4.3 Roadmap Sugerido
-
-```text
-Q1 2026: Planos de Acao Transversais + Dashboard Executivo com IA
-Q2 2026: Relatorios Customizaveis + Onboarding Guiado  
-Q3 2026: Politicas & Treinamentos + IA expandida para todos os modulos
-Q4 2026: API Publica + Conectores Enterprise
+[functions.delete-user-complete]        -> verify_jwt = false (faz check interno)
+[functions.send-approval-notification]  -> verify_jwt = false (chamada interna)
+[functions.send-auditoria-item-notification] -> verify_jwt = false
+[functions.process-invitation-reminders] -> verify_jwt = false (cron)
+[functions.daily-reminder-processor]    -> verify_jwt = false (cron)
+[functions.check-trial-expiration]      -> verify_jwt = false (cron)
+[functions.docgen-chat]                 -> verify_jwt = true
 ```
 
----
-
-## 5. METRICAS DE SUCESSO
-
-- **Ativacao:** % de clientes que configuram 3+ modulos nos primeiros 14 dias (meta: 70%)
-- **Engajamento:** DAU/MAU ratio acima de 40%
-- **Retencao:** Churn mensal abaixo de 3%
-- **Expansao:** % de clientes que fazem upgrade de plano (meta: 20% ao ano)
-- **NPS:** Acima de 50
-
----
-
-## Resumo Executivo
-
-O GovernAII tem uma base funcional **muito solida** com amplitude de modulos acima da media do mercado. Os 3 gaps mais criticos para competitividade em 2026 sao: (1) **Plano de Acoes centralizado** -- sem isso os usuarios se perdem entre modulos, (2) **Dashboard com IA interpretativa** -- o mercado espera insights, nao apenas graficos, (3) **Onboarding guiado** -- fundamental para reduzir churn e acelerar time-to-value. Com essas 3 adicoes, o GovernAII estaria posicionado como uma das plataformas GRC mais completas do mercado brasileiro.
+### Arquivos que serao modificados
+- `src/components/PasswordChangeRequired.tsx`
+- `src/components/UserProfilePopover.tsx`
+- `src/pages/Auth.tsx`
+- `src/components/NotificationCenter.tsx`
+- `supabase/config.toml`
+- `supabase/functions/create-user/index.ts`
