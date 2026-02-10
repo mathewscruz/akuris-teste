@@ -1,0 +1,85 @@
+import { HealthScoreGauge } from './HealthScoreGauge';
+import { Shield, AlertTriangle, Target, TrendingUp } from 'lucide-react';
+
+interface HeroScoreBannerProps {
+  healthScore: number;
+  criticalAlerts: number;
+  activeControls: number;
+  complianceScore: number;
+  userName: string;
+}
+
+export function HeroScoreBanner({ 
+  healthScore, 
+  criticalAlerts, 
+  activeControls, 
+  complianceScore,
+  userName 
+}: HeroScoreBannerProps) {
+  const metrics = [
+    {
+      icon: AlertTriangle,
+      label: 'Alertas Críticos',
+      value: criticalAlerts,
+      color: criticalAlerts > 0 ? 'text-destructive' : 'text-success',
+      bgColor: criticalAlerts > 0 ? 'bg-destructive/10' : 'bg-success/10',
+    },
+    {
+      icon: Shield,
+      label: 'Controles Ativos',
+      value: activeControls,
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
+    },
+    {
+      icon: Target,
+      label: 'Conformidade',
+      value: `${complianceScore}%`,
+      color: complianceScore >= 70 ? 'text-success' : complianceScore >= 50 ? 'text-warning' : 'text-destructive',
+      bgColor: complianceScore >= 70 ? 'bg-success/10' : complianceScore >= 50 ? 'bg-warning/10' : 'bg-destructive/10',
+    },
+  ];
+
+  return (
+    <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-primary/5 via-card to-accent/5 p-6 lg:p-8">
+      {/* Decorative elements */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
+      
+      <div className="relative flex flex-col lg:flex-row items-center gap-6 lg:gap-10">
+        {/* Gauge */}
+        <div className="shrink-0">
+          <HealthScoreGauge score={healthScore} />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 text-center lg:text-left space-y-4">
+          <div>
+            <p className="text-sm text-muted-foreground">Centro de Comando</p>
+            <h2 className="text-xl lg:text-2xl font-bold text-foreground">
+              Olá, {userName}
+            </h2>
+          </div>
+
+          {/* Metrics row */}
+          <div className="flex flex-wrap justify-center lg:justify-start gap-3">
+            {metrics.map((metric) => (
+              <div 
+                key={metric.label}
+                className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg border bg-card/80 backdrop-blur-sm"
+              >
+                <div className={`p-1.5 rounded-md ${metric.bgColor}`}>
+                  <metric.icon className={`h-3.5 w-3.5 ${metric.color}`} />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground leading-none">{metric.label}</p>
+                  <p className={`text-sm font-bold ${metric.color} leading-tight mt-0.5`}>{metric.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
