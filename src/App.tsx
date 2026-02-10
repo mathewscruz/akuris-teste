@@ -16,9 +16,7 @@ import GapAnalysisFrameworks from '@/pages/GapAnalysisFrameworks';
 import GapAnalysisFrameworkDetail from '@/pages/GapAnalysisFrameworkDetail';
 import GapAnalysisAderencia from '@/pages/GapAnalysisAderencia';
 import GapAnalysisNIST from '@/pages/GapAnalysisNIST';
-import Controles from '@/pages/Controles';
 import Contratos from '@/pages/Contratos';
-import Auditorias from '@/pages/Auditorias';
 import Governanca from '@/pages/Governanca';
 import Sistemas from '@/pages/Sistemas';
 import Documentos from '@/pages/Documentos';
@@ -30,7 +28,6 @@ import Assessment from '@/pages/Assessment';
 import RevisaoAcessos from '@/pages/RevisaoAcessos';
 import ReviewExterna from '@/pages/ReviewExterna';
 import Denuncia from '@/pages/Denuncia';
-import DenunciaExterna from '@/pages/DenunciaExterna';
 import DenunciaExternaRedirect from '@/pages/DenunciaExternaRedirect';
 import DenunciaMenu from '@/pages/DenunciaMenu';
 import DenunciaFormulario from '@/pages/DenunciaFormulario';
@@ -168,20 +165,8 @@ function App() {
               </Layout>
             } />
             {/* Redirects para rotas antigas */}
-            <Route path="/controles" element={
-              <Layout>
-                <ProtectedRoute moduleName="controles" fallbackToRoleCheck={false}>
-                  <Governanca />
-                </ProtectedRoute>
-              </Layout>
-            } />
-            <Route path="/auditorias" element={
-              <Layout>
-                <ProtectedRoute moduleName="auditorias" fallbackToRoleCheck={false}>
-                  <Governanca />
-                </ProtectedRoute>
-              </Layout>
-            } />
+            <Route path="/controles" element={<Navigate to="/governanca?tab=controles" replace />} />
+            <Route path="/auditorias" element={<Navigate to="/governanca?tab=auditorias" replace />} />
             <Route path="/contratos" element={
               <Layout>
                 <ProtectedRoute moduleName="contratos" fallbackToRoleCheck={false}>

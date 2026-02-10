@@ -115,6 +115,7 @@ interface Integration {
   descricao: string;
   categoria: string;
   disponivel: boolean;
+  betaLabel?: string;
   cor: string;
   Logo: React.FC;
 }
@@ -135,6 +136,7 @@ const INTEGRACOES_DISPONIVEIS: Integration[] = [
     descricao: 'Receba notificações de incidentes, riscos e controles diretamente no Slack.',
     categoria: 'comunicacao',
     disponivel: true,
+    betaLabel: 'Webhook',
     cor: '#4A154B',
     Logo: SlackLogo
   },
@@ -145,6 +147,7 @@ const INTEGRACOES_DISPONIVEIS: Integration[] = [
     descricao: 'Integre com o Teams para notificações e colaboração em tempo real.',
     categoria: 'comunicacao',
     disponivel: true,
+    betaLabel: 'Webhook',
     cor: '#5059C9',
     Logo: TeamsLogo
   },
@@ -165,6 +168,7 @@ const INTEGRACOES_DISPONIVEIS: Integration[] = [
     descricao: 'Sincronize itens de auditoria e controles com o Jira.',
     categoria: 'itsm',
     disponivel: true,
+    betaLabel: 'Beta',
     cor: '#0052CC',
     Logo: JiraLogo
   },
@@ -322,6 +326,11 @@ export function IntegrationHub() {
         {!integration.disponivel && (
           <Badge variant="secondary" className="absolute top-3 right-3 text-xs">
             Em breve
+          </Badge>
+        )}
+        {integration.disponivel && integration.betaLabel && (
+          <Badge variant="outline" className="absolute top-3 right-3 text-xs border-primary/30 text-primary">
+            {integration.betaLabel}
           </Badge>
         )}
         
