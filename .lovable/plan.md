@@ -1,104 +1,77 @@
 
-# Redesign do Dashboard e Refinamento Visual do GovernAII
+# Troca de Conteudo dos Cards do Dashboard + Sistema de Idiomas (PT/EN)
 
-## Diagnostico Atual
+## Parte 1: Trocar conteudo entre cards do Dashboard
 
-Analisei o dashboard e os modulos internos. O layout atual segue o padrao classico de SaaS: grid de KPI cards retangulares em cima, graficos em baixo, tudo em cards brancos com bordas suaves. Esse padrao e identico ao de ferramentas como Metabase, Notion Analytics, ou qualquer template shadcn/ui. Nao comunica identidade propria.
+### Situacao atual
+- **Linha 3 do grid (xl:grid-cols-3):** `MultiDimensionalRadar` (Maturidade GRC) ocupa `xl:col-span-2` (2/3) + `UpcomingExpirations` (1/3)
+- **Linha 4 do grid (xl:grid-cols-3):** `ExecutiveSummaryAI` (1/3) + `RiskScoreTimeline` (1/3) + `RecentActivities` (1/3)
 
-### Sobre a Fonte
+### Problema
+O grafico radar de Maturidade GRC e muito grande para o card de 2/3 e o Resumo Executivo IA esta comprimido em 1/3.
 
-A fonte atual e **Plus Jakarta Sans**. Ela e uma boa fonte, mas se tornou extremamente popular em projetos criados com Lovable, shadcn/ui e templates modernos. Quase todo SaaS recente usa ela ou Inter. Para se diferenciar, recomendo migrar para **DM Sans** -- uma fonte geometric sans-serif igualmente legivel, mais corporativa e menos "startup", com excelente suporte a pesos variados. Alternativa seria **Outfit** ou **Satoshi** (essa ultima nao esta no Google Fonts).
+### Solucao
+- Mover `MultiDimensionalRadar` para a posicao do `ExecutiveSummaryAI` (1/3 da linha 4)
+- Mover `ExecutiveSummaryAI` para a posicao do `MultiDimensionalRadar` (2/3 da linha 3)
+- Renomear "Resumo Executivo IA" para "Resumo" em todos os estados do componente (inicial, loading, resultado, PDF)
+- Reduzir a altura do radar chart de 400px para ~280px para caber no card menor
 
-**Recomendacao final: DM Sans** -- corporativa, moderna, distinta, disponivel no Google Fonts.
-
----
-
-## Mudancas Propostas
-
-### 1. Trocar fonte para DM Sans
-- Atualizar `index.html` para carregar DM Sans
-- Atualizar `tailwind.config.ts` para usar DM Sans como font-family principal
-- Manter fallback para system-ui
-
-### 2. Redesign do Dashboard - Layout "Command Center"
-Em vez do grid padrao de cards, criar um layout estilo "Centro de Comando" que transmita controle e visao estrategica:
-
-**Estrutura proposta:**
-
-```text
-+-------------------------------------------------------+
-| Dashboard Executivo              [Atualizar] [HH:MM]  |
-| Bem-vindo, Nome                                        |
-+-------------------------------------------------------+
-|                                                         |
-| +--HERO BANNER (Health Score + Resumo Rapido)--------+ |
-| | [Gauge SVG]  Score 72/100 Bom                      | |
-| |  3 alertas criticos | 12 controles ativos          | |
-| |  Score conformidade: 68%                           | |
-| +----------------------------------------------------+ |
-|                                                         |
-| +--KPIs em PILL/CHIP style (horizontal scroll)------+ |
-| | [Ativos 24] [Alertas 3] [Controles 12] [Incid. 1] | |
-| | [Contratos 8] [Docs 15] [Conformidade 68%]        | |
-| +----------------------------------------------------+ |
-|                                                         |
-| +--Maturidade GRC (2/3)--+ +--Vencimentos (1/3)----+ |
-| |  Radar Chart            | | Lista compacta         | |
-| +-------------------------+ +------------------------+ |
-|                                                         |
-| +--IA Summary----+ +--Riscos Timeline--+ +--Ativid.--+ |
-| |  Compacto       | |  Chart           | | Feed      | |
-| +-----------------+ +------------------+ +-----------+ |
-+-------------------------------------------------------+
-```
-
-**Diferenciais visuais:**
-- **Hero Banner:** Card grande no topo com gradiente sutil (primary/5 para transparent), contendo o HealthScoreGauge ja existente + metricas-chave inline. Substitui a secao de 7 cards por uma visao consolidada
-- **KPIs como Pills/Chips:** Em vez de cards grandes, usar badges/pills horizontais compactos que funcionam como atalhos de navegacao. Scroll horizontal no mobile
-- **Grid 3 colunas na ultima fila:** IA Summary, Riscos Timeline e Atividades lado a lado (xl), empilhados no mobile
-
-### 3. KPI Pills (substitui os 7 cards atuais)
-Em vez de 7 cards ocupando 2 fileiras inteiras, criar uma barra horizontal de "stat pills" -- pequenos indicadores compactos e clicaveis com icone + numero + badge de status. Isso libera espaco vertical para conteudo mais rico (graficos, IA).
-
-Cada pill tera:
-- Icone pequeno (h-4 w-4) com cor semantica
-- Valor numerico em bold
-- Label em texto pequeno
-- Badge de status (vencendo, criticos, etc.) quando aplicavel
-- Clicavel para navegacao
-
-### 4. Hero Score Banner
-Componente novo que combina:
-- HealthScoreGauge (ja existe, nao e usado no dashboard atualmente!)
-- 3-4 metricas-chave inline ao lado do gauge
-- Background com gradiente sutil da paleta teal
-- Cria identidade visual unica -- nenhum SaaS GRC tem isso
-
-### 5. Secao de IA mais integrada
-O ExecutiveSummaryAI atual ocupa uma fileira inteira. Compacta-lo para ocupar 1/3 do grid (ao lado de Riscos Timeline e Atividades), mostrando apenas resumo + score quando gerado, com botao "Expandir" para ver detalhes completos em dialog.
-
-### 6. Refinamento visual dos modulos internos
-- Adicionar uma barra sutil de gradiente no topo das paginas de modulo (abaixo do header) para criar continuidade visual com o dashboard
-- Os modulos ja estao bem padronizados (DataTable, StatCards), mas o header `PageHeader` pode ganhar uma linha decorativa sutil
+### Arquivos modificados
+- `src/pages/Dashboard.tsx` -- trocar posicao dos componentes no grid
+- `src/components/dashboard/ExecutiveSummaryAI.tsx` -- renomear titulo para "Resumo"
+- `src/components/dashboard/MultiDimensionalRadar.tsx` -- ajustar altura do chart para card menor
 
 ---
 
-## Arquivos que serao modificados
+## Parte 2: Sistema de Idiomas (Portugues/Ingles)
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `index.html` | Trocar Google Font de Plus Jakarta Sans para DM Sans |
-| `tailwind.config.ts` | Atualizar fontFamily para DM Sans |
-| `src/pages/Dashboard.tsx` | Redesign completo do layout: Hero Banner + KPI Pills + grid 3 colunas |
-| `src/components/dashboard/HeroScoreBanner.tsx` | NOVO - Banner principal com gauge + metricas |
-| `src/components/dashboard/KPIPills.tsx` | NOVO - Barra horizontal de indicadores compactos |
-| `src/components/dashboard/ExecutiveSummaryAI.tsx` | Compactar para modo resumido no grid |
+### Abordagem
+Criar um sistema de internacionalizacao (i18n) leve e sem dependencias externas, usando React Context + dicionarios de traducao. O usuario seleciona o idioma no perfil/header.
 
-## O que NAO sera alterado
-- Paleta de cores (teal/emerald ja esta bem diferenciada)
-- Sidebar (ja foi refinado)
-- Componentes de modulos (ja padronizados)
-- Landing page
+### Arquitetura
 
-## Resultado esperado
-O dashboard vai sair do padrao "template shadcn/ui" para um visual de "centro de comando GRC" com identidade propria, onde o score de saude organizacional e o elemento visual principal, os KPIs sao compactos e acessiveis, e o conteudo rico (graficos, IA, timeline) ocupa a maior parte do espaco.
+**Novo contexto:** `src/contexts/LanguageContext.tsx`
+- Provider com estado `locale: 'pt' | 'en'`
+- Persiste no `localStorage`
+- Exporta hook `useLanguage()` que retorna `{ t, locale, setLocale }`
+- Funcao `t(key)` busca traducao no dicionario ativo
+
+**Dicionarios:** `src/i18n/pt.ts` e `src/i18n/en.ts`
+- Contem todas as strings do sistema organizadas por modulo
+- Chaves como `dashboard.title`, `sidebar.riscos`, `common.save`, etc.
+- Comecar com as strings principais: sidebar, header, dashboard, dialogs comuns, botoes
+
+**Seletor de idioma:** Adicionado ao header (ao lado do ChangelogPopover) como um botao com bandeira/sigla (PT | EN)
+
+### Escopo das traducoes (primeira entrega)
+- Sidebar completo (todos os menus e submenus)
+- Header (breadcrumbs ficam dinamicos)
+- Dashboard (titulos, labels, KPI pills, hero banner)
+- Botoes comuns (Salvar, Cancelar, Excluir, Editar, Novo, Exportar)
+- Estados vazios e loading
+- Componentes de UI (DataTable headers, filtros)
+
+### Arquivos criados
+- `src/contexts/LanguageContext.tsx` -- Context + Provider + hook
+- `src/i18n/pt.ts` -- dicionario portugues
+- `src/i18n/en.ts` -- dicionario ingles
+- `src/components/LanguageSelector.tsx` -- botao toggle PT/EN
+
+### Arquivos modificados
+- `src/main.tsx` -- envolver app com LanguageProvider
+- `src/components/Layout.tsx` -- adicionar LanguageSelector no header
+- `src/components/AppSidebar.tsx` -- usar `t()` nos labels do menu
+- `src/pages/Dashboard.tsx` -- usar `t()` nos titulos e labels
+- `src/components/dashboard/HeroScoreBanner.tsx` -- usar `t()`
+- `src/components/dashboard/KPIPills.tsx` -- usar `t()`
+- `src/components/dashboard/ExecutiveSummaryAI.tsx` -- usar `t()`
+- `src/components/dashboard/MultiDimensionalRadar.tsx` -- usar `t()`
+- `src/components/dashboard/UpcomingExpirations.tsx` -- usar `t()`
+- `src/components/dashboard/RecentActivities.tsx` -- usar `t()`
+- `src/components/dashboard/RiskScoreTimeline.tsx` -- usar `t()`
+
+### Detalhes tecnicos
+- Sem bibliotecas externas (react-i18next, etc.) -- o sistema e simples o suficiente para um Context nativo
+- Persistencia via `localStorage.getItem('governaii-locale')`
+- Fallback para 'pt' se nao houver preferencia salva
+- Os modulos internos (Riscos, Controles, etc.) serao traduzidos incrementalmente em etapas futuras -- nesta primeira entrega o foco e sidebar + dashboard + componentes comuns
