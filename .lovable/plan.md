@@ -1,141 +1,196 @@
 
-# Validacao do Sistema de Autenticacao, Usuarios, Senhas e Notificacoes
+# Auditoria Completa de Product Design (UX/UI)
+## GovernAII - Plataforma GRC
 
-## Resumo da Analise
-
-Analisei todos os fluxos de autenticacao, registro de usuarios, troca de senhas, sistema de e-mails e notificacoes. O sistema esta **funcionalmente solido**, mas encontrei **8 problemas** que precisam ser corrigidos e **4 melhorias** recomendadas.
-
----
-
-## Problemas Encontrados
-
-### 1. [CRITICO] Troca de senha no perfil NAO valida a senha atual
-**Arquivo:** `src/components/UserProfilePopover.tsx` (linhas 130-135)
-
-O formulario de troca de senha no perfil do usuario pede a "Senha Atual", mas **nunca a valida**. O Supabase `updateUser({ password })` aceita a nova senha sem verificar a antiga. Qualquer pessoa com sessao ativa pode trocar a senha sem saber a atual.
-
-**Correcao:** Adicionar `reauthenticate` antes do `updateUser` usando `supabase.rpc` ou re-login com `signInWithPassword` para validar a senha atual.
-
-### 2. [CRITICO] PasswordChangeRequired tambem NAO valida a senha atual
-**Arquivo:** `src/components/PasswordChangeRequired.tsx` (linhas 83-88)
-
-Mesmo problema - pede a senha temporaria atual mas nao a valida. O campo "Senha Atual (Temporaria)" e apenas decorativo.
-
-**Correcao:** Antes de chamar `updateUser`, fazer `signInWithPassword` com a senha atual para confirmar que o usuario realmente a possui.
-
-### 3. [MEDIO] Edge functions faltando no config.toml
-Sete edge functions existem no projeto mas nao estao configuradas no `supabase/config.toml`:
-- `process-invitation-reminders`
-- `daily-reminder-processor`
-- `check-trial-expiration`
-- `send-approval-notification`
-- `send-auditoria-item-notification`
-- `delete-user-complete`
-- `docgen-chat`
-
-Sem configuracao, essas funcoes usam `verify_jwt = true` por padrao. Funcoes como `delete-user-complete` e `send-approval-notification` precisam de JWT. Porem `process-invitation-reminders` e `daily-reminder-processor` sao chamadas por cron/service e precisam de `verify_jwt = false`.
-
-**Correcao:** Adicionar todas ao config.toml com o valor correto de `verify_jwt`.
-
-### 4. [MEDIO] Copyright desatualizado na pagina de login
-**Arquivo:** `src/pages/Auth.tsx` (linha 271)
-
-Exibe "2025" mas estamos em 2026.
-
-**Correcao:** Alterar para `{new Date().getFullYear()}` para manter dinamico.
-
-### 5. [BAIXO] Roles ainda lidos da tabela profiles no frontend
-**Arquivo:** `src/components/AuthProvider.tsx` (linha 13)
-
-O `user_roles` table foi criado para seguranca, mas o frontend continua lendo `role` diretamente de `profiles`. Isso funciona porque profiles ainda tem a coluna, mas nao e o padrao seguro.
-
-**Nota:** Este e um problema arquitetural conhecido. A migracao ja copiou os roles para `user_roles`, mas o frontend nao foi atualizado para consultar de la. Manter como esta por agora e funcional, pois o trigger `prevent_role_self_modification` ja protege contra escalacao de privilegios.
-
-### 6. [BAIXO] Funcao `create-user` usa senha hardcoded como fallback
-**Arquivo:** `supabase/functions/create-user/index.ts` (linha 153)
-
-Usa `password: 'temp123456'` como senha inicial antes de gerar a temporaria. Embora seja substituida logo depois pela senha gerada por `generate_temp_password`, se algum erro ocorrer entre as linhas 153-209, o usuario ficaria com essa senha fraca.
-
-**Correcao:** Gerar a senha temporaria ANTES de criar o usuario no Auth e usar diretamente.
-
-### 7. [BAIXO] `create-user` com verify_jwt = false
-**Arquivo:** `supabase/config.toml` (linha 58)
-
-A funcao `create-user` esta com `verify_jwt = false`, mas ela ja faz verificacao interna de autorizacao. Embora funcione, expoe o endpoint a chamadas sem token. Idealmente deveria ser `verify_jwt = true`.
-
-**Correcao:** Alterar para `verify_jwt = true`.
-
-### 8. [BAIXO] `listUsers()` na create-user e ineficiente
-**Arquivo:** `supabase/functions/create-user/index.ts` (linha 95)
-
-`listUsers()` busca TODOS os usuarios para verificar duplicidade. Em projetos com muitos usuarios, isso sera lento e pode falhar com timeout.
-
-**Correcao:** Usar `listUsers({ filter: email })` ou buscar diretamente na tabela `profiles` por email.
+Analisei todas as paginas, componentes, fluxos e padroes visuais do sistema sob a otica de um Product Designer senior. Abaixo, as descobertas organizadas por categoria com acoes concretas.
 
 ---
 
-## Melhorias Recomendadas
+## 1. Hierarquia Visual e Espacamento
 
-### A. Adicionar validacao de comprimento minimo na nova senha (UserProfilePopover)
-O schema Zod permite `nova_senha` opcional mas sem validacao de comprimento. Se informada, deveria exigir minimo 6 caracteres.
+### Problema: Header do Dashboard sem hierarquia clara
+O greeting "Ola, Usuario! (emoji)" mistura tom informal com uma plataforma corporativa GRC. O emoji e o tom quebram a seriedade esperada por CISOs e gestores de compliance.
 
-### B. Adicionar "Marcar todas como lidas" no NotificationCenter
-O hook `useNotifications` ja tem `markAllAsRead`, mas o componente `NotificationCenter` nao expoe esse botao.
+**Acao:** Remover emoji. Trocar saudacao para formato mais profissional: "Dashboard Executivo" como titulo fixo, com subtitulo "Bem-vindo, [Nome]" em texto secundario. Manter timestamp de atualizacao.
 
-### C. Limitar tentativas de login por rate limiting
-Atualmente o sistema depende apenas do Supabase para rate limiting. Considerar adicionar feedback visual apos 3 tentativas falhas.
+### Problema: Inconsistencia de padding entre modulos
+O Dashboard usa `space-y-6` e `gap-3 lg:gap-6`, Riscos usa `container mx-auto py-6 px-4 max-w-7xl`, Denuncia usa `space-y-6` sem container. Configuracoes tambem usa `space-y-6`. A falta de container padrao cria larguras diferentes entre paginas.
 
-### D. Adicionar log de auditoria para operacoes senssiveis
-Troca de senha, reset de senha e exclusao de usuario nao geram registro de auditoria no banco.
+**Acao:** Padronizar layout wrapper. O Layout.tsx ja aplica `p-4 md:p-6` no main, entao remover containers/paddings redundantes dos modulos individuais (ex: Riscos.tsx linha 356).
 
 ---
 
-## Plano de Implementacao
+## 2. Sidebar e Navegacao
 
-### Fase 1 - Correcoes Criticas
-1. **Validar senha atual** no `PasswordChangeRequired` e no `UserProfilePopover` usando re-autenticacao via `signInWithPassword`
-2. **Atualizar copyright** para dinamico
+### Problema: Animacoes excessivas no sidebar
+O sidebar tem `hover:scale-105`, `hover:shadow-sm`, `hover:translate-x-2`, `hover:rotate-12` no chevron, e `scale-110 rotate-3` nos icones ativos. Isso cria uma experiencia "saltitante" que distrai e parece amadora. Em plataformas SaaS enterprise, micro-animacoes devem ser sutis.
 
-### Fase 2 - Correcoes de Configuracao
-3. **Adicionar edge functions faltantes** ao `config.toml` com valores corretos de `verify_jwt`
-4. **Alterar `create-user`** para `verify_jwt = true`
-5. **Gerar senha temporaria antes** de criar usuario no Auth (eliminar `temp123456`)
+**Acao:**
+- Remover `hover:scale-105` de todos os itens do sidebar
+- Remover `hover:translate-x-2` dos subitems
+- Remover `rotate-3` e `rotate-12` dos icones/chevrons
+- Manter apenas transicoes de cor e opacidade nos hovers (ja suficientes com `hover:bg-sidebar-accent/50`)
+- Reduzir `duration-300` para `duration-200`
 
-### Fase 3 - Melhorias
-6. **Adicionar validacao de comprimento** para nova senha no `UserProfilePopover`
-7. **Adicionar botao "Marcar todas como lidas"** no `NotificationCenter`
-8. **Otimizar `listUsers`** na `create-user`
+### Problema: Placeholder invisivel para alinhamento
+Linha 369 do AppSidebar.tsx tem um `<div className="w-4 h-4 flex-shrink-0" />` como placeholder para alinhar itens sem chevron. Isso e uma solucao fragil.
+
+**Acao:** Remover o placeholder. O alinhamento natural com `justify-start` e suficiente.
+
+---
+
+## 3. Cards e KPIs do Dashboard
+
+### Problema: KPI Cards com informacao insuficiente
+Os 4 cards do dashboard mostram um numero grande e um badge unico. Falta contexto imediato -- o usuario nao sabe se "12 ativos" e bom ou ruim sem clicar.
+
+**Acao:** Adicionar uma segunda linha com progresso ou comparativo inline (ex: "12 ativos | 3 criticos" ou uma mini barra de progresso mostrando % criticos vs total). Ja existe `TrendBadge` nos cards 2-4, estender para o card 1 (Ativos).
+
+### Problema: Cards clicaveis sem affordance visual clara
+Os KPI cards sao clicaveis mas nao tem indicador visual alem do cursor pointer. O usuario pode nao perceber que sao interativos.
+
+**Acao:** Adicionar um icone discreto de `ChevronRight` ou `ExternalLink` (h-3 w-3) no canto inferior direito dos cards, com opacidade 0.5 que aumenta no hover.
+
+---
+
+## 4. Componente ExecutiveSummaryAI
+
+### Problema: Estado inicial vazio
+O componente de resumo IA mostra apenas um botao "Gerar Resumo Executivo" ate ser clicado. Isso desperdiça espaco valioso no dashboard e cria uma sensacao de "feature incompleta".
+
+**Acao:** Mostrar um estado inicial mais convidativo com skeleton/preview do que sera gerado (ex: 3 linhas de skeleton + texto "Clique para gerar uma analise executiva com IA"). Opcionalmente, gerar automaticamente no primeiro acesso do dia.
+
+---
+
+## 5. Tabelas e Listas
+
+### Problema: Controles.tsx usa Table manual em vez de DataTable
+O modulo de Controles (837 linhas) usa `<Table>` manual com paginacao propria, enquanto Riscos, Incidentes e outros usam `DataTable`. Isso quebra a consistencia de UX (paginacao diferente, sorting diferente).
+
+**Acao:** Migrar Controles.tsx para usar o componente `DataTable` padrao, eliminando a implementacao manual de paginacao.
+
+### Problema: Documentos.tsx tambem usa Table manual
+Mesmo caso - 927 linhas com tabela manual.
+
+**Acao:** Migrar Documentos.tsx para DataTable.
+
+### Problema: Contratos.tsx usa Table manual
+857 linhas com tabela e paginacao manuais.
+
+**Acao:** Migrar Contratos.tsx para DataTable.
+
+---
+
+## 6. Loading States
+
+### Problema: Loading spinner identico em todos os modulos
+Todos os modulos mostram o mesmo spinner generico (circulo girando + "Carregando..."). Isso perde a oportunidade de manter contexto visual.
+
+**Acao:** Substituir o spinner generico por Skeleton layouts que espelham a estrutura real da pagina. O Dashboard ja faz isso parcialmente (skeleton nos cards), mas modulos como Riscos (linha 354-364) e Configuracoes mostram apenas spinner centralizado. Aplicar skeleton pattern em todos.
+
+---
+
+## 7. Mobile Bottom Navigation
+
+### Problema: Contratos e Documentos nao estao no bottom nav
+Os modulos recentemente movidos para raiz do sidebar (Contratos, Documentos) nao foram adicionados ao menu "Mais" do MobileBottomNav. O item "Docs" no nav principal vai para `/documentos`, mas Contratos so aparece no "Mais" de forma indireta.
+
+**Acao:** Adicionar "Contratos" aos `moreNavItems` do MobileBottomNav.tsx (ja esta parcialmente la como parte de outro grupo). Verificar que todos os modulos raiz do sidebar estejam representados.
+
+### Problema: Icones repetidos
+`Shield` e usado para Privacidade e tambem para Controles no bottom nav. `HardDrive` e usado para Incidentes no bottom nav mas para Ativos no dashboard.
+
+**Acao:** Diferenciar icones: Privacidade pode usar `Eye` ou `UserCheck`, Incidentes pode usar `AlertCircle` (ja usado no desktop sidebar).
+
+---
+
+## 8. NotificationCenter
+
+### Problema: Limite de 20 notificacoes pode cortar alertas importantes
+O sistema combina notificacoes manuais + automaticas e faz `.slice(0, 20)`. Em cenarios reais com muitos contratos/documentos vencendo, alertas criticos podem ser cortados.
+
+**Acao:** Separar notificacoes por prioridade: mostrar TODAS as de tipo "error" primeiro, depois "warning", depois "info". Adicionar um link "Ver todas" que abre uma pagina completa de notificacoes (ou dialog fullscreen) em vez de limitar a 20 no popover.
+
+### Problema: Performance - queries pesadas no NotificationCenter
+O componente faz 8+ queries separadas (documentos, contratos, controles, incidentes, ativos, manutencoes, licencas, chaves, aprovacoes) toda vez que abre. Isso impacta performance.
+
+**Acao:** Consolidar em uma unica Edge Function `get-notifications-summary` que retorna todos os alertas de uma vez, com cache de 5 minutos server-side.
+
+---
+
+## 9. Empty States
+
+### Problema: EmptyState sem ilustracoes
+O componente EmptyState usa apenas um icone circular generico. Para uma plataforma premium, falta personalidade.
+
+**Acao:** Adicionar ilustracoes SVG simples (line-art no estilo do design system teal) para os empty states mais comuns: "Nenhum risco cadastrado", "Nenhum documento", etc. Usar um componente wrapper que aceita `illustration` como prop.
+
+---
+
+## 10. Formularios e Dialogs
+
+### Problema: Dialogs sem indicacao de campos obrigatorios
+Os formularios nos dialogs (RiscoDialog, ControleDialog, etc.) nao marcam visualmente quais campos sao obrigatorios (asterisco vermelho) de forma consistente.
+
+**Acao:** Padronizar todos os Labels de campos obrigatorios com `*` vermelho apos o texto. Criar um componente `RequiredLabel` wrapper.
+
+---
+
+## 11. Cores e Identidade
+
+### Problema: App.css com estilos legados
+O arquivo `src/App.css` contem estilos do template Vite original (`#root`, `.logo`, `.read-the-docs`, `.card`) que nao sao usados e poluem o projeto.
+
+**Acao:** Limpar App.css removendo todos os estilos legados do template.
+
+---
+
+## 12. Micro-interacoes e Feedback
+
+### Problema: Botoes de acao sem feedback de carregamento
+Botoes como "Salvar", "Excluir" em dialogs nao mostram estado de loading durante operacoes assincronas de forma consistente.
+
+**Acao:** Padronizar todos os botoes de submit em dialogs para mostrar `<Loader2 className="animate-spin" />` durante requisicoes, desabilitando o botao.
+
+---
+
+## Resumo de Impacto
+
+| Categoria | Itens | Prioridade |
+|-----------|-------|------------|
+| Remover animacoes excessivas sidebar | 1 arquivo | Alta |
+| Dashboard profissionalizar header | 1 arquivo | Alta |
+| Migrar tabelas manuais para DataTable | 3 arquivos | Alta |
+| Limpar App.css legado | 1 arquivo | Media |
+| Loading skeletons em todos modulos | 5+ arquivos | Media |
+| Empty states com ilustracoes | 1 componente + SVGs | Baixa |
+| NotificationCenter priorizar erros | 1 arquivo | Media |
+| Mobile nav icones e cobertura | 1 arquivo | Media |
+| Campos obrigatorios visuais | Multiplos dialogs | Baixa |
+| Botoes loading padrao | Multiplos dialogs | Baixa |
+| ExecutiveSummaryAI estado inicial | 1 arquivo | Baixa |
 
 ---
 
 ## Detalhes Tecnicos
 
-### Validacao de senha atual (Fases 1)
-```text
-Fluxo atual:
-  Usuario digita senha atual -> Campo ignorado -> updateUser(nova_senha) -> Sucesso
+### Arquivos que serao modificados:
+- `src/App.css` -- limpar estilos legados
+- `src/components/AppSidebar.tsx` -- remover animacoes excessivas
+- `src/pages/Dashboard.tsx` -- profissionalizar header, affordance nos cards
+- `src/pages/Controles.tsx` -- migrar para DataTable
+- `src/pages/Documentos.tsx` -- migrar para DataTable
+- `src/pages/Contratos.tsx` -- migrar para DataTable
+- `src/pages/Riscos.tsx` -- remover container wrapper redundante
+- `src/components/MobileBottomNav.tsx` -- corrigir icones e cobertura
+- `src/components/NotificationCenter.tsx` -- priorizar por severidade, link "ver todas"
+- `src/components/dashboard/ExecutiveSummaryAI.tsx` -- melhorar estado inicial
+- `src/pages/Incidentes.tsx` -- skeleton loading
+- `src/pages/Configuracoes.tsx` -- skeleton loading
 
-Fluxo corrigido:
-  Usuario digita senha atual -> signInWithPassword(email, senha_atual)
-    -> Se erro: "Senha atual incorreta"
-    -> Se OK: updateUser(nova_senha) -> Sucesso
-```
-
-### Config.toml - Funcoes faltantes
-```text
-[functions.delete-user-complete]        -> verify_jwt = false (faz check interno)
-[functions.send-approval-notification]  -> verify_jwt = false (chamada interna)
-[functions.send-auditoria-item-notification] -> verify_jwt = false
-[functions.process-invitation-reminders] -> verify_jwt = false (cron)
-[functions.daily-reminder-processor]    -> verify_jwt = false (cron)
-[functions.check-trial-expiration]      -> verify_jwt = false (cron)
-[functions.docgen-chat]                 -> verify_jwt = true
-```
-
-### Arquivos que serao modificados
-- `src/components/PasswordChangeRequired.tsx`
-- `src/components/UserProfilePopover.tsx`
-- `src/pages/Auth.tsx`
-- `src/components/NotificationCenter.tsx`
-- `supabase/config.toml`
-- `supabase/functions/create-user/index.ts`
+### Principios aplicados:
+1. Menos e mais: remover animacoes que nao agregam valor
+2. Consistencia acima de tudo: mesmos componentes para mesmas funcoes
+3. Feedback imediato: o usuario sempre sabe o que esta acontecendo
+4. Hierarquia clara: titulos, subtitulos e acoes em posicoes previsiveis
+5. Tom profissional: linguagem e visual adequados ao publico-alvo (GRC)
