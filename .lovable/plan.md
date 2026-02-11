@@ -1,49 +1,23 @@
 
 
-# Alinhamento Visual dos Cards + Renomear Titulo
+# Alinhar Visualmente o Card Maturidade GRC com o Card Evolucao dos Riscos
 
-## Problemas
+## Problema
+O card "Maturidade GRC" tem altura do grafico diferente do card "Evolucao dos Riscos". O card de Riscos usa `h-52 sm:h-72` como wrapper do grafico, enquanto o Maturidade usa `height={250}` fixo no ResponsiveContainer. Isso causa desalinhamento vertical entre os dois cards.
 
-1. O titulo "Evolucao de Riscos por Criticidade" e longo demais e quebra em duas linhas no header do card
-2. O card "Maturidade GRC" nao tem a mesma estrutura visual do card "Evolucao dos Riscos" (falta area de status/badge entre header e grafico)
+## Mudanca
 
-## Mudancas
+### Arquivo: `src/components/dashboard/MultiDimensionalRadar.tsx`
 
-### 1. Renomear titulo do card de Riscos
-- **Arquivo:** `src/i18n/pt.ts` (linha 78)
-  - De: `'Evolucao de Riscos por Criticidade'`
-  - Para: `'Evolucao dos Riscos'`
-- **Arquivo:** `src/i18n/en.ts` (linha 78)
-  - De: `'Risk Evolution by Criticality'`
-  - Para: `'Risk Evolution'`
+1. Envolver o `ResponsiveContainer` em um `div` com `className="h-52 sm:h-72 w-full"` (mesmo wrapper do card de Riscos)
+2. Mudar o `ResponsiveContainer` de `height={250}` para `height="100%"` (preenche o wrapper, igual ao card de Riscos)
 
-### 2. Alinhar estrutura visual do card Maturidade GRC
-- **Arquivo:** `src/components/dashboard/MultiDimensionalRadar.tsx`
-  - Adicionar area de status entre o header e o grafico (mesmo padrao do card de Riscos que tem numero + icone + badge)
-  - Mostrar o score medio geral com badge de status (ex: "72" + badge "Bom" ou "Atencao")
-  - Manter a mesma hierarquia visual: CardHeader com titulo -> area de metricas resumo -> grafico -> rodape com grid 4 colunas
+Isso garante que ambos os cards tenham exatamente a mesma altura de area de grafico em todos os breakpoints.
 
-### Detalhes tecnicos
-
-O card de Riscos tem esta estrutura:
-```
-CardHeader
-  -> titulo + tabs
-  -> numero grande (totalCritical) + icone de trend + badge de status
-CardContent
-  -> grafico (ResponsiveContainer)
-  -> rodape grid 4 colunas (Criticos/Altos/Medios/Baixos)
-```
-
-O card de Maturidade GRC sera ajustado para:
-```
-CardHeader
-  -> titulo
-  -> score medio grande + badge de status (Excelente/Bom/Atencao/Critico)
-CardContent
-  -> grafico radar (ResponsiveContainer)
-  -> rodape grid 4 colunas (top 4 dimensoes)
-```
-
-Isso garante que ambos os cards tenham a mesma altura de header, mesma area de metricas, e mesmo rodape.
+## Resultado esperado
+Os dois cards terao estrutura identica:
+- CardHeader com titulo
+- CardHeader com numero + icone + badge
+- CardContent com div h-52/h-72 contendo o grafico
+- Rodape com grid 4 colunas
 
