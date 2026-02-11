@@ -145,7 +145,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           }}
         />
         
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden -ml-px">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Banner de Trial */}
           <TrialBanner />
           

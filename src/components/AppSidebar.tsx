@@ -252,7 +252,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar
-      className={`transition-all duration-300 ease-out ${isCollapsed ? 'w-14' : 'w-60'}`}
+      className="transition-all duration-300 ease-out"
       collapsible="icon"
     >
       <SidebarHeader className="border-b border-sidebar-border h-14 overflow-hidden">
