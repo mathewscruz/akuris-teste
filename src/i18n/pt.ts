@@ -75,7 +75,7 @@ export const pt = {
     noExpirations: 'Nenhum vencimento nos próximos 60 dias 🎉',
     recentActivities: 'Atividades Recentes',
     noActivities: 'Nenhuma atividade recente encontrada',
-    riskEvolution: 'Evolução de Riscos por Criticidade',
+    riskEvolution: 'Evolução dos Riscos',
     weekly: 'Semanal',
     monthly: 'Mensal',
     yearly: 'Anual',

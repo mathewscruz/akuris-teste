@@ -75,7 +75,7 @@ export const en = {
     noExpirations: 'No expirations in the next 60 days 🎉',
     recentActivities: 'Recent Activities',
     noActivities: 'No recent activities found',
-    riskEvolution: 'Risk Evolution by Criticality',
+    riskEvolution: 'Risk Evolution',
     weekly: 'Weekly',
     monthly: 'Monthly',
     yearly: 'Yearly',
