@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRadarChartData, RadarDataPoint } from "@/hooks/useRadarChartData";
@@ -88,6 +89,18 @@ export const MultiDimensionalRadar = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
+  const averageScore = useMemo(() => {
+    if (!data || data.length === 0) return 0;
+    return Math.round(data.reduce((sum, d) => sum + d.score, 0) / data.length);
+  }, [data]);
+
+  const statusConfig = useMemo(() => {
+    if (averageScore >= 80) return { label: t('dashboard.excellent'), variant: 'success' as const, icon: CheckCircle2, color: 'text-green-500' };
+    if (averageScore >= 60) return { label: t('dashboard.good'), variant: 'default' as const, icon: CheckCircle2, color: 'text-primary' };
+    if (averageScore >= 40) return { label: t('dashboard.warning'), variant: 'warning' as const, icon: AlertCircle, color: 'text-warning' };
+    return { label: t('dashboard.criticalStatus'), variant: 'destructive' as const, icon: XCircle, color: 'text-destructive' };
+  }, [averageScore, t]);
+
   if (isLoading) {
     return (
       <Card>
@@ -102,10 +115,19 @@ export const MultiDimensionalRadar = () => {
     );
   }
 
+  const StatusIcon = statusConfig.icon;
+
   return (
     <Card className="w-full">
       <CardHeader>
         <CardTitle>{t('dashboard.maturity')}</CardTitle>
+        <div className="flex items-center space-x-2 mt-4">
+          <span className={`text-2xl font-bold ${statusConfig.color}`}>{averageScore}%</span>
+          <StatusIcon className={`h-5 w-5 ${statusConfig.color}`} />
+          <Badge variant={statusConfig.variant}>
+            {statusConfig.label}
+          </Badge>
+        </div>
       </CardHeader>
       <CardContent className="w-full overflow-hidden">
         <ResponsiveContainer width="100%" height={250}>
