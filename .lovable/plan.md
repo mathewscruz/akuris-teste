@@ -1,43 +1,96 @@
 
+# Plano: Fluxo Completo de Auto-Cadastro com Assinatura
 
-# Ajustes no Header: Logo no Mobile + Botao Voltar
+## Situacao Atual
 
-## O que sera feito
+O sistema hoje **nao permite que um visitante se cadastre sozinho**. O fluxo atual e:
+1. Landing page tem apenas "Solicitar Demonstracao" (formulario de contato) e "Fazer Login"
+2. Usuarios sao criados apenas por admins via painel de configuracoes
+3. Nao existe pagina de signup/registro publico
+4. A pagina `/planos` esta protegida (dentro do Layout, requer login)
+5. Nao ha vinculacao automatica entre assinatura Stripe e criacao de empresa/usuario
 
-### 1. Substituir o botao de expandir sidebar pelo logo no mobile
-No header (`src/components/Layout.tsx`), o `SidebarTrigger` sera exibido **apenas em desktop** (classe `hidden md:flex`). No mobile, sera exibido o logo do sistema (imagem `akuris-logo.png`) no lugar, funcionando como link para o Dashboard.
+## O Que Falta Construir
 
-### 2. Adicionar botao "Voltar" no header (desktop e mobile)
-Um botao com icone de seta para a esquerda (`ArrowLeft`) sera adicionado ao header, visivel em ambas as plataformas. Ele aparecera **somente quando o usuario nao estiver no Dashboard** (pagina raiz), pois no Dashboard nao faz sentido "voltar". O botao usara `navigate(-1)` para voltar a pagina anterior do historico.
+### 1. Secao de Precos na Landing Page
+Adicionar uma secao de planos/precos na landing page (antes da secao de contato) com os 3 planos, toggle mensal/anual, e botao "Comecar teste gratis" que leva ao cadastro.
 
----
+### 2. Pagina de Registro (Signup)
+Criar pagina `/registro` publica onde o visitante pode:
+- Informar: Nome, Email, Senha, Nome da Empresa, CNPJ (opcional)
+- Selecionar o plano desejado (passado como parametro da URL, ex: `/registro?plano=starter`)
+- Ao submeter, criar conta no Supabase Auth
 
-## Detalhes tecnicos
+### 3. Edge Function de Provisionamento Automatico
+Criar edge function `provision-new-account` que sera chamada apos o registro:
+- Cria a empresa na tabela `empresas` com `status_licenca = 'trial'` e `data_inicio_trial = now()`
+- Cria o profile do usuario como `role = 'admin'` vinculado a empresa
+- Aplica permissoes padrao
+- Associa o plano escolhido (via `plano_id`) a empresa
+- Redireciona para o Stripe Checkout com trial de 14 dias
 
-### Arquivo: `src/components/Layout.tsx`
+### 4. Pagina de Sucesso pos-Checkout
+Criar rota `/checkout-success` que:
+- Confirma a assinatura via `check-subscription`
+- Redireciona automaticamente para `/dashboard`
+- Exibe mensagem de boas-vindas
 
-Alteracoes no bloco do header (linha 152-178):
+### 5. Ajustes no Fluxo Existente
+- Atualizar a landing page para incluir link "Comecar Gratis" que leva a `/registro`
+- Atualizar a pagina de login para incluir link "Criar conta" 
+- Tornar a rota `/planos` acessivel publicamente (mover para fora do ProtectedRoute)
+- Atualizar o `TrialBanner` para incluir link para a pagina de planos/checkout
 
-- Importar `ArrowLeft` de `lucide-react` e o logo (`akuris-logo.png`)
-- Condicional no header:
-  - **Mobile**: exibir `<img>` com o logo (altura ~28px), clicavel levando ao Dashboard
-  - **Desktop**: manter o `<SidebarTrigger />` como esta
-- Apos o logo/trigger, adicionar botao voltar:
-  - Visivel quando `location.pathname !== '/dashboard'`
-  - Icone `ArrowLeft`, estilo `ghost`, tamanho compacto
-  - `onClick={() => navigate(-1)}`
+## Detalhes Tecnicos
 
-### Estrutura visual do header (mobile):
+### Arquivos a Criar
+- `src/pages/Registro.tsx` - Formulario de auto-cadastro
+- `supabase/functions/provision-new-account/index.ts` - Provisionamento automatico
+- `src/pages/CheckoutSuccess.tsx` - Pagina pos-checkout
+
+### Arquivos a Modificar
+- `src/pages/LandingPage.tsx` - Adicionar secao de precos e CTAs de registro
+- `src/pages/Auth.tsx` - Adicionar link "Criar conta"
+- `src/App.tsx` - Adicionar rotas `/registro` e `/checkout-success`
+- `supabase/config.toml` - Registrar nova edge function
+
+### Migracao de Banco (se necessario)
+- Verificar se a tabela `planos` ja tem os registros correspondentes aos planos Stripe
+- Garantir que a tabela `empresas` aceita insercao sem campos obrigatorios bloqueantes
+
+### Fluxo Completo do Usuario
 
 ```text
-[Logo] [<-] [Breadcrumb...]          [Notif] [User]
+Landing Page
+    |
+    v
+Clica "Comecar Teste Gratis" (em qualquer plano)
+    |
+    v
+/registro?plano=starter
+    |
+    v
+Preenche: Nome, Email, Senha, Empresa
+    |
+    v
+Edge Function: provision-new-account
+  - Cria usuario no auth
+  - Cria empresa (trial, 14 dias)
+  - Cria profile (admin)
+  - Aplica permissoes
+    |
+    v
+Redireciona para Stripe Checkout (trial 14 dias)
+    |
+    v
+/checkout-success
+    |
+    v
+/dashboard (com onboarding wizard)
 ```
 
-### Estrutura visual do header (desktop):
-
-```text
-[Sidebar Toggle] [<-] [Breadcrumb...]   [Search] [Lang] [Log] [Notif] [User]
-```
-
-### Arquivo unico modificado
-- `src/components/Layout.tsx`
+### Seguranca
+- A edge function `provision-new-account` usara `SUPABASE_SERVICE_ROLE_KEY` para criar os registros
+- RLS das tabelas existentes continuara funcionando normalmente
+- Cada empresa criada tera dados isolados (empresa_id)
+- O `verify_jwt` sera `false` para a funcao de provisionamento (pois o usuario ainda nao esta autenticado no momento da criacao)
