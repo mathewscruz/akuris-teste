@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { useAuth } from '@/components/AuthProvider';
@@ -16,7 +17,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { formatDateOnly } from '@/lib/date-utils';
-import { Plus, ListTodo, Clock, CheckCircle2, AlertTriangle, XCircle, Pencil, Trash2, LayoutGrid, List, Target } from 'lucide-react';
+import { Plus, ListTodo, Clock, CheckCircle2, AlertTriangle, XCircle, Pencil, Trash2, LayoutGrid, List, Target, ExternalLink } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 
 const statusConfig: Record<string, { label: string; variant: any; icon: any }> = {
@@ -50,10 +51,44 @@ const moduloLabels: Record<string, string> = {
   'contas-privilegiadas': 'Contas Priv.',
 };
 
+// Map external module statuses to plano de acao statuses
+function mapExternalStatus(modulo: string, status: string, prazo?: string | null): string {
+  if (prazo) {
+    const diff = differenceInDays(new Date(prazo), new Date());
+    if (diff < 0) return 'atrasado';
+  }
+
+  if (modulo === 'controles') {
+    if (status === 'ativo') return 'em_andamento';
+    if (status === 'em_revisao') return 'pendente';
+    return 'pendente';
+  }
+  if (modulo === 'auditorias') {
+    if (status === 'em_andamento') return 'em_andamento';
+    return 'pendente';
+  }
+  if (modulo === 'incidentes') {
+    if (status === 'identificado') return 'pendente';
+    if (['em_investigacao', 'em_tratamento'].includes(status)) return 'em_andamento';
+    return 'pendente';
+  }
+  return 'pendente';
+}
+
+function getRouteForModule(modulo: string): string {
+  if (modulo === 'controles') return '/governanca?tab=controles';
+  if (modulo === 'auditorias') return '/governanca?tab=auditorias';
+  if (modulo === 'incidentes') return '/incidentes';
+  return '/planos-acao';
+}
+
 export default function PlanosAcao() {
   const { empresaId } = useEmpresaId();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const isAdmin = profile?.role === 'super_admin' || profile?.role === 'admin';
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPlano, setEditingPlano] = useState<any>(null);
@@ -65,8 +100,9 @@ export default function PlanosAcao() {
   const [sortField, setSortField] = useState('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [viewMode, setViewMode] = useState<'lista' | 'kanban'>('lista');
-  const [activeTab, setActiveTab] = useState('todos');
+  const [activeTab, setActiveTab] = useState('meus');
 
+  // Planos de ação nativos
   const { data: planos = [], isLoading } = useQuery({
     queryKey: ['planos-acao', empresaId],
     queryFn: async () => {
@@ -82,34 +118,141 @@ export default function PlanosAcao() {
     enabled: !!empresaId,
   });
 
-  // Auto-detect atrasados
+  // Controles pendentes do usuário
+  const { data: controlesExternos = [] } = useQuery({
+    queryKey: ['planos-acao-controles', empresaId, user?.id],
+    queryFn: async () => {
+      if (!empresaId || !user?.id) return [];
+      const { data, error } = await supabase
+        .from('controles')
+        .select('id, nome, status, criticidade, proxima_avaliacao, responsavel_id, created_at, profiles:responsavel_id(nome_completo)')
+        .eq('empresa_id', empresaId)
+        .eq('responsavel_id', user.id)
+        .in('status', ['ativo', 'em_revisao']);
+      if (error) throw error;
+      return (data || []).map((c: any) => ({
+        id: c.id,
+        titulo: c.nome,
+        status: c.status,
+        _displayStatus: mapExternalStatus('controles', c.status, c.proxima_avaliacao),
+        prioridade: c.criticidade === 'critica' ? 'critica' : c.criticidade === 'alta' ? 'alta' : 'media',
+        prazo: c.proxima_avaliacao,
+        modulo_origem: 'controles',
+        responsavel_id: c.responsavel_id,
+        profiles: c.profiles,
+        _isExternal: true,
+        _route: getRouteForModule('controles'),
+        registro_origem_titulo: null,
+        observacoes: null,
+        created_at: c.created_at,
+      }));
+    },
+    enabled: !!empresaId && !!user?.id,
+  });
+
+  // Itens de auditoria pendentes do usuário
+  const { data: auditoriasExternas = [] } = useQuery({
+    queryKey: ['planos-acao-auditorias', empresaId, user?.id],
+    queryFn: async () => {
+      if (!empresaId || !user?.id) return [];
+      const { data, error } = await supabase
+        .from('auditoria_itens')
+        .select('id, titulo, status, prioridade, prazo, responsavel_id, created_at, profiles:responsavel_id(nome_completo), auditorias!inner(empresa_id)')
+        .eq('auditorias.empresa_id', empresaId)
+        .eq('responsavel_id', user.id)
+        .not('status', 'in', '("concluido","cancelado","nao_aplicavel")');
+      if (error) throw error;
+      return (data || []).map((a: any) => ({
+        id: a.id,
+        titulo: a.titulo,
+        status: a.status,
+        _displayStatus: mapExternalStatus('auditorias', a.status, a.prazo),
+        prioridade: a.prioridade || 'media',
+        prazo: a.prazo,
+        modulo_origem: 'auditorias',
+        responsavel_id: a.responsavel_id,
+        profiles: a.profiles,
+        _isExternal: true,
+        _route: getRouteForModule('auditorias'),
+        registro_origem_titulo: null,
+        observacoes: null,
+        created_at: a.created_at,
+      }));
+    },
+    enabled: !!empresaId && !!user?.id,
+  });
+
+  // Incidentes pendentes do usuário
+  const { data: incidentesExternos = [] } = useQuery({
+    queryKey: ['planos-acao-incidentes', empresaId, user?.id],
+    queryFn: async () => {
+      if (!empresaId || !user?.id) return [];
+      const { data, error } = await supabase
+        .from('incidentes')
+        .select('id, titulo, status, criticidade, created_at, responsavel_tratamento')
+        .eq('empresa_id', empresaId)
+        .eq('responsavel_tratamento', user.id)
+        .not('status', 'in', '("encerrado","cancelado")');
+      if (error) throw error;
+      return (data || []).map((i: any) => ({
+        id: i.id,
+        titulo: i.titulo,
+        status: i.status,
+        _displayStatus: mapExternalStatus('incidentes', i.status),
+        prioridade: i.criticidade === 'critica' ? 'critica' : i.criticidade === 'alta' ? 'alta' : 'media',
+        prazo: null,
+        modulo_origem: 'incidentes',
+        responsavel_id: i.responsavel_tratamento,
+        profiles: null,
+        _isExternal: true,
+        _route: getRouteForModule('incidentes'),
+        registro_origem_titulo: null,
+        observacoes: null,
+        created_at: i.created_at,
+      }));
+    },
+    enabled: !!empresaId && !!user?.id,
+  });
+
+  // Auto-detect atrasados for native planos
   const processedPlanos = useMemo(() => {
     return planos.map((p: any) => {
       if (p.prazo && ['pendente', 'em_andamento'].includes(p.status)) {
         const diff = differenceInDays(new Date(p.prazo), new Date());
-        if (diff < 0) return { ...p, _displayStatus: 'atrasado' };
+        if (diff < 0) return { ...p, _displayStatus: 'atrasado', _isExternal: false };
       }
-      return { ...p, _displayStatus: p.status };
+      return { ...p, _displayStatus: p.status, _isExternal: false };
     });
   }, [planos]);
 
-  // Stats
+  // All external items combined
+  const allExternalItems = useMemo(() => {
+    return [...controlesExternos, ...auditoriasExternas, ...incidentesExternos];
+  }, [controlesExternos, auditoriasExternas, incidentesExternos]);
+
+  // Items for "Meus Itens" tab: user's planos + all external
+  const meusItens = useMemo(() => {
+    const meusPlanos = processedPlanos.filter(
+      (p: any) => p.responsavel_id === user?.id || p.created_by === user?.id
+    );
+    return [...meusPlanos, ...allExternalItems];
+  }, [processedPlanos, allExternalItems, user?.id]);
+
+  // Stats based on active tab data
+  const currentData = activeTab === 'meus' ? meusItens : processedPlanos;
+
   const stats = useMemo(() => {
-    const total = processedPlanos.length;
-    const pendentes = processedPlanos.filter((p: any) => p._displayStatus === 'pendente').length;
-    const emAndamento = processedPlanos.filter((p: any) => p._displayStatus === 'em_andamento').length;
-    const concluidos = processedPlanos.filter((p: any) => p._displayStatus === 'concluido').length;
-    const atrasados = processedPlanos.filter((p: any) => p._displayStatus === 'atrasado').length;
+    const total = currentData.length;
+    const pendentes = currentData.filter((p: any) => p._displayStatus === 'pendente').length;
+    const emAndamento = currentData.filter((p: any) => p._displayStatus === 'em_andamento').length;
+    const concluidos = currentData.filter((p: any) => p._displayStatus === 'concluido').length;
+    const atrasados = currentData.filter((p: any) => p._displayStatus === 'atrasado').length;
     return { total, pendentes, emAndamento, concluidos, atrasados };
-  }, [processedPlanos]);
+  }, [currentData]);
 
   // Filter + search
   const filteredPlanos = useMemo(() => {
-    let result = processedPlanos;
-
-    if (activeTab === 'meus') {
-      result = result.filter((p: any) => p.responsavel_id === user?.id || p.created_by === user?.id);
-    }
+    let result = currentData;
 
     if (statusFilter !== 'todos') {
       result = result.filter((p: any) => p._displayStatus === statusFilter);
@@ -126,7 +269,6 @@ export default function PlanosAcao() {
       );
     }
 
-    // Sort
     result.sort((a: any, b: any) => {
       const aVal = a[sortField] || '';
       const bVal = b[sortField] || '';
@@ -135,7 +277,7 @@ export default function PlanosAcao() {
     });
 
     return result;
-  }, [processedPlanos, activeTab, statusFilter, prioridadeFilter, search, sortField, sortDirection, user?.id]);
+  }, [currentData, statusFilter, prioridadeFilter, search, sortField, sortDirection]);
 
   const handleSave = async (data: any) => {
     if (!empresaId || !user?.id) return;
@@ -247,8 +389,8 @@ export default function PlanosAcao() {
     {
       key: 'modulo_origem',
       label: 'Origem',
-      render: (val: string) => (
-        <Badge variant="outline" className="text-xs">
+      render: (val: string, item: any) => (
+        <Badge variant={item._isExternal ? 'default' : 'outline'} className="text-xs">
           {moduloLabels[val] || val || 'Manual'}
         </Badge>
       ),
@@ -256,40 +398,52 @@ export default function PlanosAcao() {
     {
       key: 'actions',
       label: 'Ações',
-      className: 'w-24',
+      className: 'w-28',
       render: (_: any, item: any) => (
         <TooltipProvider>
           <div className="flex gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingPlano(item); setDialogOpen(true); }}>
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Editar</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(item.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Excluir</TooltipContent>
-            </Tooltip>
+            {item._isExternal ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(item._route)}>
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Abrir no módulo</TooltipContent>
+              </Tooltip>
+            ) : (
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingPlano(item); setDialogOpen(true); }}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Editar</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(item.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Excluir</TooltipContent>
+                </Tooltip>
+              </>
+            )}
           </div>
         </TooltipProvider>
       ),
     },
   ];
 
-  // Kanban view
   const kanbanColumns = ['pendente', 'em_andamento', 'concluido', 'atrasado', 'cancelado'];
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Planos de Ação"
-        description="Gerencie todas as ações e pendências transversais do sistema"
+        description="Visão consolidada de todas as suas pendências e ações"
         breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Planos de Ação' }]}
         actions={
           <div className="flex gap-2">
@@ -321,8 +475,8 @@ export default function PlanosAcao() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="todos">Todos</TabsTrigger>
           <TabsTrigger value="meus">Meus Itens</TabsTrigger>
+          {isAdmin && <TabsTrigger value="todos">Todos</TabsTrigger>}
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-4">
@@ -333,7 +487,7 @@ export default function PlanosAcao() {
                 columns={columns}
                 loading={isLoading}
                 searchable
-                searchPlaceholder="Buscar planos de ação..."
+                searchPlaceholder="Buscar pendências..."
                 searchValue={search}
                 onSearchChange={setSearch}
                 sortField={sortField}
@@ -372,8 +526,8 @@ export default function PlanosAcao() {
                 ]}
                 emptyState={{
                   icon: <ListTodo className="h-12 w-12" />,
-                  title: 'Nenhum plano de ação encontrado',
-                  description: 'Crie um novo plano de ação para começar',
+                  title: 'Nenhuma pendência encontrada',
+                  description: activeTab === 'meus' ? 'Você não possui itens pendentes no momento' : 'Crie um novo plano de ação para começar',
                   action: { label: 'Nova Ação', onClick: () => { setEditingPlano(null); setDialogOpen(true); } },
                 }}
               />
@@ -393,20 +547,25 @@ export default function PlanosAcao() {
                     <div className="space-y-2 min-h-[200px]">
                       {items.map((item: any) => (
                         <Card
-                          key={item.id}
+                          key={`${item.modulo_origem || 'plano'}-${item.id}`}
                           className="p-3 cursor-pointer hover:shadow-md transition-shadow"
-                          onClick={() => { setEditingPlano(item); setDialogOpen(true); }}
+                          onClick={() => {
+                            if (item._isExternal) {
+                              navigate(item._route);
+                            } else {
+                              setEditingPlano(item);
+                              setDialogOpen(true);
+                            }
+                          }}
                         >
                           <p className="font-medium text-sm line-clamp-2">{item.titulo}</p>
                           <div className="flex items-center gap-2 mt-2 flex-wrap">
                             <Badge variant={prioridadeConfig[item.prioridade]?.variant || 'default'} className="text-xs">
                               {prioridadeConfig[item.prioridade]?.label || item.prioridade}
                             </Badge>
-                            {item.modulo_origem && item.modulo_origem !== 'manual' && (
-                              <Badge variant="outline" className="text-xs">
-                                {moduloLabels[item.modulo_origem] || item.modulo_origem}
-                              </Badge>
-                            )}
+                            <Badge variant={item._isExternal ? 'default' : 'outline'} className="text-xs">
+                              {moduloLabels[item.modulo_origem] || item.modulo_origem || 'Manual'}
+                            </Badge>
                           </div>
                           {item.prazo && (
                             <p className={`text-xs mt-2 ${item._displayStatus === 'atrasado' ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
