@@ -1,110 +1,47 @@
 
+# Integrar Perfis de Permissao com Gestao de Usuarios
 
-# Reestruturar Gestao de Permissoes
+## Analise do Estado Atual
 
-## Problema Atual
+O campo "Perfil" que ja existe no formulario de usuario (linha 731) e na verdade o campo `role` (Super Admin, Admin, Usuario, Somente Leitura). **Nao ha conflito** com a nova estrutura de perfis de permissao -- sao conceitos diferentes:
 
-A Matriz de Permissoes atual exibe uma tabela gigante de **usuarios x modulos** (13 modulos x 5 permissoes = 65 checkboxes por usuario). Isso torna a gestao confusa e propensa a erros, especialmente com muitos usuarios.
+- **Role** = nivel de acesso geral do sistema (admin, user, etc.)
+- **Perfil de Permissao** = template granular de permissoes por modulo (Auditor, Gestor de Riscos, etc.)
 
-## Solucao Proposta: Perfis de Permissao (Permission Profiles)
+## Mudancas Necessarias
 
-A ideia central e criar **perfis de permissao reutilizaveis** (ex: "Auditor", "Gestor de Riscos", "Apenas Leitura") que pre-definem todas as permissoes por modulo. Depois, basta associar um perfil a um ou mais usuarios.
+### 1. Formulario de Usuario (`GerenciamentoUsuariosEnhanced.tsx`)
 
-### Como funciona na pratica
+**Schema:** Adicionar `permission_profile_id` (string, opcional) ao `usuarioSchema`
 
-1. O admin cria perfis como "Auditor Interno" e define quais modulos esse perfil pode acessar/criar/editar/excluir
-2. Ao cadastrar ou editar um usuario, seleciona o perfil desejado -- todas as permissoes sao aplicadas automaticamente
-3. Se precisar de ajuste fino, pode personalizar permissoes individuais apos aplicar o perfil
-4. Alterar um perfil pode ser replicado para todos os usuarios vinculados
+**Estado:** Adicionar estado `permissionProfiles` para armazenar lista de perfis disponiveis, carregada na inicializacao
 
-### Fluxo do usuario
+**Dialog de criar/editar:** Adicionar um novo campo Select "Perfil de Permissao" logo apos o campo "Perfil (role)", com opcoes carregadas da tabela `permission_profiles` filtrada por empresa. Incluir opcao "Sem perfil" como valor padrao.
 
-```text
-+---------------------------+       +---------------------------+
-|   Aba "Perfis"            |       |   Aba "Usuarios"          |
-|                           |       |                           |
-|  [+ Novo Perfil]          |       |  Lista de usuarios        |
-|                           |       |  Cada usuario mostra:     |
-|  Auditor Interno    (3)   |       |  - Nome / Email           |
-|  Gestor de Riscos   (5)   |       |  - Perfil: "Auditor"      |
-|  Analista LGPD      (2)   |       |  - Botao: Editar Perms    |
-|  Acesso Total       (1)   |       |                           |
-|  Somente Leitura    (4)   |       |  Ao clicar "Editar Perms" |
-|                           |       |  abre dialog individual   |
-+---------------------------+       +---------------------------+
-```
+**handleEdit:** Buscar `permission_profile_id` do usuario sendo editado (do `profiles`) e pre-selecionar no form
 
-## Mudancas no Banco de Dados
+**handleSubmit (criacao):** Enviar `permission_profile_id` no body da edge function `create-user`
 
-### Nova tabela: `permission_profiles`
-- `id` (uuid, PK)
-- `empresa_id` (uuid, FK empresas) -- isolamento por empresa
-- `name` (text) -- ex: "Auditor Interno"
-- `description` (text)
-- `is_default` (boolean) -- perfil padrao para novos usuarios
-- `created_by` (uuid)
-- `created_at`, `updated_at`
+**handleSubmit (edicao):** Alem de atualizar o profile, salvar `permission_profile_id` e chamar `apply_permission_profile` via RPC quando um perfil for selecionado
 
-### Nova tabela: `permission_profile_modules`
-- `id` (uuid, PK)
-- `profile_id` (uuid, FK permission_profiles)
-- `module_id` (uuid, FK system_modules)
-- `can_access`, `can_create`, `can_read`, `can_update`, `can_delete` (boolean)
+**fetchUsuarios:** Incluir `permission_profile_id` no select para poder exibir na tabela
 
-### Alteracao na tabela `profiles`
-- Adicionar coluna `permission_profile_id` (uuid, FK permission_profiles, nullable)
+**Coluna na tabela:** Renomear coluna "Perfil" atual para "Papel" (role) e adicionar nova coluna "Perfil de Permissao" mostrando o nome do perfil associado ou "Sem perfil"
 
-### RLS
-- Ambas as tabelas com RLS habilitado e politicas por `empresa_id`
-- Somente admin/super_admin podem criar/editar perfis
+### 2. Edge Function `create-user/index.ts`
 
-## Mudancas na Interface
+- Aceitar campo opcional `permission_profile_id` no body da requisicao
+- Apos criar o profile, salvar `permission_profile_id` no insert do profiles
+- Se `permission_profile_id` informado: chamar `apply_permission_profile(profile_id, user_id)` ao inves de `apply_default_permissions_for_user`
+- Se nao informado: manter comportamento atual com `apply_default_permissions_for_user`
 
-### 1. Aba "Permissoes" reformulada (em Configuracoes)
-Substituir a matriz atual por duas sub-abas:
+### 3. Tabela de Usuarios - Coluna Visual
 
-**Sub-aba "Perfis de Permissao"**
-- Lista de perfis em cards com nome, descricao e quantidade de usuarios vinculados
-- Botao "+ Novo Perfil" abre dialog com:
-  - Nome e descricao do perfil
-  - Lista de modulos com toggles (switch) agrupados: Acessar | Criar | Ler | Editar | Excluir
-  - Botoes de atalho: "Marcar Todos", "Somente Leitura", "Desmarcar Todos"
-- Ao editar um perfil existente, opcao de "Aplicar alteracoes a todos os usuarios deste perfil"
+Adicionar na DataTable uma coluna que mostra o perfil de permissao vinculado com badge, facilitando a visualizacao rapida de quem tem qual perfil.
 
-**Sub-aba "Permissoes por Usuario"**
-- Lista de usuarios com filtro/busca
-- Cada usuario mostra o perfil atual em badge
-- Botao "Gerenciar" abre dialog individual com:
-  - Dropdown para selecionar perfil (aplica permissoes automaticamente)
-  - Abaixo, lista de modulos com toggles para ajuste fino
-  - Indicador visual quando permissao difere do perfil base (badge "Personalizado")
+### Arquivos Modificados
 
-### 2. Integracao com Gerenciamento de Usuarios
-- No dialog de criar/editar usuario, adicionar campo "Perfil de Permissao"
-- Ao selecionar perfil, permissoes sao aplicadas automaticamente
-
-### 3. Componentes a criar/modificar
-
-| Componente | Acao |
-|-----------|------|
-| `PermissionProfileDialog.tsx` | Novo - Dialog para criar/editar perfis |
-| `PermissionProfilesList.tsx` | Novo - Lista de perfis com cards |
-| `UserPermissionDialog.tsx` | Novo - Dialog individual de permissoes por usuario |
-| `PermissionMatrix.tsx` | Refatorar - Substituir matriz por sub-abas |
-| `GerenciamentoUsuariosEnhanced.tsx` | Atualizar - Adicionar campo de perfil no dialog |
-| `usePermissions.tsx` | Atualizar - Buscar profile_id e resolver permissoes |
-
-### 4. Perfis padrao pre-cadastrados
-Ao ativar o recurso, criar automaticamente:
-- **Acesso Total** -- todos os modulos com todas as permissoes
-- **Somente Leitura** -- todos os modulos apenas com leitura
-- **Operacional** -- modulos principais com criar/ler/editar (sem excluir)
-
-## Beneficios
-
-- Reduz de 65+ checkboxes por usuario para 1 selecao de perfil
-- Padroniza permissoes entre usuarios com mesma funcao
-- Permite ajuste fino quando necessario
-- Facilita onboarding de novos usuarios
-- Auditoria clara: "Usuario X usa perfil Y com personalizacao Z"
-
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/configuracoes/GerenciamentoUsuariosEnhanced.tsx` | Adicionar campo de perfil de permissao no form, carregar perfis, exibir na tabela, aplicar ao salvar |
+| `supabase/functions/create-user/index.ts` | Receber `permission_profile_id`, salvar no profile e aplicar permissoes do perfil |
