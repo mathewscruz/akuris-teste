@@ -145,11 +145,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           }}
         />
         
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden -ml-px">
           {/* Banner de Trial */}
           <TrialBanner />
           
-          <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card flex-shrink-0 -ml-px">
+          <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card flex-shrink-0">
             <div className="flex items-center gap-4 min-w-0">
               <SidebarTrigger />
               
