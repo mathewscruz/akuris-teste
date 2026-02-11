@@ -1,23 +1,21 @@
 
+# Corrigir Alinhamento Vertical dos Cards do Dashboard
 
-# Alinhar Visualmente o Card Maturidade GRC com o Card Evolucao dos Riscos
+## Causa raiz
+O card "Evolucao dos Riscos" tem um elemento extra no header (Tabs com Semanal/Mensal/Anual) que o card "Maturidade GRC" nao tem. Isso faz o header do card de Riscos ser mais alto, empurrando o grafico e o rodape para baixo. Como resultado, os rodapes dos dois cards ficam em alturas diferentes.
 
-## Problema
-O card "Maturidade GRC" tem altura do grafico diferente do card "Evolucao dos Riscos". O card de Riscos usa `h-52 sm:h-72` como wrapper do grafico, enquanto o Maturidade usa `height={250}` fixo no ResponsiveContainer. Isso causa desalinhamento vertical entre os dois cards.
-
-## Mudanca
+## Solucao
+Usar flexbox vertical em ambos os cards para que o conteudo se distribua uniformemente e o rodape fique sempre alinhado na parte inferior do card.
 
 ### Arquivo: `src/components/dashboard/MultiDimensionalRadar.tsx`
+- Adicionar `flex flex-col` ao Card
+- Adicionar `flex-1` ao CardContent para que ocupe o espaco restante
+- Adicionar `mt-auto` ao div do rodape (grid com os 4 indicadores) para que fique sempre colado na base
 
-1. Envolver o `ResponsiveContainer` em um `div` com `className="h-52 sm:h-72 w-full"` (mesmo wrapper do card de Riscos)
-2. Mudar o `ResponsiveContainer` de `height={250}` para `height="100%"` (preenche o wrapper, igual ao card de Riscos)
+### Arquivo: `src/components/dashboard/RiskScoreTimeline.tsx`
+- Adicionar `flex flex-col` ao Card
+- Adicionar `flex-1` ao CardContent para que ocupe o espaco restante
+- Adicionar `mt-auto` ao div do rodape (grid com os 4 indicadores) para que fique sempre colado na base
 
-Isso garante que ambos os cards tenham exatamente a mesma altura de area de grafico em todos os breakpoints.
-
-## Resultado esperado
-Os dois cards terao estrutura identica:
-- CardHeader com titulo
-- CardHeader com numero + icone + badge
-- CardContent com div h-52/h-72 contendo o grafico
-- Rodape com grid 4 colunas
-
+## Resultado
+Ambos os cards se expandem para a mesma altura (por estarem em grid) e os rodapes com indicadores ficam alinhados na mesma posicao vertical, independentemente da diferenca de altura dos headers.
