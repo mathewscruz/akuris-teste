@@ -1,119 +1,121 @@
 
-# Correcoes: Analise de Documentos, Chat IA e Padronizacao de Frameworks
+# Melhorias: MFA Inteligente, Analise de Documentos e UX do Gap Analysis
 
 ---
 
-## 1. Corrigir Analise de Documentos (PDF) no Gap Analysis
+## 1. MFA com Bypass por Dia (Skip se ja verificou hoje)
 
 ### Problema
-- O `pdfjs-dist` versao 5.4.394 nao carrega o worker corretamente (erro no console: `Failed to fetch dynamically imported module: pdf.worker.min.js`)
-- Alem disso, a coluna `justificativa_relevancia` nao existe na tabela `gap_analysis_adherence_details`, causando erro ao salvar os detalhes da analise (visivel nos logs da edge function)
+O usuario precisa digitar o codigo MFA toda vez que faz login, mesmo se ja verificou no mesmo dia.
 
 ### Solucao
 
-**A. Corrigir worker do PDF.js** (`src/components/gap-analysis/adherence/AdherenceAssessmentDialog.tsx`)
-- Trocar a URL do worker de CDN para usar import inline via Vite (`new URL` pattern) ou fixar a versao do CDN para uma compativel
-- Alternativa mais robusta: usar `pdfjs-dist/build/pdf.worker.min.mjs` como import e configurar via Vite worker
-
-**B. Adicionar coluna na tabela** (migracao SQL)
+**A. Nova tabela `mfa_sessions`** (migracao SQL)
 ```sql
-ALTER TABLE gap_analysis_adherence_details
-ADD COLUMN justificativa_relevancia text;
+CREATE TABLE mfa_sessions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  empresa_id uuid NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
+  verified_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL DEFAULT (now() + interval '24 hours'),
+  ip_hint text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_mfa_sessions_user ON mfa_sessions(user_id, expires_at);
+ALTER TABLE mfa_sessions ENABLE ROW LEVEL SECURITY;
+-- Politica: apenas service role acessa (edge functions)
 ```
 
-**C. Melhorar qualidade da analise** (`supabase/functions/analyze-document-adherence/index.ts`)
-- Trocar modelo de `google/gemini-2.5-flash` para `google/gemini-3-flash-preview` (mais recente e melhor)
-- Aumentar o limite de texto do documento de 12.000 para 20.000 caracteres
-- Aumentar limite de requisitos analisados de 40 para 60
-- Melhorar o prompt com instrucoes mais detalhadas para avaliacao de conformidade
-- Aumentar `max_completion_tokens` de 12.000 para 16.000
+**B. Edge function `send-mfa-code`**: antes de gerar o codigo, verificar se existe uma `mfa_sessions` valida (nao expirada) para o `user_id`. Se sim, retornar `{ success: true, skipped: true }`.
+
+**C. Edge function `verify-mfa-code`**: apos verificacao bem-sucedida, inserir registro em `mfa_sessions` com `expires_at = now() + 24h`.
+
+**D. Frontend `Auth.tsx`**: quando `send-mfa-code` retornar `skipped: true`, pular a tela MFA e autenticar diretamente (re-logar com as credenciais salvas).
 
 ### Arquivos modificados:
-- `src/components/gap-analysis/adherence/AdherenceAssessmentDialog.tsx` - Fix PDF worker
-- `supabase/functions/analyze-document-adherence/index.ts` - Modelo melhor, prompt refinado, limites maiores
-- Migracao SQL - Adicionar coluna `justificativa_relevancia`
+- Migracao SQL (nova tabela `mfa_sessions`)
+- `supabase/functions/send-mfa-code/index.ts`
+- `supabase/functions/verify-mfa-code/index.ts`
+- `src/pages/Auth.tsx`
 
 ---
 
-## 2. Corrigir Chat AkurIA - Dados Faltantes
+## 2. Analise de Documentos com Comparacao Real ao Framework
 
 ### Problema
-O chat da AkurIA nao busca dados de varios modulos importantes:
-- **Ativos** - Nao consulta a tabela `ativos`
-- **Contas Privilegiadas** - Nao consulta `contas_privilegiadas`
-- **Dados Pessoais** - Nao consulta `dados_pessoais`
-- **Politicas** - Nao consulta `politicas`
-- **Planos de Acao** - Nao consulta `planos_acao`
-- **Fornecedores** - Nao consulta `fornecedores`
+A edge function `analyze-document-adherence` so aceita `.txt` (linha 112: `throw new Error` para qualquer outro tipo). O texto e extraido no frontend e enviado como TXT ao storage, mas a edge function verifica a extensao do arquivo no storage e rejeita tudo que nao e `.txt`. Na pratica isso funciona porque o frontend ja converte para TXT antes de enviar. Porem o prompt da IA nao inclui o **conteudo completo dos requisitos** do framework -- so envia codigo + titulo + 80 chars da descricao. Isso impede a IA de fazer uma comparacao profunda como um auditor faria.
 
-Alem disso, o contexto so envia contagens resumidas. Quando o usuario pergunta "quais sao meus ativos?", a IA nao tem os nomes individuais para responder.
+### Solucao
 
-### Solucao (`supabase/functions/akuria-chat/index.ts`)
+**A. Incluir descricao completa dos requisitos no prompt** (`analyze-document-adherence/index.ts`)
+- Mudar de `r.descricao.substring(0, 80)` para `r.descricao.substring(0, 300)`
+- Incluir campos adicionais dos requisitos: `orientacao_implementacao` e `exemplos_evidencias` (se existirem) para que a IA saiba exatamente o que a norma exige
+- Reformular o prompt para instruir a IA a agir como auditor comparando item a item
 
-**A. Adicionar consultas para modulos faltantes:**
-- `ativos`: `id, nome, tipo, criticidade, status`
-- `contas_privilegiadas`: `id, nome_conta, tipo_conta, criticidade, status`
-- `dados_pessoais`: `id, nome, categoria_dados, sensibilidade`
-- `politicas`: `id, titulo, status, data_publicacao`
-- `planos_acao`: `id, titulo, status, prioridade`
-- `fornecedores`: `id, nome, status, categoria`
+**B. Melhorar o prompt para comparacao auditor-like**
+- Instrucao explicita: "Para cada requisito, identifique no documento se existe uma clausula, paragrafo ou secao que atende ao que o requisito exige"
+- Pedir que a IA cite trechos especificos do documento como evidencia
+- Adicionar contexto: "Se o documento e uma Politica de Mesa e Tela Limpa, localize no framework os requisitos que tratam deste tema e avalie se a politica cobre todos os pontos exigidos"
 
-**B. Incluir nomes individuais no contexto** (nao apenas contagens)
-- Para cada modulo, listar os nomes dos primeiros 15 itens para que a IA possa responder "quais sao meus X?"
-- Manter contagens para visao geral
-
-**C. Trocar modelo para `google/gemini-3-flash-preview`** (mais recente)
+**C. Aumentar limite de tokens e texto**
+- Documento: 20.000 -> 30.000 caracteres
+- Requisitos: enviar descricao com ate 300 chars (ao inves de 80)
+- `max_completion_tokens`: 16.000 -> 20.000
 
 ### Arquivos modificados:
-- `supabase/functions/akuria-chat/index.ts` - Adicionar consultas e melhorar contexto
+- `supabase/functions/analyze-document-adherence/index.ts`
 
 ---
 
-## 3. Padronizar Visualizacao dos Frameworks
+## 3. Melhorar Intuitividade do Gap Analysis
 
-### Problema
-Cada tipo de framework usa um grafico diferente:
-- LGPD/GDPR/CCPA/HIPAA/27701 usam `treemap` (Mapa de Conformidade)
-- NIST/CIS usam `radar`
-- ISO 27001 usa `funnel`
-- COBIT/COSO/ISO 31000 usam `gauge`
-- SOC 2/SOX/PCI/ITIL/NIS2 usam `stacked`
+### Problemas identificados apos analise do codigo:
 
-O usuario quer que TODOS usem o **Mapa de Conformidade** (treemap) como grafico principal, padronizando a experiencia.
+1. **Analise de Documentos esta FORA do contexto do framework** -- a aba "Analise de Documentos" no `GapAnalysisFrameworkDetail.tsx` nao filtra pelo framework atual. O `AdherenceAssessmentView` carrega TODAS as analises da empresa (sem filtro de `framework_id`). Isso confunde o usuario que acha que esta analisando documentos para aquele framework especifico.
 
-### Solucao (`src/lib/framework-configs.ts` + `src/pages/GapAnalysisFrameworkDetail.tsx`)
+2. **Nao ha guia de "proximo passo"** -- quando o usuario entra num framework, nao ha indicacao visual do que fazer primeiro (avaliar requisitos, analisar documentos, etc.)
 
-**A. Padronizar `chartType` para `treemap` em todos os frameworks** no `framework-configs.ts`
-- Manter `treemap` como tipo de grafico padrao para todos
-- O `PrivacyTreemap` funciona com qualquer framework pois usa `categoryScores` que todos possuem
+3. **Os requisitos nao tem orientacao clara** -- o campo `orientacao_implementacao` e `exemplos_evidencias` existem na tabela mas podem estar vazios para muitos requisitos
 
-**B. Simplificar logica de renderizacao** no `GapAnalysisFrameworkDetail.tsx`
-- Remover os blocos condicionais de `chartType` (radar, funnel, gauge, stacked)
-- Usar um bloco unico que sempre renderiza o `PrivacyTreemap` (renomeado para `ConformityMap`) + `CategoryBarChart` como secundario
-- Manter o `CategoryStatusCards` e `GenericRequirementsTable` para todos
+### Solucao
 
-**C. Renomear componente** de `PrivacyTreemap` para `ConformityMap` (titulo ja e "Mapa de Conformidade por Capitulo")
+**A. Filtrar analises de documentos pelo framework atual**
+- No `AdherenceAssessmentView`, receber `frameworkId` como prop
+- Filtrar a query de assessments por `framework_id`
+- No dialog de criacao, pre-selecionar o framework atual e tornar o campo somente-leitura
+
+**B. Adicionar dicas contextuais no framework detail**
+- Quando o usuario nunca avaliou nenhum requisito, mostrar um banner de orientacao: "Comece avaliando os requisitos abaixo. Clique em cada requisito para ver detalhes e marcar o status de conformidade."
+- Na aba de documentos, mostrar dica: "Faca upload de politicas, procedimentos ou manuais da sua empresa para que a IA compare automaticamente com os requisitos deste framework."
+
+**C. Melhorar score dashboard para usuarios iniciantes**
+- Quando `evaluatedRequirements === 0`, mostrar texto explicativo ao inves de "0.0%" para nao assustar
 
 ### Arquivos modificados:
-- `src/lib/framework-configs.ts` - Padronizar chartType para treemap
-- `src/pages/GapAnalysisFrameworkDetail.tsx` - Simplificar blocos de graficos
-- `src/components/gap-analysis/charts/PrivacyTreemap.tsx` - Renomear export (opcional)
+- `src/pages/GapAnalysisFrameworkDetail.tsx` - Passar `frameworkId` para `AdherenceAssessmentView`
+- `src/components/gap-analysis/adherence/AdherenceAssessmentView.tsx` - Filtrar por framework
+- `src/components/gap-analysis/adherence/AdherenceAssessmentDialog.tsx` - Pre-selecionar framework
+- `src/components/gap-analysis/GenericScoreDashboard.tsx` - Dicas para score zero
 
 ---
 
-## Secao Tecnica - Resumo de Mudancas
+## Secao Tecnica - Resumo
 
 | Arquivo | Tipo | Descricao |
 |---------|------|-----------|
-| Migracao SQL | DB | Adicionar coluna `justificativa_relevancia` |
-| `AdherenceAssessmentDialog.tsx` | Frontend | Fix PDF.js worker URL |
-| `analyze-document-adherence/index.ts` | Edge Function | Modelo melhor, prompt melhorado, limites maiores |
-| `akuria-chat/index.ts` | Edge Function | Adicionar 6 modulos faltantes com nomes individuais |
-| `framework-configs.ts` | Frontend | Padronizar chartType = treemap |
-| `GapAnalysisFrameworkDetail.tsx` | Frontend | Simplificar renderizacao de graficos |
+| Migracao SQL | DB | Criar tabela `mfa_sessions` |
+| `send-mfa-code/index.ts` | Edge Function | Verificar sessao MFA antes de enviar codigo |
+| `verify-mfa-code/index.ts` | Edge Function | Criar sessao MFA apos verificacao |
+| `Auth.tsx` | Frontend | Tratar resposta `skipped: true` |
+| `analyze-document-adherence/index.ts` | Edge Function | Incluir descricao completa dos requisitos no prompt |
+| `GapAnalysisFrameworkDetail.tsx` | Frontend | Passar frameworkId, banners de orientacao |
+| `AdherenceAssessmentView.tsx` | Frontend | Filtrar por frameworkId |
+| `AdherenceAssessmentDialog.tsx` | Frontend | Pre-selecionar framework |
+| `GenericScoreDashboard.tsx` | Frontend | Dicas para score zero |
 
 ### Ordem de implementacao:
-1. Migracao SQL (coluna `justificativa_relevancia`)
-2. Fix PDF worker + edge function de aderencia
-3. Corrigir edge function do chat
-4. Padronizar frameworks e graficos
+1. Migracao SQL (tabela `mfa_sessions`)
+2. Edge functions MFA (send + verify)
+3. Frontend Auth.tsx (skip MFA)
+4. Edge function analise de documentos (prompt melhorado)
+5. Frontend Gap Analysis (filtros + UX)
