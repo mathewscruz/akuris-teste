@@ -1,33 +1,119 @@
 
-# Fix: MFA Screen Not Appearing (Race Condition)
+# Correcoes: Analise de Documentos, Chat IA e Padronizacao de Frameworks
 
-## Root Cause
+---
 
-When `signInWithPassword` is called, Supabase's `onAuthStateChange(SIGNED_IN)` fires in the `AuthProvider`, setting `user` to a truthy value. This causes line 65 of `Auth.tsx`:
+## 1. Corrigir Analise de Documentos (PDF) no Gap Analysis
 
+### Problema
+- O `pdfjs-dist` versao 5.4.394 nao carrega o worker corretamente (erro no console: `Failed to fetch dynamically imported module: pdf.worker.min.js`)
+- Alem disso, a coluna `justificativa_relevancia` nao existe na tabela `gap_analysis_adherence_details`, causando erro ao salvar os detalhes da analise (visivel nos logs da edge function)
+
+### Solucao
+
+**A. Corrigir worker do PDF.js** (`src/components/gap-analysis/adherence/AdherenceAssessmentDialog.tsx`)
+- Trocar a URL do worker de CDN para usar import inline via Vite (`new URL` pattern) ou fixar a versao do CDN para uma compativel
+- Alternativa mais robusta: usar `pdfjs-dist/build/pdf.worker.min.mjs` como import e configurar via Vite worker
+
+**B. Adicionar coluna na tabela** (migracao SQL)
+```sql
+ALTER TABLE gap_analysis_adherence_details
+ADD COLUMN justificativa_relevancia text;
 ```
-if (!loading && user) return <Navigate to="/dashboard" replace />;
-```
 
-...to immediately navigate away from `/auth`, **unmounting** the Auth component. Then when `signOut()` fires, the user is redirected back to `/auth`, but the component **remounts** with fresh state (`mfaPending = false`). The MFA screen never appears.
+**C. Melhorar qualidade da analise** (`supabase/functions/analyze-document-adherence/index.ts`)
+- Trocar modelo de `google/gemini-2.5-flash` para `google/gemini-3-flash-preview` (mais recente e melhor)
+- Aumentar o limite de texto do documento de 12.000 para 20.000 caracteres
+- Aumentar limite de requisitos analisados de 40 para 60
+- Melhorar o prompt com instrucoes mais detalhadas para avaliacao de conformidade
+- Aumentar `max_completion_tokens` de 12.000 para 16.000
 
-## Solution
+### Arquivos modificados:
+- `src/components/gap-analysis/adherence/AdherenceAssessmentDialog.tsx` - Fix PDF worker
+- `supabase/functions/analyze-document-adherence/index.ts` - Modelo melhor, prompt refinado, limites maiores
+- Migracao SQL - Adicionar coluna `justificativa_relevancia`
 
-Use a **React ref** (`useRef`) to synchronously flag that MFA is in progress BEFORE calling `signInWithPassword`. Refs update instantly (unlike `setState` which is async/batched), so the redirect guard will see the flag immediately when `onAuthStateChange` triggers a re-render.
+---
 
-## Changes in `src/pages/Auth.tsx`
+## 2. Corrigir Chat AkurIA - Dados Faltantes
 
-1. Add `const mfaInProgressRef = useRef(false);` at the top of the component
-2. Set `mfaInProgressRef.current = true` BEFORE calling `signInWithPassword` (not after)
-3. Update the redirect guard on line 65 to: `if (!loading && user && !mfaInProgressRef.current) return <Navigate to="/dashboard" replace />;`
-4. Reset `mfaInProgressRef.current = false` in `handleMFAVerified` and `handleMFACancel`, and in all MFA error fallback paths
-5. Keep the existing `mfaPending` state for rendering the MFA verification screen (the ref only blocks navigation)
+### Problema
+O chat da AkurIA nao busca dados de varios modulos importantes:
+- **Ativos** - Nao consulta a tabela `ativos`
+- **Contas Privilegiadas** - Nao consulta `contas_privilegiadas`
+- **Dados Pessoais** - Nao consulta `dados_pessoais`
+- **Politicas** - Nao consulta `politicas`
+- **Planos de Acao** - Nao consulta `planos_acao`
+- **Fornecedores** - Nao consulta `fornecedores`
 
-## Why a Ref and Not Just State?
+Alem disso, o contexto so envia contagens resumidas. Quando o usuario pergunta "quais sao meus ativos?", a IA nao tem os nomes individuais para responder.
 
-- `setState` is batched/async -- the re-render from `onAuthStateChange` can happen before the new state is committed
-- `useRef` updates synchronously and is readable immediately on the next render without waiting for a commit
-- This eliminates the race condition entirely
+### Solucao (`supabase/functions/akuria-chat/index.ts`)
 
-## Files Modified
-- `src/pages/Auth.tsx` only (approximately 10 lines changed)
+**A. Adicionar consultas para modulos faltantes:**
+- `ativos`: `id, nome, tipo, criticidade, status`
+- `contas_privilegiadas`: `id, nome_conta, tipo_conta, criticidade, status`
+- `dados_pessoais`: `id, nome, categoria_dados, sensibilidade`
+- `politicas`: `id, titulo, status, data_publicacao`
+- `planos_acao`: `id, titulo, status, prioridade`
+- `fornecedores`: `id, nome, status, categoria`
+
+**B. Incluir nomes individuais no contexto** (nao apenas contagens)
+- Para cada modulo, listar os nomes dos primeiros 15 itens para que a IA possa responder "quais sao meus X?"
+- Manter contagens para visao geral
+
+**C. Trocar modelo para `google/gemini-3-flash-preview`** (mais recente)
+
+### Arquivos modificados:
+- `supabase/functions/akuria-chat/index.ts` - Adicionar consultas e melhorar contexto
+
+---
+
+## 3. Padronizar Visualizacao dos Frameworks
+
+### Problema
+Cada tipo de framework usa um grafico diferente:
+- LGPD/GDPR/CCPA/HIPAA/27701 usam `treemap` (Mapa de Conformidade)
+- NIST/CIS usam `radar`
+- ISO 27001 usa `funnel`
+- COBIT/COSO/ISO 31000 usam `gauge`
+- SOC 2/SOX/PCI/ITIL/NIS2 usam `stacked`
+
+O usuario quer que TODOS usem o **Mapa de Conformidade** (treemap) como grafico principal, padronizando a experiencia.
+
+### Solucao (`src/lib/framework-configs.ts` + `src/pages/GapAnalysisFrameworkDetail.tsx`)
+
+**A. Padronizar `chartType` para `treemap` em todos os frameworks** no `framework-configs.ts`
+- Manter `treemap` como tipo de grafico padrao para todos
+- O `PrivacyTreemap` funciona com qualquer framework pois usa `categoryScores` que todos possuem
+
+**B. Simplificar logica de renderizacao** no `GapAnalysisFrameworkDetail.tsx`
+- Remover os blocos condicionais de `chartType` (radar, funnel, gauge, stacked)
+- Usar um bloco unico que sempre renderiza o `PrivacyTreemap` (renomeado para `ConformityMap`) + `CategoryBarChart` como secundario
+- Manter o `CategoryStatusCards` e `GenericRequirementsTable` para todos
+
+**C. Renomear componente** de `PrivacyTreemap` para `ConformityMap` (titulo ja e "Mapa de Conformidade por Capitulo")
+
+### Arquivos modificados:
+- `src/lib/framework-configs.ts` - Padronizar chartType para treemap
+- `src/pages/GapAnalysisFrameworkDetail.tsx` - Simplificar blocos de graficos
+- `src/components/gap-analysis/charts/PrivacyTreemap.tsx` - Renomear export (opcional)
+
+---
+
+## Secao Tecnica - Resumo de Mudancas
+
+| Arquivo | Tipo | Descricao |
+|---------|------|-----------|
+| Migracao SQL | DB | Adicionar coluna `justificativa_relevancia` |
+| `AdherenceAssessmentDialog.tsx` | Frontend | Fix PDF.js worker URL |
+| `analyze-document-adherence/index.ts` | Edge Function | Modelo melhor, prompt melhorado, limites maiores |
+| `akuria-chat/index.ts` | Edge Function | Adicionar 6 modulos faltantes com nomes individuais |
+| `framework-configs.ts` | Frontend | Padronizar chartType = treemap |
+| `GapAnalysisFrameworkDetail.tsx` | Frontend | Simplificar renderizacao de graficos |
+
+### Ordem de implementacao:
+1. Migracao SQL (coluna `justificativa_relevancia`)
+2. Fix PDF worker + edge function de aderencia
+3. Corrigir edge function do chat
+4. Padronizar frameworks e graficos
