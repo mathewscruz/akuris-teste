@@ -1,104 +1,121 @@
 
-# Melhorias Visuais e Funcionais do Gap Analysis - Inspiradas na Referencia
 
-## Analise das Imagens de Referencia
+# Redesign Completo da Experiencia do Gap Analysis
 
-Identifiquei 5 melhorias que se encaixam no nosso cenario, e 2 itens que nao se aplicam.
+## Problemas Identificados
 
-### O que vale adotar
+### Pagina Principal (GapAnalysisFrameworks)
+1. **Stat Cards genericos** - "Total de Frameworks: 21", "Itens Pendentes: 0" nao ajudam o usuario a tomar nenhuma decisao. Sao numeros frios sem contexto.
+2. **21 cards de frameworks de uma vez** - Quando o usuario nunca usou nenhum, ele ve 21 cards iguais (secao "Disponiveis") sem saber por onde comecar. E overwhelming.
+3. **Nenhum guia de "por onde comecar"** - Um usuario leigo nao sabe a diferenca entre ISO 27001 e NIST CSF 2.0. Precisa de orientacao.
 
-1. **Separacao "Frameworks Ativos" vs "Disponiveis"** (imagem 101) - A referencia separa frameworks com avaliacao iniciada (mostrando blocos coloridos de status e % de conclusao) dos nao iniciados (mostrando descricao completa e estimativa de esforco). Atualmente nossos cards misturam todos juntos.
-
-2. **Blocos coloridos de status por categoria** (imagens 100, 101, 102) - Ao inves de apenas barras de progresso, a referencia usa pequenos quadrados coloridos onde cada quadrado = 1 requisito e a cor = status (verde=conforme, vermelho=nao conforme, amarelo=parcial, cinza=pendente). Isso da uma visao muito mais rica do que uma barra de progresso. Podemos adotar isso tanto nos FrameworkCards ativos quanto na pagina de detalhe do framework como cards de categoria.
-
-3. **Cards de categorias com blocos de status na pagina de detalhe** (imagens 100, 102) - A referencia mostra um grid de cards por categoria, cada um com blocos coloridos, contagem de conformidade e % atribuido. Ao clicar num card, abre popover com breakdown (Conforme, Parcial, Nao Conforme, Pendente). Podemos adicionar isso acima da tabela de requisitos.
-
-4. **Evidencias com drag & drop e "Adicionar link"** (imagem 103) - A referencia mostra uma zona de drag & drop estilizada e botoes "Add link" e "Link existing evidence". Nosso upload atual e apenas um botao "Anexar Arquivo". Melhorar para incluir drag & drop visual e opcao de adicionar URL como evidencia.
-
-5. **Tabela de requisitos agrupados por status** (imagem 99) - A referencia agrupa requisitos como "Unmet 4" e "Met 16" com contagem, e ao lado de cada requisito mostra as evidencias vinculadas com icone de status. Podemos adicionar a contagem de evidencias por requisito na tabela.
-
-### O que NAO vale adotar
-
-- **Fluxo de aprovacao/review com timeline** (imagem 104) - Adiciona complexidade significativa sem beneficio direto para o cenario de auto-avaliacao que e nosso foco. O usuario quer se auto-avaliar, nao precisa de aprovacao de um terceiro.
-- **Secao "Checks & Controls" e "Supported integrations"** (imagem 105) - Especifico de ferramentas com integracao automatica a infraestrutura (AWS, GCP). Nao se aplica ao nosso produto que e focado em avaliacao manual.
+### Submodulo "Avaliacao de Aderencia"
+4. **Duplicacao de proposito** - "Frameworks" avalia manualmente requisito por requisito. "Avaliacao de Aderencia" analisa documentos com IA contra um framework. Sao complementares, mas ficam em paginas separadas sem conexao, confundindo o usuario.
+5. **Historico de evolucao** - O `ScoreEvolutionChart` existe mas so aparece DENTRO do detalhe de um framework. O usuario nao tem uma visao geral da evolucao de todos os seus frameworks num unico lugar.
 
 ---
 
-## Plano de Implementacao
+## Solucao Proposta
 
-### 1. Separar Frameworks Ativos vs Disponiveis na pagina principal
+### 1. Redesign da Pagina Principal - De "Catalogo" para "Meu Painel de Compliance"
 
-**Arquivo:** `src/pages/GapAnalysisFrameworks.tsx`
+Substituir a pagina atual por uma experiencia orientada ao usuario:
 
-Dividir a lista de frameworks em duas secoes:
-- **"Frameworks Ativos"** - Frameworks que a empresa ja tem avaliacoes iniciadas. Cards maiores (2 colunas) com blocos coloridos de status, % de conclusao, e contagem de conformidade
-- **"Frameworks Disponiveis"** - Frameworks sem avaliacoes. Cards com descricao completa e botao "Iniciar Avaliacao"
+**Secao Hero (topo)** - Se o usuario NAO tem nenhum framework ativo:
+- Exibir um banner de boas-vindas com titulo "Comece sua jornada de compliance"
+- 3 cards de sugestao com os frameworks mais populares (ISO 27001, LGPD, NIST CSF 2.0) com uma frase simples explicando para quem serve cada um
+- Botao "Ver todos os frameworks" que expande/mostra o catalogo completo
+- Isso elimina o problema de 21 cards na tela logo de cara
 
-### 2. Componente de blocos coloridos de status (StatusBlocks)
+**Secao Hero (topo)** - Se o usuario JA tem frameworks ativos:
+- Banner com score medio geral de compliance + mini grafico de evolucao (sparkline)
+- Cards dos frameworks ativos com StatusBlocks (como ja esta, mas destacados como protagonistas)
+- Botao discreto "Explorar mais frameworks"
 
-**Novo arquivo:** `src/components/gap-analysis/StatusBlocks.tsx`
+**Secao de Frameworks Disponiveis** - Reformulada:
+- Agrupar frameworks por categoria (Seguranca, Privacidade, Qualidade, Governanca) em accordions/secoes colapsaveis
+- Cada framework mostra uma frase de 1 linha explicando PARA QUEM serve (ex: "Para empresas que processam dados pessoais no Brasil")
+- Reduz a carga visual de 21 cards para secoes organizadas
 
-Componente reutilizavel que renderiza uma grade de quadradinhos coloridos:
-- Verde = Conforme
-- Vermelho = Nao Conforme
-- Amarelo = Parcial
-- Azul = N/A
-- Cinza claro = Nao Avaliado
+**Arquivo modificado:** `src/pages/GapAnalysisFrameworks.tsx`
+**Arquivo modificado:** `src/components/gap-analysis/FrameworkCard.tsx`
 
-Cada bloco representa 1 requisito. Usado nos FrameworkCards ativos e nos CategoryCards.
+### 2. Unificar Frameworks + Aderencia em Uma Unica Pagina
 
-### 3. Cards de categorias com blocos na pagina de detalhe do framework
+Eliminar o subitem "Avaliacao de Aderencia" do sidebar. Mover essa funcionalidade para DENTRO da pagina de detalhe do framework (`GapAnalysisFrameworkDetail`), como uma aba ou secao.
 
-**Novo arquivo:** `src/components/gap-analysis/CategoryStatusCards.tsx`
+Quando o usuario entra no detalhe de um framework (ex: ISO 27001), ele ve:
+- Tab "Avaliacao Manual" (a tabela de requisitos atual)
+- Tab "Analise de Documentos" (a avaliacao de aderencia, filtrada para aquele framework)
+- Tab "Historico e Evolucao" (grafico de evolucao do score ao longo do tempo + lista de snapshots)
 
-Grid de cards por categoria com:
-- Nome da categoria
-- Blocos coloridos de status
-- Contagem "X/Y conformes"
-- Ao clicar, mostra popover com breakdown detalhado (quantos Conforme, Parcial, Nao Conforme, Pendente)
-- Funciona como atalho para filtrar a tabela abaixo
+Isso faz muito mais sentido porque:
+- A aderencia sempre e relativa a UM framework especifico
+- O historico e relativo a UM framework especifico
+- O usuario nao precisa navegar entre paginas para ver coisas do mesmo framework
 
-**Arquivo:** `src/pages/GapAnalysisFrameworkDetail.tsx`
-- Inserir CategoryStatusCards entre o dashboard de score e a tabela de requisitos
+**Arquivos modificados:**
+- `src/pages/GapAnalysisFrameworkDetail.tsx` - Adicionar Tabs com 3 abas
+- `src/components/AppSidebar.tsx` - Remover subitem "Avaliacao de Aderencia"
+- `src/App.tsx` - Remover rota `/gap-analysis/avaliacao-aderencia`
 
-### 4. Melhorar evidencias com drag & drop e link URL
+### 3. Aba "Historico e Evolucao" (Nova)
 
-**Arquivo:** `src/components/gap-analysis/nist/NISTRequirementDetailDialog.tsx`
+Dentro do detalhe do framework, uma aba dedicada para o historico que o usuario pode usar para demonstrar progresso:
 
-Substituir o botao simples de upload por:
-- Zona de drag & drop com borda tracejada e texto "Arraste e solte, ou Buscar arquivos..." (como na referencia)
-- Botao "Adicionar Link" para inserir URL de evidencia (Notion, SharePoint, Google Drive etc.)
-- Lista de evidencias com icone por tipo de arquivo (PDF, imagem, link, documento)
-- Limite de 20MB visivel
+- Grafico de evolucao do score (ja existe `ScoreEvolutionChart`, mover para ca)
+- Timeline com marcos: "Em 15/01 voce avaliou 20 requisitos", "Em 20/01 sua conformidade subiu de 30% para 45%"
+- Botao "Gerar Relatorio de Evolucao" que exporta um PDF com o historico (util para apresentar para stakeholders/auditores)
+- Comparacao "Score inicial vs Score atual"
 
-### 5. Contagem de evidencias na tabela de requisitos
+**Novo componente:** `src/components/gap-analysis/FrameworkHistoryTab.tsx`
 
-**Arquivo:** `src/components/gap-analysis/GenericRequirementsTable.tsx`
+### 4. Cards de Stat Relevantes
 
-Adicionar coluna "Evidencias" na tabela mostrando contagem de evidencias vinculadas a cada requisito (ex: icone de clip + "3 arquivos"). Carrega count a partir dos evidence_files da avaliacao.
+Substituir os 4 stat cards atuais por informacoes uteis:
+
+- **"Sua Conformidade Geral"** - Media ponderada de todos os frameworks ativos com indicador de tendencia (subindo/descendo)
+- **"Proximas Acoes"** - Quantidade de planos de acao pendentes vinculados a requisitos
+- **"Requisitos Criticos"** - Quantidade de requisitos de peso alto marcados como "Nao Conforme"
+- **"Progresso do Mes"** - Quantos requisitos foram avaliados neste mes vs mes anterior
+
+**Arquivo modificado:** `src/pages/GapAnalysisFrameworks.tsx`
+**Arquivo modificado:** `src/hooks/useGapAnalysisStats.tsx`
+
+### 5. Melhoria Visual nos Cards de Framework Disponivel
+
+Em vez de cards todos iguais com icone generico, adicionar:
+- Tag de categoria colorida (Seguranca = azul, Privacidade = verde, Qualidade = laranja, Governanca = roxo)
+- Frase curta de "para quem serve"
+- Indicador de complexidade/esforco estimado (Baixo/Medio/Alto baseado na quantidade de requisitos)
+
+**Arquivo modificado:** `src/components/gap-analysis/FrameworkCard.tsx`
 
 ---
 
 ## Secao Tecnica
 
 ### Novos arquivos:
-- `src/components/gap-analysis/StatusBlocks.tsx` - Componente de blocos coloridos
-- `src/components/gap-analysis/CategoryStatusCards.tsx` - Grid de cards de categorias
+- `src/components/gap-analysis/FrameworkHistoryTab.tsx` - Aba de historico com timeline e relatorio de evolucao
+- `src/components/gap-analysis/WelcomeHero.tsx` - Banner de boas-vindas para usuarios sem frameworks ativos
+- `src/components/gap-analysis/FrameworkCatalog.tsx` - Catalogo organizado por categoria com accordions
 
 ### Arquivos modificados:
-- `src/pages/GapAnalysisFrameworks.tsx` - Separacao Ativos/Disponiveis, uso de StatusBlocks nos cards ativos
-- `src/components/gap-analysis/FrameworkCard.tsx` - Variante "ativa" com StatusBlocks
-- `src/pages/GapAnalysisFrameworkDetail.tsx` - Adicionar CategoryStatusCards
-- `src/components/gap-analysis/nist/NISTRequirementDetailDialog.tsx` - Drag & drop + add link para evidencias
-- `src/components/gap-analysis/GenericRequirementsTable.tsx` - Coluna de contagem de evidencias
+- `src/pages/GapAnalysisFrameworks.tsx` - Redesign completo: hero condicional, stats relevantes, catalogo por categoria
+- `src/pages/GapAnalysisFrameworkDetail.tsx` - Adicionar sistema de Tabs (Avaliacao | Documentos | Historico)
+- `src/components/gap-analysis/FrameworkCard.tsx` - Tags de categoria, frase descritiva, indicador de esforco
+- `src/components/AppSidebar.tsx` - Remover subitem "Avaliacao de Aderencia", manter apenas "Gap Analysis" com link unico
+- `src/App.tsx` - Remover rota `/gap-analysis/avaliacao-aderencia` (ou redirecionar para `/gap-analysis/frameworks`)
+- `src/hooks/useGapAnalysisStats.tsx` - Novos calculos (conformidade geral, acoes pendentes, requisitos criticos, progresso mensal)
 
-### Dados necessarios:
-- Para os StatusBlocks nos FrameworkCards, precisamos buscar contagem por status para cada framework (ja temos os dados de evaluations, apenas precisamos granularidade por status)
-- Para evidencias por link, armazenar no campo `evidence_files` existente com tipo `{ type: 'file' | 'link', name, url, size? }`
+### Logica de agrupamento por categoria:
+- Mapear `tipo_framework` para categorias visuais: `seguranca` = "Seguranca da Informacao", `privacidade` = "Privacidade e Protecao de Dados", `qualidade` = "Qualidade e Processos", `governanca` = "Governanca Corporativa"
+- Usar essas categorias nos accordions do catalogo e nas tags dos cards
 
 ### Ordem de implementacao:
-1. StatusBlocks (componente base)
-2. Separacao Ativos/Disponiveis + FrameworkCard ativo com blocos
-3. CategoryStatusCards na pagina de detalhe
-4. Drag & drop + link URL nas evidencias
-5. Coluna de evidencias na tabela de requisitos
+1. Redesign da pagina principal (Hero + Stats + Catalogo por categoria)
+2. Unificacao: Tabs no detalhe do framework (Avaliacao | Documentos | Historico)
+3. Nova aba de Historico e Evolucao
+4. Remocao do subitem de Aderencia do sidebar e rota
+5. Melhoria visual nos cards de frameworks disponiveis
+
