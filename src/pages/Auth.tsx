@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
@@ -48,6 +48,7 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   
   // MFA state
+  const mfaInProgressRef = useRef(false);
   const [mfaPending, setMfaPending] = useState(false);
   const [mfaUserId, setMfaUserId] = useState('');
   const [mfaEmail, setMfaEmail] = useState('');
@@ -62,7 +63,7 @@ const Auth = () => {
     }
   }, []);
 
-  if (!loading && user) return <Navigate to="/dashboard" replace />;
+  if (!loading && user && !mfaInProgressRef.current) return <Navigate to="/dashboard" replace />;
 
   if (loading) {
     return (
@@ -89,6 +90,7 @@ const Auth = () => {
       return;
     }
     setIsLoading(true);
+    mfaInProgressRef.current = true;
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) throw error;
@@ -122,6 +124,7 @@ const Auth = () => {
 
           if (mfaResponse.error) {
             console.error('Erro ao enviar MFA, login direto:', mfaResponse.error);
+            mfaInProgressRef.current = false;
             setMfaPending(false);
             setMfaPassword('');
             const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
@@ -137,6 +140,7 @@ const Auth = () => {
             if (mfaResponse.data?.error) {
               toast.warning(mfaResponse.data.error);
             }
+            mfaInProgressRef.current = false;
             setMfaPending(false);
             setMfaPassword('');
             const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
@@ -146,6 +150,7 @@ const Auth = () => {
           }
         } catch (mfaError) {
           console.error('Exceção MFA:', mfaError);
+          mfaInProgressRef.current = false;
           setMfaPending(false);
           setMfaPassword('');
           const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
@@ -156,6 +161,7 @@ const Auth = () => {
         }
       }
     } catch (error: any) {
+      mfaInProgressRef.current = false;
       logger.warn('Login failed', { module: 'Auth', action: 'login', details: error.message });
       toast.error(getErrorMessage(error));
     } finally {
@@ -172,6 +178,7 @@ const Auth = () => {
       });
       // Limpar senha da memória imediatamente
       setMfaPassword('');
+      mfaInProgressRef.current = false;
       setMfaPending(false);
       
       if (error) {
@@ -183,12 +190,14 @@ const Auth = () => {
       toast.success('Login realizado com sucesso!');
     } catch (err) {
       setMfaPassword('');
+      mfaInProgressRef.current = false;
       setMfaPending(false);
       toast.error('Erro ao autenticar. Tente novamente.');
     }
   };
 
   const handleMFACancel = () => {
+    mfaInProgressRef.current = false;
     setMfaPending(false);
     setMfaUserId('');
     setMfaEmail('');
