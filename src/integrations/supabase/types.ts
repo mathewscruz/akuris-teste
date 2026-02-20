@@ -4778,6 +4778,47 @@ export type Database = {
           },
         ]
       }
+      mfa_codes: {
+        Row: {
+          attempts: number
+          code: string
+          created_at: string
+          empresa_id: string
+          expires_at: string
+          id: string
+          used: boolean
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          created_at?: string
+          empresa_id: string
+          expires_at?: string
+          id?: string
+          used?: boolean
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          created_at?: string
+          empresa_id?: string
+          expires_at?: string
+          id?: string
+          used?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mfa_codes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -6397,6 +6438,7 @@ export type Database = {
         Returns: boolean
       }
       check_trial_expiration: { Args: never; Returns: undefined }
+      cleanup_expired_mfa_codes: { Args: never; Returns: undefined }
       consume_ai_credit: {
         Args: {
           p_descricao?: string

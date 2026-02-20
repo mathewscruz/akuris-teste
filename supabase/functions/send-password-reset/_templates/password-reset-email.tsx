@@ -5,8 +5,7 @@ import { BaseEmailTemplate, emailStyles } from '../../_shared/email-templates/Ba
 interface PasswordResetEmailProps {
   userName: string;
   userEmail: string;
-  temporaryPassword: string;
-  loginUrl: string;
+  resetUrl: string;
   companyName?: string;
   companyLogoUrl?: string;
 }
@@ -14,13 +13,12 @@ interface PasswordResetEmailProps {
 export const PasswordResetEmail = ({
   userName,
   userEmail,
-  temporaryPassword,
-  loginUrl,
+  resetUrl,
   companyName,
   companyLogoUrl,
 }: PasswordResetEmailProps) => (
   <BaseEmailTemplate
-    previewText="Sua senha foi redefinida"
+    previewText="Redefinição de senha - Akuris"
     title="Redefinição de Senha"
     companyLogoUrl={companyLogoUrl}
   >
@@ -29,35 +27,23 @@ export const PasswordResetEmail = ({
     </Text>
 
     <Text style={emailStyles.text}>
-      Sua senha foi redefinida com sucesso. Use as credenciais abaixo para acessar:
+      Recebemos uma solicitação para redefinir a senha da sua conta. Clique no botão abaixo para definir uma nova senha:
     </Text>
 
-    <Section style={emailStyles.infoBox}>
-      <Text style={{ ...emailStyles.text, margin: '0 0 8px' }}>
-        <strong>E-mail:</strong> {userEmail}
-      </Text>
-      <Text style={{ ...emailStyles.text, margin: '0 0 8px' }}>
-        <strong>Nova senha temporária:</strong>
-      </Text>
-      <Text style={{ ...emailStyles.code, display: 'block', textAlign: 'center' }}>
-        {temporaryPassword}
-      </Text>
-    </Section>
-
     <Section style={emailStyles.buttonSection}>
-      <Link href={loginUrl} style={emailStyles.button}>
-        Fazer Login
+      <Link href={resetUrl} style={emailStyles.button}>
+        Redefinir Minha Senha
       </Link>
     </Section>
 
     <Section style={emailStyles.warningBox}>
       <Text style={{ ...emailStyles.text, margin: '0', fontSize: '13px' }}>
-        <strong>Importante:</strong> Por segurança, você será solicitado a alterar sua senha após o login.
+        <strong>Importante:</strong> Este link expira em 1 hora. Se expirar, solicite uma nova redefinição.
       </Text>
     </Section>
 
     <Text style={emailStyles.text}>
-      Se você não solicitou esta redefinição, por favor entre em contato com o suporte imediatamente.
+      Se você não solicitou esta redefinição, por favor ignore este e-mail. Sua senha permanecerá inalterada.
     </Text>
   </BaseEmailTemplate>
 );

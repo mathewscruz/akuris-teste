@@ -183,3 +183,9 @@ verify_jwt = true
 
 [functions.provision-new-account]
 verify_jwt = false
+
+[functions.send-mfa-code]
+verify_jwt = false
+
+[functions.verify-mfa-code]
+verify_jwt = false

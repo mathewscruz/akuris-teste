@@ -14,6 +14,15 @@ interface CreateUserRequest {
   permission_profile_id?: string
 }
 
+function generateRandomPassword(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%'
+  let result = ''
+  for (let i = 0; i < 24; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -83,26 +92,12 @@ Deno.serve(async (req) => {
 
     console.log(`Criando usuário: ${email}`)
 
-    const { data: tempPassword, error: tempPassError } = await supabaseAdmin
-      .rpc('generate_temp_password')
-
-    if (tempPassError || !tempPassword) {
-      console.error('Erro ao gerar senha temporária:', tempPassError)
-      throw new Error('Erro ao gerar senha temporária')
-    }
-
-    const { data: existingProfile, error: existingProfileError } = await supabaseAdmin
+    // Verificar se já existe
+    const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
       .select('user_id, id, nome, created_at')
       .eq('email', email)
       .maybeSingle()
-
-    if (existingProfileError) {
-      console.error('Erro ao verificar perfil existente:', existingProfileError)
-      throw new Error('Erro ao verificar usuários existentes')
-    }
-
-    let authData: any
 
     if (existingProfile) {
       return new Response(JSON.stringify({
@@ -122,32 +117,32 @@ Deno.serve(async (req) => {
         ]
       }), {
         status: 409,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
       })
     }
 
+    // Gerar senha aleatória interna (NÃO será enviada ao usuário)
+    const internalPassword = generateRandomPassword()
+
+    let authData: any
     let existingAuthUser = null
     try {
       const allUsers = await supabaseAdmin.auth.admin.listUsers()
       existingAuthUser = allUsers.data?.users?.find(u => u.email === email) || null
     } catch (e) {
-      console.warn('Erro ao buscar usuário no Auth, criando novo:', e)
+      console.warn('Erro ao buscar usuário no Auth:', e)
     }
 
     if (existingAuthUser) {
       console.log('Usuário órfão detectado - recriando profile para:', email)
       authData = { user: existingAuthUser }
-
       await supabaseAdmin.auth.admin.updateUserById(existingAuthUser.id, {
-        password: tempPassword
+        password: internalPassword
       })
     } else {
       const { data: newAuthData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
         email: email,
-        password: tempPassword,
+        password: internalPassword,
         email_confirm: true,
         user_metadata: {
           nome: nome,
@@ -192,83 +187,94 @@ Deno.serve(async (req) => {
 
     console.log('Perfil criado com sucesso')
 
-    await supabaseAdmin
-      .from('temporary_passwords')
-      .insert({
-        user_id: authData.user.id,
-        is_temporary: true,
-      })
-
-    console.log('Senha temporária registrada')
-
+    // Aplicar permissões
     try {
       if (permission_profile_id) {
-        console.log('Aplicando perfil de permissão:', permission_profile_id)
-        const { error: permissionsError } = await supabaseAdmin
-          .rpc('apply_permission_profile', { 
-            profile_id: permission_profile_id,
-            target_user_id: authData.user.id 
-          })
-
-        if (permissionsError) {
-          console.error('Erro ao aplicar perfil de permissão:', permissionsError)
-        } else {
-          console.log('Perfil de permissão aplicado com sucesso')
-        }
+        await supabaseAdmin.rpc('apply_permission_profile', { 
+          profile_id: permission_profile_id,
+          target_user_id: authData.user.id 
+        })
       } else {
-        console.log('Aplicando permissões padrão para o usuário...')
-        const { error: permissionsError } = await supabaseAdmin
-          .rpc('apply_default_permissions_for_user', { 
-            user_id_param: authData.user.id 
-          })
-
-        if (permissionsError) {
-          console.error('Erro ao aplicar permissões padrão:', permissionsError)
-        } else {
-          console.log('Permissões padrão aplicadas com sucesso')
-        }
+        await supabaseAdmin.rpc('apply_default_permissions_for_user', { 
+          user_id_param: authData.user.id 
+        })
       }
     } catch (permError) {
       console.error('Exceção ao aplicar permissões:', permError)
     }
 
-    let companyName = 'Akuris';
-    let companyLogoUrl = 'https://akuris.com.br/akuris-logo.png';
+    // Gerar link de invite para o usuário definir sua senha
+    const siteUrl = 'https://akuris.com.br'
+    let setupPasswordUrl = `${siteUrl}/auth`
+    
+    try {
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'invite',
+        email: email,
+        options: {
+          redirectTo: `${siteUrl}/definir-senha`,
+        }
+      })
+
+      if (linkError || !linkData) {
+        console.error('Erro ao gerar invite link:', linkError)
+        // Fallback: usar recovery link
+        const { data: recoveryData, error: recoveryError } = await supabaseAdmin.auth.admin.generateLink({
+          type: 'recovery',
+          email: email,
+          options: {
+            redirectTo: `${siteUrl}/definir-senha`,
+          }
+        })
+        
+        if (!recoveryError && recoveryData) {
+          setupPasswordUrl = `${siteUrl}/definir-senha?token_hash=${recoveryData.properties.hashed_token}&type=recovery`
+        }
+      } else {
+        setupPasswordUrl = `${siteUrl}/definir-senha?token_hash=${linkData.properties.hashed_token}&type=invite`
+      }
+    } catch (linkGenError) {
+      console.error('Exceção ao gerar link:', linkGenError)
+    }
+
+    // Buscar dados da empresa para o e-mail
+    let companyName = 'Akuris'
+    let companyLogoUrl = ''
     
     try {
       const { data: empresaData } = await supabaseAdmin
         .from('empresas')
         .select('nome, logo_url')
         .eq('id', finalEmpresaId)
-        .single();
+        .single()
       
       if (empresaData) {
-        companyName = empresaData.nome || companyName;
-        companyLogoUrl = empresaData.logo_url || companyLogoUrl;
+        companyName = empresaData.nome || companyName
+        companyLogoUrl = empresaData.logo_url || companyLogoUrl
       }
     } catch (empresaError) {
-      console.log('Não foi possível buscar dados da empresa, usando padrões:', empresaError);
+      console.log('Não foi possível buscar dados da empresa:', empresaError)
     }
 
-    let emailSent = false;
+    // Enviar e-mail de boas-vindas com link
+    let emailSent = false
     try {
-      console.log('Tentando enviar e-mail de boas-vindas...')
-      const { data: emailData, error: emailError } = await supabaseAdmin.functions.invoke('send-welcome-email', {
+      console.log('Enviando e-mail de boas-vindas com link para definir senha...')
+      const { error: emailError } = await supabaseAdmin.functions.invoke('send-welcome-email', {
         body: {
           userName: nome,
           userEmail: email,
-          temporaryPassword: tempPassword,
-          loginUrl: 'https://akuris.com.br/auth',
-          companyName: companyName,
-          companyLogoUrl: companyLogoUrl
+          setupPasswordUrl,
+          companyName,
+          companyLogoUrl
         }
       })
 
       if (emailError) {
         console.error('Erro ao enviar e-mail:', emailError)
       } else {
-        console.log('E-mail de boas-vindas enviado com sucesso:', emailData)
-        emailSent = true;
+        console.log('E-mail de boas-vindas enviado com sucesso')
+        emailSent = true
       }
     } catch (emailError) {
       console.error('Exceção ao enviar e-mail:', emailError)
@@ -281,14 +287,11 @@ Deno.serve(async (req) => {
         email: email,
         nome: nome
       },
-      emailSent: emailSent,
-      message: emailSent ? 'Usuário criado com sucesso! E-mail de boas-vindas enviado.' : 'Usuário criado com sucesso! Falha no envio do e-mail.'
+      emailSent,
+      message: emailSent ? 'Usuário criado com sucesso! E-mail com link para definir senha enviado.' : 'Usuário criado com sucesso! Falha no envio do e-mail.'
     }), {
       status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        ...corsHeaders,
-      },
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
     })
 
   } catch (error: any) {
@@ -300,10 +303,7 @@ Deno.serve(async (req) => {
       }),
       {
         status: 500,
-        headers: { 
-          'Content-Type': 'application/json', 
-          ...corsHeaders 
-        },
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
       }
     )
   }
