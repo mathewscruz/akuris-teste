@@ -356,21 +356,44 @@ export function Riscos() {
     if (!dataRevisao) return null;
     const dias = differenceInDays(new Date(dataRevisao), new Date());
     if (dias < 0) {
-      return <Badge className="bg-red-100 text-red-800 border-red-200 whitespace-nowrap">Vencida</Badge>;
+      return <Badge className="bg-red-100 text-red-800 border-red-200 text-[10px] px-1.5 py-0">Vencida</Badge>;
     }
     if (dias <= 7) {
-      return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 whitespace-nowrap">{dias}d</Badge>;
+      return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-[10px] px-1.5 py-0">{dias}d</Badge>;
     }
-    return <span className="text-sm text-muted-foreground whitespace-nowrap">{formatDateOnly(dataRevisao)}</span>;
+    return null;
   };
 
   const getAprovacaoBadge = (status?: string) => {
     switch (status) {
-      case 'aprovado': return <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">✓</Badge>;
-      case 'rejeitado': return <Badge className="bg-red-100 text-red-800 border-red-200 text-xs">✗</Badge>;
-      case 'pendente': return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">⏳</Badge>;
+      case 'aprovado': return <Badge className="bg-green-100 text-green-800 border-green-200 text-[10px] px-1.5 py-0">Aprovado</Badge>;
+      case 'rejeitado': return <Badge className="bg-red-100 text-red-800 border-red-200 text-[10px] px-1.5 py-0">Rejeitado</Badge>;
+      case 'pendente': return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-[10px] px-1.5 py-0">Pendente</Badge>;
       default: return null;
     }
+  };
+
+  // Função para calcular variação percentual
+  const calcTrend = (atual: number, antigo: number | null | undefined): { value: number; direction: 'up' | 'down' | 'neutral' } | undefined => {
+    if (antigo === null || antigo === undefined || antigo === 0) return undefined;
+    const diff = ((atual - antigo) / antigo) * 100;
+    const rounded = Math.round(Math.abs(diff));
+    if (rounded === 0) return undefined;
+    return { value: rounded, direction: diff > 0 ? 'up' : 'down' };
+  };
+
+  // Mini sparkline SVG component
+  const MiniSparkline = ({ trend, color }: { trend?: { direction: 'up' | 'down' | 'neutral' }; color: string }) => {
+    // Simple visual sparkline
+    const upPath = "M0,14 L4,12 L8,10 L12,8 L16,11 L20,7 L24,5 L28,3";
+    const downPath = "M0,3 L4,5 L8,7 L12,5 L16,8 L20,10 L24,12 L28,14";
+    const flatPath = "M0,8 L4,9 L8,7 L12,8 L16,9 L20,7 L24,8 L28,8";
+    const path = trend?.direction === 'up' ? upPath : trend?.direction === 'down' ? downPath : flatPath;
+    return (
+      <svg width="32" height="16" viewBox="0 0 28 16" className="opacity-60">
+        <path d={path} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    );
   };
 
   if (loading) {
@@ -408,11 +431,8 @@ export function Riscos() {
       key: 'nome',
       label: 'Nome',
       sortable: true,
-      render: (value: any, risco: Risco) => (
-        <div className="flex items-center gap-1.5">
-          <span className="font-medium">{value}</span>
-          {getAprovacaoBadge(risco.status_aprovacao)}
-        </div>
+      render: (value: any) => (
+        <span className="font-medium">{value}</span>
       )
     },
     {
@@ -447,9 +467,30 @@ export function Riscos() {
       )
     },
     {
-      key: 'data_proxima_revisao',
-      label: 'Revisão',
-      render: (value: string) => getRevisaoBadge(value) || <span className="text-muted-foreground text-sm">-</span>
+      key: 'tags',
+      label: 'Tags',
+      render: (_value: any, risco: Risco) => {
+        const tags: React.ReactNode[] = [];
+        const aprovBadge = getAprovacaoBadge(risco.status_aprovacao);
+        if (aprovBadge) tags.push(aprovBadge);
+        if (risco.aceito) tags.push(<Badge key="aceito" className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] px-1.5 py-0">Aceito</Badge>);
+        const revBadge = getRevisaoBadge(risco.data_proxima_revisao);
+        if (revBadge) tags.push(revBadge);
+
+        if (tags.length === 0) return <span className="text-muted-foreground text-sm">-</span>;
+        
+        const visible = tags.slice(0, 2);
+        const extra = tags.length - 2;
+        
+        return (
+          <div className="flex items-center gap-1 flex-wrap">
+            {visible}
+            {extra > 0 && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">+{extra}</Badge>
+            )}
+          </div>
+        );
+      }
     },
     {
       key: 'tratamentos_count',
@@ -585,31 +626,58 @@ export function Riscos() {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="Total de Riscos"
-            value={stats?.total || 0}
-            description={`${stats?.criticos || 0} críticos, ${stats?.altos || 0} altos`}
-            icon={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}
-            variant={stats?.criticos ? "destructive" : "default"}
-            loading={!stats}
-          />
-          <StatCard
-            title="Tratamentos Concluídos"
-            value={stats?.tratamentos_concluidos || 0}
-            description={`${stats?.tratamentos_andamento || 0} em andamento`}
-            icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
-            variant="success"
-            loading={!stats}
-          />
-          <StatCard
-            title="Riscos Aceitos"
-            value={stats?.aceitos || 0}
-            description="Aceitos formalmente"
-            icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
-            variant="warning"
-            loading={!stats}
-          />
-          <RiskScoreCard stats={stats} loading={!stats} />
+          {(() => {
+            const totalTrend = calcTrend(stats?.total || 0, stats?.total_7d_atras);
+            const tratConcTrend = calcTrend(stats?.tratamentos_concluidos || 0, stats?.tratamentos_concluidos_7d_atras);
+            const aceitosTrend = calcTrend(stats?.aceitos || 0, stats?.aceitos_7d_atras);
+            return (
+              <>
+                <StatCard
+                  title="Total de Riscos"
+                  value={stats?.total || 0}
+                  description={`${stats?.criticos || 0} críticos, ${stats?.altos || 0} altos`}
+                  icon={
+                    <div className="flex flex-col items-center gap-1">
+                      <AlertTriangle className="h-4 w-4" />
+                      <MiniSparkline trend={totalTrend} color="hsl(var(--destructive))" />
+                    </div>
+                  }
+                  variant={stats?.criticos ? "destructive" : "default"}
+                  loading={!stats}
+                  trend={totalTrend ? { value: totalTrend.value, direction: totalTrend.direction, period: '7d' } : undefined}
+                />
+                <StatCard
+                  title="Tratamentos Concluídos"
+                  value={stats?.tratamentos_concluidos || 0}
+                  description={`${stats?.tratamentos_andamento || 0} em andamento`}
+                  icon={
+                    <div className="flex flex-col items-center gap-1">
+                      <TrendingUp className="h-4 w-4" />
+                      <MiniSparkline trend={tratConcTrend} color="hsl(var(--success))" />
+                    </div>
+                  }
+                  variant="success"
+                  loading={!stats}
+                  trend={tratConcTrend ? { value: tratConcTrend.value, direction: tratConcTrend.direction, period: '7d' } : undefined}
+                />
+                <StatCard
+                  title="Riscos Aceitos"
+                  value={stats?.aceitos || 0}
+                  description="Aceitos formalmente"
+                  icon={
+                    <div className="flex flex-col items-center gap-1">
+                      <CheckCircle className="h-4 w-4" />
+                      <MiniSparkline trend={aceitosTrend} color="hsl(var(--warning))" />
+                    </div>
+                  }
+                  variant="warning"
+                  loading={!stats}
+                  trend={aceitosTrend ? { value: aceitosTrend.value, direction: aceitosTrend.direction, period: '7d' } : undefined}
+                />
+                <RiskScoreCard stats={stats} loading={!stats} />
+              </>
+            );
+          })()}
         </div>
 
         {/* Action Buttons */}

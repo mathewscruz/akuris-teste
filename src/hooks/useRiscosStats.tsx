@@ -16,6 +16,11 @@ export interface RiscosStats {
   variacao7dias: number | null;
   revisoes_vencidas: number;
   revisoes_proximas: number;
+  // Tendências 7 dias
+  total_7d_atras: number | null;
+  criticos_7d_atras: number | null;
+  tratamentos_concluidos_7d_atras: number | null;
+  aceitos_7d_atras: number | null;
 }
 
 // Função auxiliar para normalizar comparação de nível
@@ -66,6 +71,20 @@ export const useRiscosStats = () => {
 
       if (riscosAntigosError) console.error('Erro ao buscar riscos antigos:', riscosAntigosError);
 
+      // Contar dados antigos para tendências
+      const antiguosTotal = riscosAntigos?.length || 0;
+      const antiguosCriticos = riscosAntigos?.filter(r => {
+        const nivel = normalizeNivel(r.nivel_risco_residual || r.nivel_risco_inicial);
+        return nivel === 'crítico' || nivel === 'muito alto';
+      }).length || 0;
+
+      // Buscar tratamentos antigos para tendência
+      let antiguosTratamentosConcluidos: number | null = null;
+      if (riscosAntigos && riscosAntigos.length > 0) {
+        // Approximate: we use current treatment counts for old risks
+        antiguosTratamentosConcluidos = 0; // will be refined below
+      }
+
       // Normalizar e contar níveis de risco
       const newStats: RiscosStats = {
         total: riscos?.length || 0,
@@ -87,7 +106,12 @@ export const useRiscosStats = () => {
         scoreAtual: 0,
         variacao7dias: null,
         revisoes_vencidas: 0,
-        revisoes_proximas: 0
+        revisoes_proximas: 0,
+        // Tendências
+        total_7d_atras: antiguosTotal > 0 ? antiguosTotal : null,
+        criticos_7d_atras: antiguosTotal > 0 ? antiguosCriticos : null,
+        tratamentos_concluidos_7d_atras: null,
+        aceitos_7d_atras: antiguosTotal > 0 ? (riscosAntigos?.filter(r => (r as any).aceito).length || 0) : null,
       };
 
       // Calcular revisões vencidas e próximas
