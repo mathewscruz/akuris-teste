@@ -21,7 +21,7 @@ interface BaseEmailTemplateProps {
   showFooter?: boolean;
 }
 
-const AKURIS_LOGO_URL = 'https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/email-assets/akuris-logo.png?v=1';
+const AKURIS_LOGO_URL = 'https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/email-assets/akuris-logo.png';
 
 const COLORS = {
   primary: '#7552ff',
@@ -63,7 +63,9 @@ export const BaseEmailTemplate = ({
               <Img
                 src={logoUrl}
                 alt={companyName}
-                style={logoStyle}
+                width="160"
+                height="48"
+                style={{ margin: '0 auto', display: 'block' }}
               />
             ) : (
               <Text style={headerFallbackName}>{companyName}</Text>

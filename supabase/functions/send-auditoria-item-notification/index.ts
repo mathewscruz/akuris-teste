@@ -39,7 +39,7 @@ serve(async (req) => {
       .from("empresas").select("nome, logo_url").eq("id", responsavel.empresa_id).single();
 
     const companyName = empresa?.nome || "Akuris";
-    const companyLogo = empresa?.logo_url || "https://akuris.com.br/akuris-logo.png";
+    const companyLogo = empresa?.logo_url || "https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/email-assets/akuris-logo.png";
     const prazoFormatted = prazo ? new Date(prazo).toLocaleDateString('pt-BR') : "Não definido";
     const appUrl = "https://akuris.com.br";
     const auditoriaLink = `${appUrl}/auditorias`;
@@ -53,7 +53,7 @@ serve(async (req) => {
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
         <tr><td style="padding: 32px; text-align: center; border-bottom: 1px solid #e2e8f0;">
-          <img src="${companyLogo}" alt="${companyName}" style="max-height: 50px; max-width: 200px;" onerror="this.style.display='none'">
+          <img src="${companyLogo}" alt="${companyName}" width="200" height="50" style="max-height: 50px; max-width: 200px;" onerror="this.style.display='none'">
         </td></tr>
         <tr><td style="padding: 32px;">
           <h1 style="color: #0a1628; margin: 0 0 24px 0; font-size: 24px;">📋 Novo Item de Auditoria Atribuído</h1>
