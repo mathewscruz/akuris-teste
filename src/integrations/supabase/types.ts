@@ -3986,6 +3986,7 @@ export type Database = {
           evidencias_encontradas: string | null
           gaps_especificos: string | null
           id: string
+          justificativa_relevancia: string | null
           observacoes_ia: string | null
           requirement_id: string
           requisito_codigo: string | null
@@ -3999,6 +4000,7 @@ export type Database = {
           evidencias_encontradas?: string | null
           gaps_especificos?: string | null
           id?: string
+          justificativa_relevancia?: string | null
           observacoes_ia?: string | null
           requirement_id: string
           requisito_codigo?: string | null
@@ -4012,6 +4014,7 @@ export type Database = {
           evidencias_encontradas?: string | null
           gaps_especificos?: string | null
           id?: string
+          justificativa_relevancia?: string | null
           observacoes_ia?: string | null
           requirement_id?: string
           requisito_codigo?: string | null
