@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 serve(async (req) => {
@@ -11,7 +11,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Salvar body no início para poder usar em caso de erro
   let requestBody: any = null;
   
   try {
@@ -28,9 +27,8 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Consumir crédito de IA antes de prosseguir
+    // Consumir crédito de IA
     if (empresaId) {
-      // Get user from auth header
       const authHeader = req.headers.get('Authorization');
       let userId: string | null = null;
       if (authHeader) {
@@ -48,7 +46,6 @@ serve(async (req) => {
         });
 
       if (creditError || creditResult === false) {
-        // Update assessment status to error
         await supabase
           .from('gap_analysis_adherence_assessments')
           .update({
@@ -58,7 +55,7 @@ serve(async (req) => {
           .eq('id', assessmentId);
 
         return new Response(JSON.stringify({ 
-          error: 'Créditos de IA esgotados. Entre em contato para adquirir mais créditos.',
+          error: 'Créditos de IA esgotados.',
           creditsExhausted: true
         }), {
           status: 402,
@@ -69,7 +66,7 @@ serve(async (req) => {
 
     console.log('Starting adherence analysis:', { assessmentId, frameworkId, storageFileName });
 
-    // 1. Buscar dados do framework e requisitos
+    // 1. Buscar framework e requisitos
     const { data: framework, error: frameworkError } = await supabase
       .from('gap_analysis_frameworks')
       .select('*')
@@ -86,13 +83,8 @@ serve(async (req) => {
       .eq('framework_id', frameworkId)
       .order('ordem');
 
-    if (reqError) {
-      throw new Error(`Erro ao buscar requisitos: ${reqError.message}`);
-    }
-
-    if (!requirements || requirements.length === 0) {
-      throw new Error('Framework não possui requisitos cadastrados');
-    }
+    if (reqError) throw new Error(`Erro ao buscar requisitos: ${reqError.message}`);
+    if (!requirements || requirements.length === 0) throw new Error('Framework não possui requisitos cadastrados');
 
     console.log(`Framework: ${framework.nome}, Requirements: ${requirements.length}`);
 
@@ -107,80 +99,78 @@ serve(async (req) => {
 
     console.log('Document downloaded, size:', fileData.size);
 
-    // 3. Extrair texto do documento (deve ser TXT pré-processado)
+    // 3. Extrair texto
     console.log('Reading document text...');
     let documentText = '';
     const fileExtension = storageFileName.toLowerCase().split('.').pop();
-    
     console.log('File extension detected:', fileExtension);
 
-    try {
-      if (fileExtension === 'txt') {
-        // Documento já foi pré-processado no frontend
-        documentText = await fileData.text();
-        console.log('Text extracted, length:', documentText.length);
-      } else {
-        throw new Error(`Tipo de arquivo não suportado: ${fileExtension}. Apenas arquivos TXT são aceitos (pré-processados no frontend).`);
-      }
-    } catch (e: any) {
-      console.error('Error reading document:', e.message);
-      throw new Error(`Não foi possível ler o documento: ${e.message}`);
+    if (fileExtension === 'txt') {
+      documentText = await fileData.text();
+      console.log('Text extracted, length:', documentText.length);
+    } else {
+      throw new Error(`Tipo de arquivo não suportado: ${fileExtension}. Apenas TXT pré-processados são aceitos.`);
     }
 
     if (!documentText || documentText.trim().length < 100) {
       throw new Error('Documento não contém texto suficiente para análise (mínimo 100 caracteres)');
     }
 
-    // 5. Montar prompt inteligente para IA - identifica requisitos relevantes
-    const requirementsList = requirements?.map((r, idx) => 
-      `${idx + 1}. [ID:${r.id}] ${r.codigo || 'N/A'} - ${r.titulo}`
-    ).join('\n');
+    // 4. Montar prompt com mais contexto e qualidade
+    const docTextForAnalysis = documentText.substring(0, 20000);
+    const reqsForAnalysis = requirements.slice(0, 60);
 
-    const documentName = storageFileName.split('/').pop()?.replace('.txt', '') || 'Documento';
+    const prompt = `Você é um auditor sênior de conformidade regulatória com experiência em frameworks como ISO 27001, LGPD, NIST CSF, SOC 2, GDPR e outros.
 
-    const prompt = `Você DEVE retornar APENAS JSON válido no formato especificado.
+TAREFA: Analise o documento abaixo e avalie sua conformidade com os requisitos do framework ${framework.nome} (${framework.versao || ''}).
 
-DOCUMENTO ANALISADO (primeiros 12000 chars):
-${documentText.substring(0, 12000)}${documentText.length > 12000 ? '\n\n[... documento continua ...]' : ''}
+INSTRUÇÕES DETALHADAS:
+1. Leia o documento inteiro com atenção
+2. Para CADA requisito listado, determine se o documento aborda, menciona ou implementa o que é exigido
+3. Seja criterioso: "conforme" significa que o documento cobre adequadamente o requisito; "parcial" significa cobertura incompleta; "nao_conforme" significa ausência ou inadequação
+4. Forneça evidências textuais específicas encontradas no documento (citações ou referências a seções)
+5. Identifique gaps concretos e acionáveis
+6. O percentual geral deve refletir a média ponderada real dos requisitos avaliados
 
-REQUISITOS ${framework.nome} (primeiros 40):
-${requirements.slice(0, 40).map((r, i) => `${i+1}. ID:${r.id} | ${r.codigo}: ${r.titulo}`).join('\n')}
+DOCUMENTO ANALISADO:
+---
+${docTextForAnalysis}${documentText.length > 20000 ? '\n\n[... documento continua - ' + (documentText.length - 20000) + ' caracteres adicionais ...]' : ''}
+---
 
-TAREFA: Identifique requisitos RELEVANTES e analise conformidade.
+REQUISITOS DO FRAMEWORK ${framework.nome} (${reqsForAnalysis.length} de ${requirements.length}):
+${reqsForAnalysis.map((r, i) => `${i+1}. ID:${r.id} | ${r.codigo || 'N/A'}: ${r.titulo}${r.descricao ? ' - ' + r.descricao.substring(0, 80) : ''}`).join('\n')}
 
-FORMATO JSON OBRIGATÓRIO:
+FORMATO JSON OBRIGATÓRIO (retorne APENAS JSON válido, sem markdown):
 {
-  "documento_tipo_identificado": "string (ex: politica, procedimento)",
-  "documento_escopo_identificado": "string (max 50 chars)",
+  "documento_tipo_identificado": "string (política, procedimento, contrato, manual, etc)",
+  "documento_escopo_identificado": "string curta descrevendo escopo do documento",
   "total_requisitos_relevantes": número,
   "resultado_geral": "conforme"|"nao_conforme"|"parcial",
   "percentual_conformidade": 0-100,
   "pontos_fortes": [
-    {"titulo": "max 50 chars", "descricao": "max 100 chars"}
+    {"titulo": "max 60 chars", "descricao": "max 150 chars com detalhes específicos"}
   ],
   "pontos_melhoria": [
-    {"titulo": "max 50 chars", "descricao": "max 100 chars", "prioridade": "alta|media|baixa"}
+    {"titulo": "max 60 chars", "descricao": "max 150 chars com ação recomendada", "prioridade": "alta|media|baixa"}
   ],
   "requisitos_analisados": [
     {
-      "requirement_id": "UUID do requisito",
-      "requisito_codigo": "código",
+      "requirement_id": "UUID exato do requisito",
+      "requisito_codigo": "código do requisito",
       "status_aderencia": "conforme"|"nao_conforme"|"parcial"|"nao_aplicavel",
-      "evidencias_encontradas": "max 80 chars",
-      "gaps_especificos": "max 70 chars",
+      "evidencias_encontradas": "citação ou referência específica do documento (max 120 chars)",
+      "gaps_especificos": "o que falta para conformidade total (max 100 chars)",
       "score_conformidade": 0-10,
-      "observacoes_ia": "max 120 chars",
-      "justificativa_relevancia": "max 70 chars"
+      "observacoes_ia": "análise detalhada do auditor (max 150 chars)",
+      "justificativa_relevancia": "por que este requisito é relevante ao documento (max 80 chars)"
     }
   ],
-  "requisitos_nao_aplicaveis": ["array de IDs"],
-  "recomendacoes": ["max 120 chars cada"],
-  "analise_detalhada": "resumo executivo (max 400 palavras)"
-}
+  "requisitos_nao_aplicaveis": ["array de UUIDs de requisitos não aplicáveis ao escopo do documento"],
+  "recomendacoes": ["recomendações acionáveis e específicas, max 150 chars cada, mínimo 3"],
+  "analise_detalhada": "resumo executivo da análise (max 500 palavras) incluindo: visão geral da conformidade, áreas de maior risco, prioridades de remediação"
+}`;
 
-CRÍTICO: Retorne APENAS o JSON, sem prefixos, sufixos ou markdown.`;
-
-    // 6. Chamar Lovable AI Gateway com Gemini 2.5 Flash
+    // 5. Chamar Lovable AI Gateway
     console.log('Calling Lovable AI Gateway...');
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -189,15 +179,15 @@ CRÍTICO: Retorne APENAS o JSON, sem prefixos, sufixos ou markdown.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3-flash-preview',
         messages: [
           { 
             role: 'system', 
-            content: 'Você é auditor de conformidade. Retorne APENAS JSON válido, sem texto adicional. Siga rigorosamente o schema fornecido.'
+            content: 'Você é um auditor sênior de conformidade regulatória. Analise documentos com rigor e precisão. Retorne APENAS JSON válido seguindo exatamente o schema fornecido. Seja específico nas evidências e gaps.'
           },
           { role: 'user', content: prompt }
         ],
-        max_completion_tokens: 12000,
+        max_completion_tokens: 16000,
         response_format: { type: 'json_object' }
       }),
     });
@@ -205,15 +195,8 @@ CRÍTICO: Retorne APENAS o JSON, sem prefixos, sufixos ou markdown.`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Lovable AI Gateway error:', response.status, errorText);
-      
-      // Tratamento específico para erros de rate limit e pagamento
-      if (response.status === 429) {
-        throw new Error('Limite de requisições excedido. Aguarde alguns minutos e tente novamente.');
-      }
-      if (response.status === 402) {
-        throw new Error('Créditos do Lovable AI esgotados. Adicione créditos em Settings > Workspace > Usage.');
-      }
-      
+      if (response.status === 429) throw new Error('Limite de requisições excedido. Aguarde e tente novamente.');
+      if (response.status === 402) throw new Error('Créditos do Lovable AI esgotados.');
       throw new Error(`Erro na API (${response.status}): ${errorText}`);
     }
 
@@ -227,45 +210,32 @@ CRÍTICO: Retorne APENAS o JSON, sem prefixos, sufixos ou markdown.`;
       finishReason: aiResponse.choices?.[0]?.finish_reason
     }));
     
-    // Verificar se resposta foi truncada ANTES de verificar conteúdo
     if (aiResponse.choices?.[0]?.finish_reason === 'length') {
-      console.error('Response truncated - muitos requisitos aplicáveis.');
-      console.error('Content até truncamento:', aiResponse.choices[0].message?.content?.substring(0, 500));
-      throw new Error(
-        'O documento analisado possui requisitos demais para uma única análise. ' +
-        'Sugestão: analise o documento em seções menores ou revise o framework para reduzir requisitos.'
-      );
+      console.error('Response truncated');
+      throw new Error('Análise truncada. Tente com um framework com menos requisitos.');
     }
     
     if (!aiResponse.choices?.[0]?.message?.content) {
-      console.error('Invalid AI response structure:', JSON.stringify(aiResponse, null, 2));
-      throw new Error('Resposta da IA inválida - estrutura de resposta não contém conteúdo');
+      throw new Error('Resposta da IA inválida');
     }
 
     let analysisResult;
     try {
       const content = aiResponse.choices[0].message.content;
-      
-      if (!content) {
-        throw new Error('Resposta da IA vazia');
-      }
-      
       console.log('AI response length:', content.length);
       
-      // Parse JSON
       analysisResult = JSON.parse(content);
       
-      // Validar estrutura mínima
       if (!analysisResult.resultado_geral || !analysisResult.requisitos_analisados) {
         throw new Error('JSON sem campos obrigatórios');
       }
       
-      // Truncar campos automaticamente
+      // Truncar campos
       if (analysisResult.requisitos_analisados) {
         analysisResult.requisitos_analisados = analysisResult.requisitos_analisados.map((req: any) => ({
           ...req,
-          evidencias_encontradas: (req.evidencias_encontradas || '').substring(0, 100),
-          gaps_especificos: (req.gaps_especificos || '').substring(0, 80),
+          evidencias_encontradas: (req.evidencias_encontradas || '').substring(0, 120),
+          gaps_especificos: (req.gaps_especificos || '').substring(0, 100),
           observacoes_ia: (req.observacoes_ia || '').substring(0, 150),
           justificativa_relevancia: (req.justificativa_relevancia || '').substring(0, 80)
         }));
@@ -278,12 +248,10 @@ CRÍTICO: Retorne APENAS o JSON, sem prefixos, sufixos ou markdown.`;
       });
     } catch (e) {
       console.error('Parse error:', e);
-      const content = aiResponse.choices[0]?.message?.content || '';
-      console.error('Content preview:', content.substring(0, 500));
       throw new Error('JSON inválido retornado pela IA');
     }
 
-    // 7. Salvar resultado completo na tabela de assessments
+    // 6. Salvar resultado
     console.log('Saving assessment results...');
     const { error: updateError } = await supabase
       .from('gap_analysis_adherence_assessments')
@@ -296,7 +264,7 @@ CRÍTICO: Retorne APENAS o JSON, sem prefixos, sufixos ou markdown.`;
         recomendacoes: analysisResult.recomendacoes || [],
         analise_detalhada: analysisResult.analise_detalhada,
         metadados_analise: {
-          modelo_usado: 'google/gemini-2.5-flash',
+          modelo_usado: 'google/gemini-3-flash-preview',
           tempo_processamento: Date.now(),
           total_requisitos: requirements?.length || 0,
           total_requisitos_relevantes: analysisResult.total_requisitos_relevantes || 0,
@@ -316,7 +284,7 @@ CRÍTICO: Retorne APENAS o JSON, sem prefixos, sufixos ou markdown.`;
 
     console.log('Assessment updated successfully');
 
-    // 8. Salvar detalhes por requisito (agora requisitos_analisados)
+    // 7. Salvar detalhes por requisito
     if (analysisResult.requisitos_analisados && analysisResult.requisitos_analisados.length > 0) {
       console.log('Saving requirement details...');
       const detailsToInsert = analysisResult.requisitos_analisados.map((req: any) => {
@@ -360,9 +328,7 @@ CRÍTICO: Retorne APENAS o JSON, sem prefixos, sufixos ou markdown.`;
 
   } catch (error: any) {
     console.error('Error in analyze-document-adherence:', error);
-    console.error('Error stack:', error.stack);
     
-    // Tentar atualizar o assessment com erro usando o body salvo
     try {
       if (requestBody?.assessmentId) {
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -375,24 +341,18 @@ CRÍTICO: Retorne APENAS o JSON, sem prefixos, sufixos ou markdown.`;
             status: 'erro',
             metadados_analise: { 
               erro: error.message,
-              erro_detalhes: error.stack,
               timestamp_erro: new Date().toISOString()
             }
           })
           .eq('id', requestBody.assessmentId);
-          
-        console.log('Assessment marked as erro');
       }
     } catch (updateErr) {
-      console.error('Failed to update assessment with error status:', updateErr);
+      console.error('Failed to update assessment with error:', updateErr);
     }
 
     return new Response(
       JSON.stringify({ error: error.message }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

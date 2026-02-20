@@ -10,11 +10,7 @@ import { GenericRequirementsTable } from '@/components/gap-analysis/GenericRequi
 import { CategoryBarChart } from '@/components/gap-analysis/CategoryBarChart';
 import { AreaBarChart } from '@/components/gap-analysis/AreaBarChart';
 import { CategoryStatusCards } from '@/components/gap-analysis/CategoryStatusCards';
-import { FrameworkRadarChart } from '@/components/gap-analysis/charts/FrameworkRadarChart';
-import { ISOProgressFunnel } from '@/components/gap-analysis/charts/ISOProgressFunnel';
 import { PrivacyTreemap } from '@/components/gap-analysis/charts/PrivacyTreemap';
-import { GovernanceGauge } from '@/components/gap-analysis/charts/GovernanceGauge';
-import { ComplianceStackedBar } from '@/components/gap-analysis/charts/ComplianceStackedBar';
 import { FrameworkHistoryTab } from '@/components/gap-analysis/FrameworkHistoryTab';
 import { AdherenceAssessmentView } from '@/components/gap-analysis/adherence/AdherenceAssessmentView';
 import { AdherenceResultView } from '@/components/gap-analysis/adherence/AdherenceResultView';
@@ -225,40 +221,11 @@ export default function GapAnalysisFrameworkDetail() {
               frameworkId={frameworkId!}
             />
 
-            {/* Charts */}
-            {config?.chartType === 'radar' && pillarScores.length > 0 && (
-              <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
-                <FrameworkRadarChart pillarScores={pillarScores} maxScore={config.scoreType === 'percentage' ? 100 : 5} />
-                {categoryScores.length > 0 && <CategoryBarChart categoryScores={categoryScores} config={config} />}
-                {areaScores.length > 0 && <AreaBarChart areaScores={areaScores} config={config} />}
-              </div>
-            )}
-
-            {config?.chartType === 'funnel' && sectionScores.length > 0 && (
-              <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-                <ISOProgressFunnel sectionScores={sectionScores} />
-                {categoryScores.length > 0 && <CategoryBarChart categoryScores={categoryScores} config={config} />}
-              </div>
-            )}
-
-            {config?.chartType === 'treemap' && categoryScores.length > 0 && (
+            {/* Charts - Mapa de Conformidade padronizado para todos os frameworks */}
+            {categoryScores.length > 0 && (
               <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
                 <PrivacyTreemap categoryScores={categoryScores} />
-                {areaScores.length > 0 && <AreaBarChart areaScores={areaScores} config={config} />}
-              </div>
-            )}
-
-            {config?.chartType === 'gauge' && (
-              <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-                <GovernanceGauge overallScore={overallScore} maxScore={config.scoreType === 'percentage' ? 100 : 5} />
-                {categoryScores.length > 0 && <CategoryBarChart categoryScores={categoryScores} config={config} />}
-              </div>
-            )}
-
-            {config?.chartType === 'stacked' && categoryScores.length > 0 && (
-              <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-                <ComplianceStackedBar categoryScores={categoryScores} />
-                {areaScores.length > 0 && <AreaBarChart areaScores={areaScores} config={config} />}
+                <CategoryBarChart categoryScores={categoryScores} config={config} />
               </div>
             )}
 

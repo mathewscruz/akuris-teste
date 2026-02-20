@@ -49,8 +49,8 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
     errorMessage: ''
   });
 
-  // Configurar worker do PDF.js
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+  // Configurar worker do PDF.js - usar .mjs para versão 5.x+
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
   // Buscar frameworks disponíveis
   const { data: frameworks, loading: loadingFrameworks } = useOptimizedQuery(
