@@ -1,35 +1,57 @@
 
-# Correcao Definitiva do Logo nos E-mails
 
-## Causa Raiz
-O bucket `email-assets` no Supabase Storage **nao existe** (retorna 404). Todas as templates de e-mail referenciam `https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/email-assets/akuris-logo.png` que esta inacessivel.
+# Solucao Definitiva: Logo Embutido como Base64
 
-## Solucao
+## Problema
+Apesar do bucket `email-assets` existir e conter o arquivo `akuris-logo.png` (137KB), o logo continua quebrado nos e-mails. Isso provavelmente ocorreu porque o upload anterior capturou o HTML da pagina de preview em vez do arquivo PNG real.
 
-### Passo 1: Criar Edge Function para upload do logo
-Criar uma Edge Function temporaria `upload-email-logo` que:
-1. Cria o bucket `email-assets` como publico no Supabase Storage
-2. Faz download do logo de `public/akuris-logo.png` (da URL do preview do projeto)
-3. Faz upload para o bucket como `akuris-logo.png`
-4. Retorna a URL publica confirmando sucesso
+## Solucao: Abordagem mais simples possivel
 
-### Passo 2: Executar a funcao
-- Deploy e chamada da funcao para garantir que o bucket e o arquivo existam
-- Verificar que a URL `https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/email-assets/akuris-logo.png` retorna a imagem corretamente
+**Embutir o logo diretamente no template como imagem base64 (data URI).** Isso elimina 100% da dependencia de URLs externas, buckets, CDNs ou qualquer outro ponto de falha.
 
-### Passo 3: Limpar
-- Deletar a edge function temporaria apos o upload bem-sucedido
+Vantagens:
+- Funciona em TODOS os clientes de e-mail (Gmail, Outlook, Apple Mail)
+- Zero dependencia de URLs externas
+- Nunca quebra por problemas de storage/DNS/cache
+- A imagem viaja junto com o e-mail
 
-**Nenhuma alteracao nos templates e necessaria** — todos ja referenciam a URL correta, o problema e somente que o bucket/arquivo nao existe no storage.
+## Passos
+
+### 1. Copiar o logo enviado pelo usuario para o projeto
+- Copiar `user-uploads://AKURIS_400_x_120_px_2-3.png` para `public/akuris-logo-email.png`
+
+### 2. Converter para base64 via Edge Function temporaria
+- Criar uma Edge Function que le o arquivo do storage e retorna o base64
+- Ou usar a imagem diretamente convertida
+
+### 3. Atualizar BaseEmailTemplate.tsx
+- Substituir a tag `<Img src={logoUrl}>` por uma imagem com `src="data:image/png;base64,..."` contendo o logo embutido
+- Remover a constante `AKURIS_LOGO_URL` e a prop `companyLogoUrl` (simplificar)
+- O header escuro (#0a1628) continuara o mesmo, com o logo branco/violeta visivel
+
+### 4. Atualizar Edge Functions com HTML inline
+- Nas funcoes que usam HTML inline (denuncias, incidentes, auditorias, due diligence), substituir `<img src="...">` pelo mesmo data URI base64
+
+### 5. Deploy de todas as funcoes afetadas
 
 ## Secao Tecnica
 
-**Edge Function `upload-email-logo/index.ts`:**
-- Usa `supabaseAdmin` com `SUPABASE_SERVICE_ROLE_KEY` para criar o bucket publico
-- Faz fetch do logo de `https://id-preview--e64d00f7-1631-421a-bcc8-86aa27d8fb2a.lovable.app/akuris-logo.png`
-- Upload via `supabase.storage.from('email-assets').upload('akuris-logo.png', blob, { contentType: 'image/png', upsert: true })`
-- Funcao sera deletada apos execucao
+**Mudanca principal no BaseEmailTemplate.tsx:**
+```tsx
+// Antes:
+<Img src={logoUrl} alt={companyName} width="160" height="48" ... />
 
-**Arquivos envolvidos:**
-- `supabase/functions/upload-email-logo/index.ts` (criar, executar, deletar)
-- Nenhum template precisa ser alterado
+// Depois:
+<Img src="data:image/png;base64,iVBORw0KGgo..." alt="Akuris" width="160" height="48" ... />
+```
+
+**Arquivos modificados:**
+- `supabase/functions/_shared/email-templates/BaseEmailTemplate.tsx` - logo base64 embutido
+- `supabase/functions/_shared/constants.ts` - remover URL do logo (nao mais necessaria)
+- `supabase/functions/send-denuncia-notification/index.ts` - logo base64 inline
+- `supabase/functions/send-incidente-notification/index.ts` - logo base64 inline
+- `supabase/functions/send-auditoria-item-notification/index.ts` - logo base64 inline
+- `supabase/functions/send-due-diligence-email/index.ts` - logo base64 inline
+- Demais funcoes que usam HTML inline com logo
+
+**Nota:** O arquivo base64 aumenta o tamanho do e-mail em ~10-15KB, o que e absolutamente aceitavel e e a pratica padrao da industria para logos em e-mails.
