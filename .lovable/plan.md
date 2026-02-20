@@ -1,35 +1,38 @@
 
+# Restaurar Bordas Arredondadas e Efeito de Iluminacao
 
-# Correcao da Linha Branca e Ajuste Visual do Menu Lateral
+## Problemas
 
-## Problemas Identificados
-
-1. **Linha branca entre sidebar e conteudo**: Causada por `border-r` no componente Sidebar (`sidebar.tsx` linha 242) e `border` no container de conteudo (`Layout.tsx` linha 149)
-2. **Visual nao corresponde ao anexo 1**: O menu lateral precisa de ajustes para ficar mais proximo da referencia (degrade mais suave, sem bordas visiveis entre sidebar e conteudo)
+1. O ultimo ajuste removeu o arredondamento e margem do lado esquerdo do painel de conteudo (`rounded-r-2xl my-2 mr-2 border-l-0`), quando a referencia mostra arredondamento em todos os lados
+2. Falta o efeito de iluminacao/brilho sutil no fundo do sidebar, como mostrado no anexo 2
 
 ## Mudancas
 
-### 1. Remover border-r do sidebar (sidebar.tsx)
-- Na linha 242, remover `group-data-[side=left]:border-r` e `group-data-[side=right]:border-l` para eliminar a linha branca entre sidebar e conteudo
+### 1. Restaurar arredondamento completo do painel (Layout.tsx)
+- Trocar `rounded-r-2xl my-2 mr-2 border border-border/20 border-l-0` por `rounded-2xl m-2 border border-border/20`
+- Isso restaura as bordas arredondadas em todos os 4 cantos e o espaco uniforme ao redor
 
-### 2. Ajustar border do conteudo (Layout.tsx)
-- Na linha 149, trocar `border border-border/30` por `border-l-0 border border-border/20` ou remover a borda do lado esquerdo (que toca o sidebar), mantendo apenas as bordas superiores, direita e inferior para o efeito de painel
-- Ajustar `m-2` para `my-2 mr-2` para que o conteudo encoste no sidebar sem gap do lado esquerdo, mantendo o espaco nos outros lados
-- Arredondar apenas os cantos da direita: `rounded-r-2xl` em vez de `rounded-2xl`
-
-### 3. Refinar o degrade do sidebar (index.css)
-- Ajustar o gradiente para ser mais suave e profundo, como na referencia (mais escuro no topo, leve brilho azulado no fundo)
+### 2. Adicionar efeito de iluminacao no sidebar (index.css)
+- Ajustar o gradiente do sidebar para incluir um leve brilho azulado/violeta na parte inferior, simulando o efeito de iluminacao visivel no anexo 2
+- Gradiente: navy escuro no topo, transicao suave, e um toque de brilho azulado embaixo
 
 ## Secao Tecnica
 
-**Arquivo: `src/components/ui/sidebar.tsx` (linha 242)**
-- Remover: `group-data-[side=left]:border-r group-data-[side=right]:border-l`
-- Manter: `group-data-[collapsible=icon]:w-[--sidebar-width-icon]`
-
 **Arquivo: `src/components/Layout.tsx` (linha 149)**
-- De: `bg-background rounded-2xl m-2 border border-border/30`
-- Para: `bg-background rounded-r-2xl my-2 mr-2 border border-border/20 border-l-0`
+- De: `bg-background rounded-r-2xl my-2 mr-2 border border-border/20 border-l-0`
+- Para: `bg-background rounded-2xl m-2 border border-border/20`
 
 **Arquivo: `src/index.css`**
-- Ajustar gradiente para tom mais profundo com leve brilho no fundo, similar ao anexo 1
+- Atualizar `.sidebar-gradient` para incluir efeito de iluminacao:
+```css
+.sidebar-gradient {
+  background: linear-gradient(180deg, 
+    hsl(225, 45%, 10%) 0%, 
+    hsl(228, 40%, 13%) 60%, 
+    hsl(235, 35%, 17%) 100%);
+}
+```
 
+**Arquivos modificados:**
+- `src/components/Layout.tsx`
+- `src/index.css`
