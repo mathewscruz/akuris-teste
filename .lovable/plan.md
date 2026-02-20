@@ -1,65 +1,33 @@
 
-# Fix MFA Flow: Authenticate AFTER Code Verification
+# Fix: MFA Screen Not Appearing (Race Condition)
 
-## Problem
+## Root Cause
 
-Current flow:
-1. User enters email + password
-2. `signInWithPassword` is called -- user is NOW authenticated with a valid Supabase session
-3. MFA code is sent to email
-4. User enters code
-5. If valid, proceed
+When `signInWithPassword` is called, Supabase's `onAuthStateChange(SIGNED_IN)` fires in the `AuthProvider`, setting `user` to a truthy value. This causes line 65 of `Auth.tsx`:
 
-This is broken because:
-- The user already has a session before entering the MFA code
-- If the page is refreshed during MFA, `mfaPending` resets to `false` and the user is fully logged in without MFA
-- The toast "codigo enviado" appears while the user is technically already authenticated
+```
+if (!loading && user) return <Navigate to="/dashboard" replace />;
+```
+
+...to immediately navigate away from `/auth`, **unmounting** the Auth component. Then when `signOut()` fires, the user is redirected back to `/auth`, but the component **remounts** with fresh state (`mfaPending = false`). The MFA screen never appears.
 
 ## Solution
 
-New flow:
-1. User enters email + password
-2. `signInWithPassword` validates credentials (confirms they are correct)
-3. IMMEDIATELY call `supabase.auth.signOut()` to destroy the session
-4. Send MFA code to email
-5. Show MFA verification screen (no active session exists)
-6. User enters the 6-digit code
-7. `verify-mfa-code` edge function validates the code
-8. On success, call `signInWithPassword` AGAIN to create the real session
-9. User is now authenticated
+Use a **React ref** (`useRef`) to synchronously flag that MFA is in progress BEFORE calling `signInWithPassword`. Refs update instantly (unlike `setState` which is async/batched), so the redirect guard will see the flag immediately when `onAuthStateChange` triggers a re-render.
 
-## Technical Changes
+## Changes in `src/pages/Auth.tsx`
 
-### File: `src/pages/Auth.tsx`
+1. Add `const mfaInProgressRef = useRef(false);` at the top of the component
+2. Set `mfaInProgressRef.current = true` BEFORE calling `signInWithPassword` (not after)
+3. Update the redirect guard on line 65 to: `if (!loading && user && !mfaInProgressRef.current) return <Navigate to="/dashboard" replace />;`
+4. Reset `mfaInProgressRef.current = false` in `handleMFAVerified` and `handleMFACancel`, and in all MFA error fallback paths
+5. Keep the existing `mfaPending` state for rendering the MFA verification screen (the ref only blocks navigation)
 
-1. Add `mfaPassword` state to temporarily hold the password during MFA flow (in-memory only, cleared after use)
-2. In `handleSignIn`:
-   - After successful `signInWithPassword`, call `supabase.auth.signOut()` immediately
-   - Store email and password in MFA state
-   - Send MFA code
-   - Show MFA screen
-3. In `handleMFAVerified`:
-   - Call `signInWithPassword` again with the stored credentials
-   - Clear the stored password from state
-   - Show success toast
-4. In `handleMFACancel`:
-   - Clear all MFA state including stored password
-   - No need to call signOut (user is already signed out)
-5. Update the guard on line 64: remove the `!mfaPending` check since user won't have a session during MFA
+## Why a Ref and Not Just State?
 
-### File: `src/components/MFAVerification.tsx`
+- `setState` is batched/async -- the re-render from `onAuthStateChange` can happen before the new state is committed
+- `useRef` updates synchronously and is readable immediately on the next render without waiting for a commit
+- This eliminates the race condition entirely
 
-- No structural changes needed; the component already handles code input, verification, and resend correctly
-- The `onVerified` callback will now trigger the real sign-in in Auth.tsx
-
-### No changes to edge functions
-
-- `send-mfa-code` and `verify-mfa-code` work correctly as-is
-- They use `supabaseAdmin` (service role), so they don't depend on the user having an active session
-
-## Security Benefits
-
-- No valid session exists during MFA verification
-- Page refresh during MFA returns user to login form (no bypass)
-- Password is only held in React state (memory) during the brief MFA window, never persisted
-- Password state is cleared immediately after re-authentication or cancellation
+## Files Modified
+- `src/pages/Auth.tsx` only (approximately 10 lines changed)
