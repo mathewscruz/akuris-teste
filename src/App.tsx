@@ -42,6 +42,7 @@ import Politicas from '@/pages/Politicas';
 import Planos from '@/pages/Planos';
 import Registro from '@/pages/Registro';
 import CheckoutSuccess from '@/pages/CheckoutSuccess';
+import DefinirSenha from '@/pages/DefinirSenha';
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ function App() {
         <Router>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/definir-senha" element={<DefinirSenha />} />
             <Route path="/assessment/:token" element={<Assessment />} />
             {/* Rotas antigas para compatibilidade */}
             <Route path="/denuncia/externa/:token" element={<DenunciaExternaRedirect />} />

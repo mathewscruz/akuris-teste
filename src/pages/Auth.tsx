@@ -11,6 +11,7 @@ import { Eye, EyeOff, CheckCircle2, Loader2, Shield, BarChart3, FileCheck, Mail,
 import logoImage from '@/assets/akuris-logo.png';
 import { ForgotPasswordDialog } from '@/components/ForgotPasswordDialog';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { MFAVerification } from '@/components/MFAVerification';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
 
@@ -45,6 +46,11 @@ const Auth = () => {
   const [forgotPasswordDialogOpen, setForgotPasswordDialogOpen] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  
+  // MFA state
+  const [mfaPending, setMfaPending] = useState(false);
+  const [mfaUserId, setMfaUserId] = useState('');
+  const [mfaEmail, setMfaEmail] = useState('');
 
   useEffect(() => {
     const savedEmail = localStorage.getItem('akuris_remember_email');
@@ -55,7 +61,7 @@ const Auth = () => {
     }
   }, []);
 
-  if (!loading && user) return <Navigate to="/dashboard" replace />;
+  if (!loading && user && !mfaPending) return <Navigate to="/dashboard" replace />;
 
   if (loading) {
     return (
@@ -83,8 +89,9 @@ const Auth = () => {
     }
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) throw error;
+      
       if (rememberMe) {
         localStorage.setItem('akuris_remember_email', email.trim());
         localStorage.setItem('akuris_remember_me', 'true');
@@ -92,14 +99,72 @@ const Auth = () => {
         localStorage.removeItem('akuris_remember_email');
         localStorage.removeItem('akuris_remember_me');
       }
-      setLoginSuccess(true);
-      toast.success('Login realizado com sucesso!');
+
+      // Iniciar fluxo MFA
+      const userId = data.user?.id;
+      if (userId) {
+        try {
+          const mfaResponse = await supabase.functions.invoke('send-mfa-code', {
+            body: { userId, email: email.trim() },
+          });
+
+          if (mfaResponse.error) {
+            console.error('Erro ao enviar MFA, login direto:', mfaResponse.error);
+            // Se falhar MFA, permitir login direto
+            setLoginSuccess(true);
+            toast.success('Login realizado com sucesso!');
+          } else if (mfaResponse.data?.success) {
+            // MFA enviado com sucesso - mostrar tela de verificação
+            setMfaPending(true);
+            setMfaUserId(userId);
+            setMfaEmail(email.trim());
+            toast.info('Código de verificação enviado para seu e-mail');
+          } else {
+            // Rate limited ou outro erro não-fatal
+            if (mfaResponse.data?.error) {
+              toast.warning(mfaResponse.data.error);
+            }
+            setLoginSuccess(true);
+          }
+        } catch (mfaError) {
+          console.error('Exceção MFA:', mfaError);
+          setLoginSuccess(true);
+          toast.success('Login realizado com sucesso!');
+        }
+      }
     } catch (error: any) {
       logger.warn('Login failed', { module: 'Auth', action: 'login', details: error.message });
       toast.error(getErrorMessage(error));
+    } finally {
       setIsLoading(false);
     }
   };
+
+  const handleMFAVerified = () => {
+    setMfaPending(false);
+    setLoginSuccess(true);
+    toast.success('Login realizado com sucesso!');
+  };
+
+  const handleMFACancel = async () => {
+    setMfaPending(false);
+    setMfaUserId('');
+    setMfaEmail('');
+    await supabase.auth.signOut();
+    toast.info('Login cancelado');
+  };
+
+  // Mostrar tela MFA
+  if (mfaPending) {
+    return (
+      <MFAVerification
+        userId={mfaUserId}
+        email={mfaEmail}
+        onVerified={handleMFAVerified}
+        onCancel={handleMFACancel}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">

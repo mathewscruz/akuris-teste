@@ -5,8 +5,7 @@ import { BaseEmailTemplate, emailStyles } from '../../_shared/email-templates/Ba
 interface WelcomeEmailProps {
   userName: string;
   userEmail: string;
-  temporaryPassword: string;
-  loginUrl: string;
+  setupPasswordUrl: string;
   companyName?: string;
   companyLogoUrl?: string;
 }
@@ -14,13 +13,12 @@ interface WelcomeEmailProps {
 export const WelcomeEmail = ({
   userName,
   userEmail,
-  temporaryPassword,
-  loginUrl,
+  setupPasswordUrl,
   companyName,
   companyLogoUrl,
 }: WelcomeEmailProps) => (
   <BaseEmailTemplate
-    previewText="Bem-vindo ao Akuris"
+    previewText="Bem-vindo ao Akuris - Defina sua senha"
     title={`Bem-vindo, ${userName}!`}
     companyLogoUrl={companyLogoUrl}
   >
@@ -29,34 +27,28 @@ export const WelcomeEmail = ({
     </Text>
 
     <Text style={emailStyles.text}>
-      Use as credenciais abaixo para fazer seu primeiro acesso:
+      Para começar a usar a plataforma, defina sua senha clicando no botão abaixo:
     </Text>
 
     <Section style={emailStyles.infoBox}>
       <Text style={{ ...emailStyles.text, margin: '0 0 8px' }}>
-        <strong>E-mail:</strong> {userEmail}
-      </Text>
-      <Text style={{ ...emailStyles.text, margin: '0 0 8px' }}>
-        <strong>Senha temporária:</strong>
-      </Text>
-      <Text style={{ ...emailStyles.code, display: 'block', textAlign: 'center' }}>
-        {temporaryPassword}
+        <strong>E-mail de acesso:</strong> {userEmail}
       </Text>
     </Section>
 
     <Section style={emailStyles.buttonSection}>
-      <Link href={loginUrl} style={emailStyles.button}>
-        Acessar Plataforma
+      <Link href={setupPasswordUrl} style={emailStyles.button}>
+        Definir Minha Senha
       </Link>
     </Section>
 
     <Section style={emailStyles.warningBox}>
       <Text style={{ ...emailStyles.text, margin: '0', fontSize: '13px' }}>
-        <strong>Importante:</strong> Por segurança, você será solicitado a alterar sua senha no primeiro acesso.
+        <strong>Importante:</strong> Este link expira em 24 horas. Se expirar, peça ao administrador para reenviar o convite.
       </Text>
     </Section>
 
-    <Text style={emailStyles.text}>
+    <Text style={emailStyles.textSmall}>
       Se você não solicitou este cadastro, por favor desconsidere este e-mail.
     </Text>
   </BaseEmailTemplate>

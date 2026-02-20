@@ -76,13 +76,6 @@ Deno.serve(async (req) => {
       throw new Error('ID do usuário não fornecido')
     }
 
-    const { data: targetUser, error: userError } = await supabaseAdmin.auth.admin
-      .getUserById(userId)
-
-    if (userError || !targetUser) {
-      throw new Error('Usuário não encontrado')
-    }
-
     const { data: userProfile, error: userProfileError } = await supabaseAdmin
       .from('profiles')
       .select('nome, email, empresa_id, empresa:empresas(nome, logo_url)')
@@ -97,47 +90,33 @@ Deno.serve(async (req) => {
       throw new Error('Você não tem permissão para gerenciar este usuário')
     }
 
-    const { data: tempPassword, error: passwordError } = await supabaseAdmin
-      .rpc('generate_temp_password')
-
-    if (passwordError || !tempPassword) {
-      throw new Error('Erro ao gerar senha temporária')
-    }
-
-    const { error: updatePasswordError } = await supabaseAdmin.auth.admin.updateUserById(
-      userId,
-      { password: tempPassword }
-    )
-
-    if (updatePasswordError) {
-      throw new Error('Erro ao atualizar senha')
-    }
-
-    const { error: tempPasswordUpsertError } = await supabaseAdmin
-      .from('temporary_passwords')
-      .upsert({
-        user_id: userId,
-        is_temporary: true,
-        created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-      }, {
-        onConflict: 'user_id'
+    // Gerar novo link de convite (não mais senha temporária)
+    const siteUrl = 'https://akuris.com.br'
+    let setupPasswordUrl = `${siteUrl}/auth`
+    
+    try {
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'recovery',
+        email: userProfile.email,
+        options: {
+          redirectTo: `${siteUrl}/definir-senha`,
+        }
       })
 
-    if (tempPasswordUpsertError) {
-      console.error('Erro ao registrar senha temporária:', tempPasswordUpsertError)
+      if (!linkError && linkData) {
+        setupPasswordUrl = `${siteUrl}/definir-senha?token_hash=${linkData.properties.hashed_token}&type=recovery`
+      }
+    } catch (linkGenError) {
+      console.error('Erro ao gerar link:', linkGenError)
     }
 
     console.log(`Enviando e-mail de boas-vindas para: ${userProfile.email}`)
-    
-    const loginUrl = 'https://akuris.com.br'
     
     const html = await renderAsync(
       React.createElement(WelcomeEmail, {
         userName: userProfile.nome,
         userEmail: userProfile.email,
-        temporaryPassword: tempPassword,
-        loginUrl,
+        setupPasswordUrl,
         companyName: userProfile.empresa?.nome,
         companyLogoUrl: userProfile.empresa?.logo_url
       })
@@ -146,7 +125,7 @@ Deno.serve(async (req) => {
     const { data, error } = await resend.emails.send({
       from: 'Akuris <noreply@akuris.com.br>',
       to: [userProfile.email],
-      subject: 'Akuris - Seus novos dados de acesso',
+      subject: 'Akuris - Defina sua senha de acesso',
       html,
     })
 

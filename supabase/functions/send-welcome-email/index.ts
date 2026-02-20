@@ -13,13 +13,12 @@ const corsHeaders = {
 interface WelcomeEmailRequest {
   userName: string
   userEmail: string
-  temporaryPassword: string
+  setupPasswordUrl: string
   companyName?: string
   companyLogoUrl?: string
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -34,18 +33,15 @@ Deno.serve(async (req) => {
   try {
     console.log('Recebendo requisição para envio de e-mail de boas-vindas')
     
-    const { userName, userEmail, temporaryPassword, companyName, companyLogoUrl }: WelcomeEmailRequest = await req.json()
+    const { userName, userEmail, setupPasswordUrl, companyName, companyLogoUrl }: WelcomeEmailRequest = await req.json()
     
     console.log(`Enviando e-mail de boas-vindas para: ${userEmail}`)
-    
-    const loginUrl = 'https://akuris.com.br'
     
     const html = await renderAsync(
       React.createElement(WelcomeEmail, {
         userName,
         userEmail,
-        temporaryPassword,
-        loginUrl,
+        setupPasswordUrl,
         companyName,
         companyLogoUrl
       })
@@ -54,7 +50,7 @@ Deno.serve(async (req) => {
     const { data, error } = await resend.emails.send({
       from: 'Akuris <noreply@akuris.com.br>',
       to: [userEmail],
-      subject: 'Bem-vindo ao Akuris - Seus dados de acesso',
+      subject: 'Bem-vindo ao Akuris - Defina sua senha',
       html,
     })
 
