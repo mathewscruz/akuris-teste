@@ -1,73 +1,36 @@
 
+Objetivo: eliminar o erro ao editar riscos e validar consistência CRUD (campos x tipos do banco) nos módulos principais.
 
-# Diagnostico de CRUD Quebrado
+Implementação
+1) Corrigir trigger de auditoria de riscos no banco (hotfix crítico)
+- Criar migration para substituir `public.audit_riscos_changes`.
+- Trocar `OLD.id::text` e `NEW.id::text` por `OLD.id` e `NEW.id` (UUID nativo) nos INSERTs de `audit_logs.record_id`.
+- Manter `SET search_path TO 'public'` e recriar trigger `audit_riscos_changes` na tabela `riscos`.
 
-## Bug 1: Incidentes -- Tipo UUID vs Texto (CONFIRMADO)
+2) Executar varredura técnica de funções/trigger de auditoria
+- Conferir todas as funções `audit_%_changes` e usos de `create_audit_log(...)` para garantir que `record_id` sempre entra como UUID.
+- Confirmar que somente `audit_riscos_changes` estava com cast inválido.
 
-As colunas `responsavel_deteccao` e `responsavel_tratamento` na tabela `incidentes` sao do tipo **UUID**, mas o `IncidenteDialog.tsx` usa campos `<Input>` de texto livre (linhas 410-435). Quando o usuario digita um nome como "Joao Silva", o PostgreSQL rejeita porque espera um UUID valido.
+3) Validar CRUD de Riscos ponta a ponta
+- Testar criar, editar, excluir e listar.
+- Confirmar PATCH em `riscos` sem erro 400.
+- Confirmar criação de trilha em `audit_logs` para INSERT/UPDATE/DELETE.
 
-**Correcao**: Substituir os dois campos `<Input>` por `<UserSelect>` (componente que ja existe no projeto e e usado em Controles, Chaves, Licencas). Isso garante que apenas UUIDs validos sejam enviados. Tambem ajustar o schema Zod de `z.string()` para aceitar UUIDs ou strings vazias.
+4) Validar CRUD de Incidentes e módulos críticos com campos UUID
+- Incidentes: criar/editar com `responsavel_deteccao` e `responsavel_tratamento`.
+- Controles, Auditorias (itens), Planos de Ação, Denúncias (tratamento) com foco em campos `*_id`/`responsavel_*`.
+- Confirmar que formulários estão enviando UUID/NULL (não texto livre) quando coluna é UUID.
 
-**Arquivo**: `src/components/incidentes/IncidenteDialog.tsx`
-- Importar `UserSelect` de `@/components/riscos/UserSelect`
-- Substituir os 2 campos Input (linhas 408-435) por `UserSelect`
-- Enviar `null` em vez de string vazia quando nenhum responsavel for selecionado
+5) Rodar checklist final de consistência campo x banco
+- Para cada módulo auditado: mapear campos do formulário → colunas da tabela.
+- Registrar divergências restantes (se houver) com prioridade e arquivo afetado.
 
----
+Validação de aceite
+- Edição de risco concluída sem erro `record_id uuid vs text`.
+- Trilha de auditoria de riscos funcionando.
+- CRUD de Incidentes e módulos críticos executando sem erro de tipo/RLS.
+- Sem regressão visual/fluxo nos dialogs.
 
-## Bug 2: Riscos -- nivel_risco_inicial pode ficar vazio
-
-O `RiscoFormWizard.tsx` calcula `nivelInicial` via `calcularNivelRisco()` que usa `parseInt()` nos valores de probabilidade/impacto. Se a matriz nao estiver carregada corretamente no momento do submit (ex: `selectedMatriz` ainda `null`), o `calcularNivelRisco` retorna `''` (string vazia). Apesar de `nivel_risco_inicial` ser `NOT NULL text`, o valor vazio pode causar problemas de validacao ou comportamento inesperado no fluxo.
-
-Alem disso, ao editar um risco, se a matriz configuracao nao carregar antes do submit (race condition entre o `useEffect` que carrega matrizes e o `useEffect` que reseta o form), o calculo falha silenciosamente.
-
-**Correcao**: 
-- Adicionar validacao pre-submit que verifica se `nivelInicial` nao esta vazio
-- Garantir que o botao de submit so fica habilitado apos a matriz estar carregada
-- Mostrar mensagem clara caso a matriz nao esteja configurada
-
-**Arquivo**: `src/components/riscos/RiscoFormWizard.tsx`
-
----
-
-## Verificacao de Outros Modulos
-
-Analisei os demais modulos de CRUD e a situacao e:
-
-| Modulo | Status | Observacao |
-|--------|--------|------------|
-| Controles | OK | Usa `UserSelect` para `responsavel_id` (UUID) |
-| Denuncias | OK | Usa Select com `user_id` dos profiles |
-| Ativos | OK | Campos texto, nao UUID |
-| Chaves Criptograficas | OK | Usa `UserSelect` |
-| Licencas | OK | Usa `UserSelect` |
-| Contratos | OK | Usa Select de usuarios |
-| Documentos | OK | Sem campo responsavel UUID |
-| Contas Privilegiadas | OK | Schema compativel com form |
-| Dados Pessoais | OK | Sem campo responsavel UUID |
-| ROPA | OK | `responsavel_tratamento` e UUID mas usa Select com `user_id` |
-| Solicitacoes Titular | OK | `responsavel_analise` e UUID tratado corretamente |
-| Fluxo de Dados | OK | `responsavel_fluxo` e UUID com Select de usuarios |
-
-**Apenas o modulo de Incidentes tem o bug de tipo UUID vs texto.**
-
----
-
-## Plano de Implementacao
-
-### Passo 1: Corrigir IncidenteDialog (Bug critico)
-- Importar `UserSelect`
-- Substituir `<Input>` de `responsavel_deteccao` por `<UserSelect>`
-- Substituir `<Input>` de `responsavel_tratamento` por `<UserSelect>`
-- Enviar `null` quando o valor for vazio (em vez de string vazia)
-- Na edicao, carregar o UUID existente no `UserSelect`
-
-### Passo 2: Proteger RiscoFormWizard contra nivel vazio
-- Adicionar check `if (!nivelInicial)` antes do submit com toast de erro
-- Desabilitar botao de submit enquanto `selectedMatriz` for null
-- Adicionar fallback no calculo caso a matriz nao tenha niveis configurados
-
-### Arquivos Afetados
-- `src/components/incidentes/IncidenteDialog.tsx`
-- `src/components/riscos/RiscoFormWizard.tsx`
-
+Detalhes técnicos (alvos)
+- Banco: função/trigger `public.audit_riscos_changes`, tabela `public.audit_logs(record_id uuid)`.
+- Frontend (revalidação): `src/components/riscos/RiscoFormWizard.tsx`, `src/components/incidentes/IncidenteDialog.tsx` e dialogs com campos UUID.
