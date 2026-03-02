@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Clock, Target, Lightbulb, ArrowRight, Shield, Scale, Lock } from 'lucide-react';
+import { BookOpen, Clock, Target, Lightbulb, ArrowRight, Shield, Scale, Lock, Users, Award } from 'lucide-react';
 
 interface FrameworkOnboardingProps {
   frameworkNome: string;
@@ -98,8 +98,64 @@ function getFrameworkInfo(nome: string, tipo: string, total: number): FrameworkI
   };
 }
 
+interface FrameworkBenefits {
+  audience: string;
+  benefits: string[];
+}
+
+function getFrameworkBenefits(nome: string): FrameworkBenefits {
+  const lowerName = nome.toLowerCase();
+
+  if (lowerName.includes('iso') && nome.includes('27001')) {
+    return {
+      audience: 'Empresas que tratam informações sensíveis de clientes, parceiros ou que participam de licitações e contratos que exigem certificação.',
+      benefits: [
+        'Diferencial competitivo em licitações e contratos corporativos',
+        'Redução comprovada de incidentes de segurança',
+        'Conformidade com requisitos regulatórios (LGPD, SOX, etc.)',
+        'Certificação reconhecida internacionalmente',
+      ],
+    };
+  }
+
+  if (lowerName.includes('nist')) {
+    return {
+      audience: 'Organizações que buscam melhorar continuamente sua postura de cibersegurança, especialmente empresas com operações nos EUA ou que atendem clientes americanos.',
+      benefits: [
+        'Framework flexível e adaptável ao tamanho da organização',
+        'Linguagem comum para comunicar riscos para a alta direção',
+        'Alinhamento com requisitos de clientes internacionais',
+        'Base para implementação de outras certificações',
+      ],
+    };
+  }
+
+  if (lowerName.includes('lgpd')) {
+    return {
+      audience: 'Toda empresa que coleta, armazena ou processa dados pessoais de pessoas físicas no Brasil — obrigatório por lei desde 2020.',
+      benefits: [
+        'Evitar multas de até 2% do faturamento (R$ 50 milhões por infração)',
+        'Transparência e confiança com clientes e parceiros',
+        'Redução de riscos de vazamento de dados',
+        'Conformidade legal perante a ANPD',
+      ],
+    };
+  }
+
+  return {
+    audience: 'Organizações que desejam elevar seu nível de maturidade e demonstrar conformidade com padrões reconhecidos do mercado.',
+    benefits: [
+      'Processos mais organizados e documentados',
+      'Redução de riscos operacionais',
+      'Maior confiança de clientes e parceiros',
+      'Base para certificações futuras',
+    ],
+  };
+}
+
 export function FrameworkOnboarding({ frameworkNome, frameworkVersao, frameworkTipo, totalRequirements, onStart }: FrameworkOnboardingProps) {
   const info = getFrameworkInfo(frameworkNome, frameworkTipo, totalRequirements);
+  const benefits = getFrameworkBenefits(frameworkNome);
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -121,6 +177,40 @@ export function FrameworkOnboarding({ frameworkNome, frameworkVersao, frameworkT
           </div>
         </CardContent>
       </Card>
+
+      {/* Para quem é + Benefícios */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Para quem é este framework?
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">{benefits.audience}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Award className="h-5 w-5 text-primary" />
+              O que você ganha?
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-1.5">
+              {benefits.benefits.map((b, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <span className="text-primary mt-0.5">✓</span>
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Roteiro */}
       <Card>

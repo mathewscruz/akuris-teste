@@ -299,6 +299,28 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   const clearFilters = () => { setSearchTerm(''); setStatusFilter('all'); setOnlyMandatory(false); };
   const hasActiveFilters = searchTerm.trim() !== '' || statusFilter !== 'all' || onlyMandatory;
 
+  const StatusLegend = () => (
+    <div className="flex flex-wrap items-center gap-3 mb-3 p-3 rounded-lg bg-muted/40 border text-xs">
+      <span className="font-medium text-foreground">Legenda:</span>
+      <div className="flex items-center gap-1.5">
+        <Badge variant="success" className="text-[10px] px-1.5 py-0">Conforme</Badge>
+        <span className="text-muted-foreground">Atende 100% e tem evidências</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <Badge variant="warning" className="text-[10px] px-1.5 py-0">Parcial</Badge>
+        <span className="text-muted-foreground">Atende parcialmente, falta documentação</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Não Conforme</Badge>
+        <span className="text-muted-foreground">Não atende — requer ação</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <Badge variant="outline" className="text-[10px] px-1.5 py-0">N/A</Badge>
+        <span className="text-muted-foreground">Não se aplica ao seu contexto</span>
+      </div>
+    </div>
+  );
+
   const SearchAndFilterBar = () => (
     <div className="flex flex-wrap items-center gap-3 mb-4">
       <div className="relative flex-1 min-w-[200px] max-w-md">
@@ -482,6 +504,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
         <CardHeader><CardTitle>Requisitos do {frameworkName}</CardTitle></CardHeader>
         <CardContent>
           <SearchAndFilterBar />
+          <StatusLegend />
           <Tabs value={activeSection} onValueChange={(v) => { setActiveSection(v); setActiveTab('all'); setCurrentPage(1); }}>
             <TabsList className="mb-4">
               {config.sections.map(section => (
@@ -531,6 +554,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       <CardHeader><CardTitle>Requisitos do {frameworkName}</CardTitle></CardHeader>
       <CardContent>
         <SearchAndFilterBar />
+        <StatusLegend />
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setCurrentPage(1); }}>
           <TabsList className="mb-4 flex-wrap h-auto gap-1">
             <TabsTrigger value="all">Todos ({requirements.length})</TabsTrigger>

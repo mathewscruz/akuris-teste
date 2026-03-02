@@ -2,7 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FrameworkLogo } from './FrameworkLogos';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, Search, Brain, BarChart3 } from 'lucide-react';
 
 interface SuggestedFramework {
   id: string;
@@ -27,6 +27,24 @@ const FRAMEWORK_AUDIENCES: Record<string, string> = {
   'SOC 2': 'Para empresas de tecnologia que precisam demonstrar controles de segurança',
 };
 
+const HOW_IT_WORKS = [
+  {
+    icon: Search,
+    title: 'Escolha um framework',
+    description: 'Selecione o padrão mais relevante para o seu negócio',
+  },
+  {
+    icon: Brain,
+    title: 'Avalie com ajuda da IA',
+    description: 'A IA explica cada requisito e sugere o status adequado',
+  },
+  {
+    icon: BarChart3,
+    title: 'Acompanhe e trate gaps',
+    description: 'Monitore seu score e crie planos de ação para evoluir',
+  },
+];
+
 export function WelcomeHero({ onFrameworkClick, onShowCatalog, suggestedFrameworks }: WelcomeHeroProps) {
   return (
     <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
@@ -43,6 +61,23 @@ export function WelcomeHero({ onFrameworkClick, onShowCatalog, suggestedFramewor
           Recomendamos iniciar pelo que mais se aplica ao seu negócio.
         </p>
 
+        {/* Como funciona? */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {HOW_IT_WORKS.map((step, i) => (
+            <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 shrink-0">
+                <step.icon className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">{`${i + 1}. ${step.title}`}</p>
+                <p className="text-xs text-muted-foreground">{step.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Frameworks sugeridos */}
+        <h3 className="text-sm font-semibold text-muted-foreground mb-3">Frameworks recomendados para começar</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {suggestedFrameworks.slice(0, 3).map((fw) => (
             <Card
