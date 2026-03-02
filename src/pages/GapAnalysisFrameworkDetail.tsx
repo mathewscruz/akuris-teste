@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Download } from 'lucide-react';
+import { ChevronLeft, Download, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -15,6 +16,7 @@ import { AdherenceAssessmentView } from '@/components/gap-analysis/adherence/Adh
 import { AdherenceResultView } from '@/components/gap-analysis/adherence/AdherenceResultView';
 import { AIRecommendationsCard } from '@/components/gap-analysis/AIRecommendationsCard';
 import { FrameworkOnboarding } from '@/components/gap-analysis/FrameworkOnboarding';
+import { JourneyProgressBar } from '@/components/gap-analysis/JourneyProgressBar';
 import { exportFrameworkPDF } from '@/components/gap-analysis/ExportFrameworkPDF';
 import { supabase } from '@/integrations/supabase/client';
 import { getFrameworkConfig } from '@/lib/framework-configs';
@@ -22,6 +24,15 @@ import { useFrameworkScore } from '@/hooks/useFrameworkScore';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
+
+const FRAMEWORK_DESCRIPTIONS: Record<string, string> = {
+  'ISO 27001': 'Padrão internacional para gestão de segurança da informação (SGSI). A certificação demonstra que sua empresa protege informações sensíveis de forma sistemática.',
+  'LGPD': 'Lei Geral de Proteção de Dados — conformidade obrigatória para todas as empresas que tratam dados pessoais no Brasil.',
+  'NIST CSF 2.0': 'Framework de cibersegurança do NIST que organiza práticas em 6 funções: Governar, Identificar, Proteger, Detectar, Responder e Recuperar.',
+  'ISO 27701': 'Extensão da ISO 27001 focada em gestão de privacidade, alinhada à LGPD e GDPR.',
+  'PCI DSS': 'Padrão de segurança para empresas que processam, armazenam ou transmitem dados de cartões de pagamento.',
+  'SOC 2': 'Framework de auditoria para empresas de tecnologia que demonstra controles de segurança, disponibilidade e confidencialidade.',
+};
 
 interface Framework {
   id: string;
@@ -228,7 +239,7 @@ export default function GapAnalysisFrameworkDetail() {
 
         <PageHeader
           title={`${framework.nome} ${framework.versao}`}
-          description={framework.descricao || `Avaliação de conformidade ${framework.tipo_framework}`}
+          description={framework.descricao || FRAMEWORK_DESCRIPTIONS[framework.nome] || `Avaliação de conformidade ${framework.tipo_framework}`}
           actions={
             <Button onClick={handleExportPDF} variant="outline" disabled={exporting}>
               <Download className="h-4 w-4 mr-2" />
@@ -236,6 +247,16 @@ export default function GapAnalysisFrameworkDetail() {
             </Button>
           }
         />
+
+        {/* Journey Progress Bar */}
+        {!showOnboarding && totalRequirements > 0 && (
+          <JourneyProgressBar
+            evaluatedRequirements={evaluatedRequirements}
+            totalRequirements={totalRequirements}
+            conformeCount={categoryData.reduce((sum, c) => sum + c.conforme, 0)}
+            hasActionPlans={evaluatedRequirements > 0}
+          />
+        )}
 
         {/* Tabs: Avaliação Manual | Análise de Documentos | Histórico */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -270,7 +291,24 @@ export default function GapAnalysisFrameworkDetail() {
                   frameworkId={frameworkId!}
                 />
 
-                {/* AI Recommendations */}
+                {/* Motivational banner */}
+                {empresaId && evaluatedRequirements >= 5 && evaluatedRequirements < totalRequirements && (
+                  <Card className="p-4 border-primary/20 bg-primary/5">
+                    <div className="flex items-center gap-3">
+                      <Sparkles className="h-5 w-5 text-primary shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium">
+                          Você já avaliou {evaluatedRequirements} de {totalRequirements} requisitos!
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Gere recomendações da IA abaixo para priorizar os próximos passos.
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
+                {/* AI Recommendations — positioned before charts for visibility */}
                 {empresaId && evaluatedRequirements > 0 && (
                   <AIRecommendationsCard
                     frameworkId={frameworkId!}

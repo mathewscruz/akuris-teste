@@ -165,8 +165,43 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
     }
   ];
 
+  const DOCUMENT_EXAMPLES: Record<string, string[]> = {
+    'ISO': ['Política de Segurança da Informação', 'Matriz RACI', 'Relatório de Análise de Riscos', 'Plano de Continuidade de Negócios', 'Registro de Ativos'],
+    'LGPD': ['Política de Privacidade', 'ROPA (Registro de Operações)', 'Termo de Consentimento', 'RIPD (Relatório de Impacto)', 'Procedimento de Atendimento ao Titular'],
+    'NIST': ['Inventário de Ativos', 'Plano de Resposta a Incidentes', 'Política de Controle de Acesso', 'Relatório de Vulnerabilidades', 'Plano de Recuperação'],
+    'PCI': ['Diagrama de Rede', 'Política de Senhas', 'Logs de Auditoria', 'Procedimento de Criptografia'],
+  };
+
+  const getDocExamples = (): string[] => {
+    if (!frameworkNome) return ['Políticas', 'Procedimentos', 'Registros', 'Relatórios'];
+    for (const [key, examples] of Object.entries(DOCUMENT_EXAMPLES)) {
+      if (frameworkNome.toUpperCase().includes(key)) return examples;
+    }
+    return ['Políticas', 'Procedimentos', 'Registros', 'Relatórios'];
+  };
+
   return (
     <div className="space-y-6">
+      {/* Guidance Card */}
+      <Card className="p-4 border-primary/20 bg-primary/5">
+        <div className="flex items-start gap-3">
+          <FileCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium mb-1">Como funciona a Análise de Documentos?</p>
+            <p className="text-xs text-muted-foreground mb-2">
+              Envie documentos como políticas, procedimentos, registros ou relatórios. A IA analisa automaticamente
+              a aderência ao framework e sugere o status de conformidade para cada requisito relacionado.
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              <span className="text-xs text-muted-foreground">Exemplos:</span>
+              {getDocExamples().map((doc, i) => (
+                <Badge key={i} variant="outline" className="text-[10px]">{doc}</Badge>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {/* Botão Nova Avaliação */}
       <div className="flex justify-end">
         <Button onClick={() => setIsDialogOpen(true)}>
