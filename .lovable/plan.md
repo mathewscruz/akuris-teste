@@ -1,88 +1,86 @@
 
 
-# Plano: Transicoes Suaves, Varredura de Textos e Integrações Enriquecidas
+# Validacao e Melhorias do Modulo Gap Analysis — "Consultor Virtual de Certificacao"
 
-## 1) Transicao mais suave entre telas
+## Diagnostico Atual
 
-**Problema**: `PageTransition.tsx` usa `animate-fade-in` com 0.3s e translateY(10px), criando um efeito brusco.
+Apos varredura completa dos arquivos, o modulo ja possui uma base solida:
+- Onboarding com roteiro especifico por framework (ISO, NIST, LGPD)
+- Assistente IA por requisito (explicacao, evidencias, status sugerido)
+- Dashboard de score com evolucao temporal
+- Analise de documentos por IA (aderencia automatica)
+- Plano de acao integrado por requisito nao-conforme
+- Historico e exportacao PDF
 
-**Correcao**:
-- Alterar keyframe `fade-in` em `tailwind.config.ts`: reduzir translateY de 10px para 4px e aumentar duracao de 0.3s para 0.45s com ease `cubic-bezier(0.4, 0, 0.2, 1)`.
-- Atualizar `PageTransition.tsx` para usar a classe de animacao atualizada.
-
-**Arquivos**: `tailwind.config.ts`, `src/components/PageTransition.tsx`
-
----
-
-## 2) Varredura de textos brutos (underscore sem formatacao)
-
-**Problema**: Valores como `api_key`, `certificado_ssl`, `token_acesso`, `legitimo_interesse`, `execucao_contrato`, `servidor_local`, `tempo_real`, `formulario_web`, `revogacao_consentimento`, `pessoa_juridica`, `contrato_principal`, etc. sao gravados no banco com underscore. O `formatStatus()` ja resolve a maioria via replace de `_` por espaco + capitalize, mas falta cobertura no mapa `STATUS_LABELS` para garantir acentuacao correta.
-
-**Correcao**: Adicionar ao `STATUS_LABELS` em `src/lib/text-utils.ts` todas as entradas compostas que precisam de acento/formatacao especial:
-- `api_key` → `API Key`
-- `certificado_ssl` → `Certificado SSL`
-- `ssh_key` → `SSH Key`
-- `token_acesso` → `Token de Acesso`
-- `secret_key` → `Secret Key`
-- `legitimo_interesse` → `Legítimo Interesse`
-- `execucao_contrato` → `Execução de Contrato`
-- `cumprimento_obrigacao` → `Cumprimento de Obrigação Legal`
-- `protecao_vida` → `Proteção da Vida`
-- `exercicio_direitos` → `Exercício de Direitos`
-- `politicas_publicas` → `Políticas Públicas`
-- `diretamente_titular` → `Diretamente do Titular`
-- `nao_compartilha` → `Não Compartilha`
-- `autorizacao_anpd` → `Autorização ANPD`
-- `servidor_local` → `Servidor Local`
-- `cloud_publica` → `Cloud Pública`
-- `cloud_privada` → `Cloud Privada`
-- `muito_grande` → `Muito Grande`
-- `tempo_real` → `Tempo Real`
-- `revogacao_consentimento` → `Revogação de Consentimento`
-- `formulario_web` → `Formulário Web`
-- `pessoa_juridica` → `Pessoa Jurídica`
-- `pessoa_fisica` → `Pessoa Física`
-- `contrato_principal` → `Contrato Principal`
-- `licoes_aprendidas` → `Lições Aprendidas` (ja existe)
-- `disponibilidade` → `Disponibilidade`
-- `privacidade` → `Privacidade`
-
-**Arquivo**: `src/lib/text-utils.ts`
+**Porem, para substituir uma consultoria Big4, faltam elementos criticos de guia, contexto e acao que um usuario leigo precisaria:**
 
 ---
 
-## 3) Enriquecer payloads de integracao (Slack, Teams, Jira, Webhook)
+## Lacunas Identificadas
 
-**Problema**: Os payloads enviados pelo `integration-webhook-dispatcher` sao simplistas -- mostram `evento: "incidente_criado"` em texto bruto, sem contexto de modulo, sem dados estruturados, e a gravidade aparece como string crua (`alta`, `critica`).
+### 1. Falta um "Mapa de Progresso" visivel e motivacional
+O usuario nao tem nocao clara de onde esta na jornada. O score existe mas nao ha um indicador visual tipo "etapa 1 de 5" ou "voce esta aqui". Sem isso, o leigo desiste.
 
-**Correcoes no `integration-webhook-dispatcher/index.ts`**:
+### 2. Framework Detail: descripcao do framework esta ausente ou generica
+Na pagina de detalhe (`GapAnalysisFrameworkDetail`), o `PageHeader` mostra apenas `"Avaliacao de conformidade {tipo}"` quando nao ha `descricao`. Nao contextualiza *por que* o usuario deveria se importar.
 
-### Slack
-- Adicionar secao de "facts" com campos: Modulo, Gravidade formatada, Responsavel (se disponivel em `dados`).
-- Adicionar divider entre header e contexto.
-- Formatar `evento` para legivel (ex: `incidente_criado` → `Incidente Criado`).
+### 3. Onboarding nao explica os status de avaliacao
+O usuario ve "Conforme / Parcial / Nao Conforme / N/A" na tabela mas nao sabe o que cada um significa no contexto do framework. Nenhum tooltip ou legenda.
 
-### Teams
-- Adicionar mais `facts`: Modulo, Criticidade, ID do registro (se em `dados`).
-- Incluir descricao como texto markdown formatado.
-- Formatar `evento` e `gravidade` para texto legivel.
+### 4. Tab "Analise de Documentos" nao orienta o que enviar
+O usuario leigo nao sabe *quais documentos* enviar. A aba abre direto o formulario sem contexto.
 
-### Jira
-- Enriquecer `description` com tabela ADF ou lista de campos.
-- Adicionar labels ao ticket: `governaii`, `grc`, evento.
+### 5. Quick Actions ausentes apos score calculado
+Apos avaliar varios requisitos, nao ha um CTA claro tipo "Proximos passos recomendados" visivel no dashboard (o AI Recommendations so aparece apos avaliar, mas fica escondido abaixo dos graficos).
 
-### Webhook generico
-- Adicionar campo `modulo` extraido do evento (ex: `incidente_criado` → `Incidentes`).
-- Adicionar campo `gravidade_label` formatada.
-- Incluir `fonte: "GovernAII"` e `versao: "2.0"`.
+### 6. FrameworkCard (available) nao indica "por onde comecar"
+Os cards de frameworks disponiveis mostram esforco mas nao indicam qual e mais relevante para o perfil da empresa.
 
-**Arquivo**: `supabase/functions/integration-webhook-dispatcher/index.ts`
+---
+
+## Plano de Implementacao
+
+### Tarefa 1: Adicionar Barra de Progresso da Jornada no Framework Detail
+**Arquivo**: `src/pages/GapAnalysisFrameworkDetail.tsx`
+- Criar componente `JourneyProgressBar` com 4 etapas: Conhecer o Framework → Avaliar Requisitos → Tratar Gaps → Certificar
+- Posicionar entre o PageHeader e as Tabs
+- Calcular etapa automaticamente: 0 avaliados = etapa 1, <50% = etapa 2, >50% e com planos = etapa 3, >80% conforme = etapa 4
+- Visual: barra horizontal com dots, label da etapa atual, e dica contextual
+
+### Tarefa 2: Enriquecer descricoes e contexto dos frameworks
+**Arquivos**: `src/components/gap-analysis/FrameworkOnboarding.tsx`, `src/pages/GapAnalysisFrameworkDetail.tsx`
+- Adicionar ao Onboarding uma secao "Para quem e este framework?" e "O que voce ganha com a certificacao?" com textos especificos para ISO 27001, NIST, LGPD e generico
+- No PageHeader do Detail, usar descricoes enriquecidas do FRAMEWORK_AUDIENCES quando `framework.descricao` estiver vazio
+
+### Tarefa 3: Adicionar legenda de status com tooltips na tabela de requisitos
+**Arquivo**: `src/components/gap-analysis/GenericRequirementsTable.tsx`
+- Inserir acima da tabela uma legenda horizontal compacta com os 4 status e suas definicoes (tooltip ou popover)
+- Ex: "Conforme = Voce ja atende 100% deste requisito e tem evidencias", "Parcial = Voce atende parcialmente mas falta documentacao ou processo"
+
+### Tarefa 4: Adicionar orientacao contextual na aba "Analise de Documentos"
+**Arquivo**: `src/components/gap-analysis/adherence/AdherenceAssessmentView.tsx`
+- Antes da lista de assessments, adicionar um Card informativo explicando: "Envie documentos como politicas, procedimentos, registros ou relatorios. A IA analisa automaticamente a aderencia ao framework."
+- Incluir exemplos de documentos por tipo de framework (ISO → Politica de Seguranca, RACI, Relatorio de Riscos; LGPD → Politica de Privacidade, ROPA, Termo de Consentimento)
+
+### Tarefa 5: Reposicionar AI Recommendations para maior visibilidade
+**Arquivo**: `src/pages/GapAnalysisFrameworkDetail.tsx`
+- Mover o `AIRecommendationsCard` para ANTES dos graficos (logo apos o ScoreDashboard)
+- Quando `evaluatedRequirements >= 5 && evaluatedRequirements < totalRequirements`, mostrar um banner motivacional: "Voce ja avaliou X requisitos! Gere recomendacoes da IA para priorizar os proximos passos."
+
+### Tarefa 6: Adicionar "Guia Rapido" no WelcomeHero para usuarios novos
+**Arquivo**: `src/components/gap-analysis/WelcomeHero.tsx`
+- Adicionar abaixo da descricao uma secao "Como funciona?" com 3 passos visuais: 
+  1. "Escolha um framework" 
+  2. "Avalie cada requisito com ajuda da IA" 
+  3. "Acompanhe seu progresso e trate os gaps"
+- Manter conciso, com icones
 
 ---
 
 ## Arquivos afetados
-1. `tailwind.config.ts` — keyframe fade-in
-2. `src/components/PageTransition.tsx` — classe de animacao
-3. `src/lib/text-utils.ts` — STATUS_LABELS expandido
-4. `supabase/functions/integration-webhook-dispatcher/index.ts` — payloads enriquecidos
+1. `src/pages/GapAnalysisFrameworkDetail.tsx` — JourneyProgressBar + reorder AI card
+2. `src/components/gap-analysis/FrameworkOnboarding.tsx` — secoes "Para quem" e "Beneficios"
+3. `src/components/gap-analysis/GenericRequirementsTable.tsx` — legenda de status
+4. `src/components/gap-analysis/adherence/AdherenceAssessmentView.tsx` — guia de documentos
+5. `src/components/gap-analysis/WelcomeHero.tsx` — "Como funciona?"
 
