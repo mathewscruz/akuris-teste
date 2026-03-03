@@ -64,7 +64,7 @@ function ReminderDialog({ assessment, open, onOpenChange, onSuccess }: ReminderD
         .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      let empresaNome = 'GovernAI';
+      let empresaNome = 'Akuris';
       let empresaLogoUrl = null;
 
       if (profileData?.empresa_id) {
@@ -412,7 +412,7 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
         .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      let empresaNome = 'GovernAI';
+      let empresaNome = 'Akuris';
       let empresaLogoUrl = null;
 
       if (profileData?.empresa_id) {

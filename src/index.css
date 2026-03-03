@@ -337,7 +337,7 @@
   }
 
   /* ========================================
-     Dark Mode - GovernAII Night Theme
+     Dark Mode - Akuris Night Theme
      ======================================== */
   .dark {
     /* Base Colors */
@@ -469,7 +469,7 @@
 
 /* Component Utilities */
 @layer utilities {
-  /* GovernAII Accent Bar - Signature Element */
+  /* Akuris Accent Bar - Signature Element */
   .governaii-accent-bar {
     position: relative;
   }
@@ -486,7 +486,7 @@
     animation: accent-bar-pulse 3s ease-in-out infinite;
   }
   
-  /* GovernAII Card Hover Effect */
+  /* Akuris Card Hover Effect */
   .governaii-card-hover {
     transition: all 0.3s var(--transition-smooth);
   }

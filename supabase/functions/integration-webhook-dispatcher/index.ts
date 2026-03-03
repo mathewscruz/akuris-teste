@@ -48,7 +48,7 @@ function extrairModulo(evento: string): string {
   for (const [key, label] of Object.entries(map)) {
     if (lower.includes(key)) return label;
   }
-  return 'GovernAII';
+  return 'Akuris';
 }
 
 // Formata gravidade para exibição
@@ -120,7 +120,7 @@ function buildSlackPayload(titulo: string, descricao: string | undefined, evento
       type: "actions",
       elements: [{
         type: "button",
-        text: { type: "plain_text", text: "📎 Ver no GovernAII", emoji: true },
+        text: { type: "plain_text", text: "📎 Ver no Akuris", emoji: true },
         url: link,
         style: "primary"
       }]
@@ -129,7 +129,7 @@ function buildSlackPayload(titulo: string, descricao: string | undefined, evento
 
   blocks.push({
     type: "context",
-    elements: [{ type: "mrkdwn", text: `_Enviado por GovernAII GRC Platform_` }]
+    elements: [{ type: "mrkdwn", text: `_Enviado por Akuris GRC Platform_` }]
   });
 
   return { blocks };
@@ -170,7 +170,7 @@ function buildTeamsPayload(titulo: string, descricao: string | undefined, evento
     ...(link ? {
       "potentialAction": [{
         "@type": "OpenUri",
-        "name": "📎 Ver no GovernAII",
+        "name": "📎 Ver no Akuris",
         "targets": [{ "os": "default", "uri": link }]
       }]
     } : {})
@@ -185,7 +185,7 @@ function buildJiraPayload(titulo: string, descricao: string | undefined, evento:
 
   let fullDescription = `*Descrição:*\n${descricao || 'Sem descrição'}\n\n`;
   fullDescription += `----\n\n`;
-  fullDescription += `*Detalhes do Evento GovernAII:*\n`;
+  fullDescription += `*Detalhes do Evento Akuris:*\n`;
   fullDescription += `||Campo||Valor||\n`;
   fullDescription += `|Módulo|${modulo}|\n`;
   fullDescription += `|Evento|${eventoFormatado}|\n`;
@@ -199,14 +199,14 @@ function buildJiraPayload(titulo: string, descricao: string | undefined, evento:
   if (dados?.prazo) fullDescription += `|Prazo|${dados.prazo}|\n`;
   if (dados?.impacto) fullDescription += `|Impacto|${dados.impacto}|\n`;
 
-  if (link) fullDescription += `\n*Link:* [Ver no GovernAII|${link}]\n`;
+  if (link) fullDescription += `\n*Link:* [Ver no Akuris|${link}]\n`;
 
-  const labels = ['governaii', 'grc', modulo.toLowerCase().replace(/\s+/g, '-').replace(/[áàã]/g, 'a').replace(/[éê]/g, 'e').replace(/[íî]/g, 'i').replace(/[óôõ]/g, 'o').replace(/[úû]/g, 'u').replace(/ç/g, 'c')];
+  const labels = ['akuris', 'grc', modulo.toLowerCase().replace(/\s+/g, '-').replace(/[áàã]/g, 'a').replace(/[éê]/g, 'e').replace(/[íî]/g, 'i').replace(/[óôõ]/g, 'o').replace(/[úû]/g, 'u').replace(/ç/g, 'c')];
 
   return {
     fields: {
       project: { key: jiraProjectKey },
-      summary: `[GovernAII] ${titulo}`,
+      summary: `[Akuris] ${titulo}`,
       description: fullDescription,
       issuetype: { name: jiraIssueType },
       labels: labels,
@@ -220,7 +220,7 @@ function buildWebhookPayload(titulo: string, descricao: string | undefined, even
   const modulo = extrairModulo(evento);
 
   return {
-    fonte: 'GovernAII',
+    fonte: 'Akuris',
     versao: '2.0',
     evento,
     evento_label: formatEvento(evento),
