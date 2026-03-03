@@ -1,45 +1,20 @@
 import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
+import { loadAkurisLogo, addAkurisCover, addAkurisFooter, addSectionTitle as addPdfSectionTitle, drawTableHeader, formatLabel, AKURIS_COLORS } from '@/lib/pdf-utils';
 
 // ── helpers ──────────────────────────────────────────────────────────
-function addCover(doc: jsPDF, title: string, subtitle: string) {
-  doc.setFillColor(15, 23, 42);
-  doc.rect(0, 0, 210, 297, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(28);
-  doc.text(title, 105, 120, { align: 'center' });
-  doc.setFontSize(12);
-  doc.setTextColor(180, 180, 200);
-  doc.text(subtitle, 105, 140, { align: 'center' });
-  doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 105, 160, { align: 'center' });
-}
-
-function addPageFooter(doc: jsPDF) {
-  const pages = doc.getNumberOfPages();
-  for (let i = 1; i <= pages; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(150);
-    doc.text(`Página ${i} de ${pages}`, 105, 290, { align: 'center' });
-    doc.text('Gerado por Akuris GRC', 195, 290, { align: 'right' });
-  }
-}
-
-function addSectionTitle(doc: jsPDF, title: string, y: number): number {
-  doc.setFontSize(16);
-  doc.setTextColor(60, 60, 100);
-  doc.text(title, 20, y);
-  doc.setDrawColor(120, 100, 220);
-  doc.line(20, y + 2, 190, y + 2);
-  return y + 12;
+function addSectionTitleLocal(doc: jsPDF, title: string, y: number): number {
+  return addPdfSectionTitle(doc, title, y, 20);
 }
 
 function addMetricRow(doc: jsPDF, label: string, value: string | number, y: number): number {
   doc.setFontSize(11);
-  doc.setTextColor(80);
-  doc.text(label, 25, y);
-  doc.setTextColor(30);
+  doc.setTextColor(AKURIS_COLORS.textLight);
+  doc.text(label, 28, y);
+  doc.setTextColor(AKURIS_COLORS.text);
+  doc.setFont('helvetica', 'bold');
   doc.text(String(value), 120, y);
+  doc.setFont('helvetica', 'normal');
   return y + 7;
 }
 
@@ -53,26 +28,48 @@ function checkPageBreak(doc: jsPDF, y: number, margin = 40): number {
 
 function addTable(doc: jsPDF, headers: string[], rows: string[][], startY: number, colWidths: number[]): number {
   let y = startY;
-  doc.setFontSize(9);
-  doc.setTextColor(255);
-  doc.setFillColor(60, 60, 100);
+  
+  // Header
+  doc.setFontSize(8);
+  doc.setFillColor(AKURIS_COLORS.primary);
   let x = 20;
   headers.forEach((h, i) => {
     doc.rect(x, y - 5, colWidths[i], 8, 'F');
+    x += colWidths[i];
+  });
+  
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  x = 20;
+  headers.forEach((h, i) => {
     doc.text(h, x + 2, y);
     x += colWidths[i];
   });
-  y += 8;
-  doc.setTextColor(40);
-  for (const row of rows) {
+  y += 6;
+  
+  doc.setFont('helvetica', 'normal');
+  for (let ri = 0; ri < rows.length; ri++) {
+    const row = rows[ri];
     y = checkPageBreak(doc, y);
+    
+    // Zebra striping
+    if (ri % 2 === 0) {
+      doc.setFillColor(248, 247, 255);
+      x = 20;
+      const totalW = colWidths.reduce((a, b) => a + b, 0);
+      doc.rect(20, y - 3.5, totalW, 6, 'F');
+    }
+    
+    doc.setFontSize(8);
+    doc.setTextColor(AKURIS_COLORS.text);
     x = 20;
     row.forEach((cell, i) => {
-      const lines = doc.splitTextToSize(cell || '-', colWidths[i] - 4);
+      const formatted = formatLabel(cell || '-');
+      const lines = doc.splitTextToSize(formatted, colWidths[i] - 4);
       doc.text(lines[0], x + 2, y);
       x += colWidths[i];
     });
-    y += 7;
+    y += 6;
   }
   return y + 5;
 }
@@ -242,15 +239,18 @@ export async function generateTemplatePDF(relatorio: any, empresaId: string) {
   const doc = new jsPDF();
   const templateBase = relatorio.template_base;
   const data = await fetchTemplateData(templateBase, empresaId);
+  const logo = await loadAkurisLogo();
 
   // Cover
-  addCover(doc, relatorio.nome, relatorio.descricao || '');
+  addAkurisCover(doc, logo, relatorio.nome, relatorio.descricao || '', {
+    data: new Date().toLocaleDateString('pt-BR')
+  });
 
   // Sections
   for (const section of data.sections) {
     doc.addPage();
     let y = 25;
-    y = addSectionTitle(doc, section.title, y);
+    y = addSectionTitleLocal(doc, section.title, y);
 
     if (section.metrics) {
       for (const m of section.metrics) {
@@ -270,11 +270,11 @@ export async function generateTemplatePDF(relatorio: any, empresaId: string) {
   if (data.sections.length === 0) {
     doc.addPage();
     doc.setFontSize(14);
-    doc.setTextColor(100);
+    doc.setTextColor(AKURIS_COLORS.textLight);
     doc.text('Nenhum dado encontrado para este template.', 105, 140, { align: 'center' });
     doc.text('Verifique se há dados cadastrados nos módulos correspondentes.', 105, 155, { align: 'center' });
   }
 
-  addPageFooter(doc);
+  addAkurisFooter(doc);
   doc.save(`${relatorio.nome.replace(/\s+/g, '_')}.pdf`);
 }

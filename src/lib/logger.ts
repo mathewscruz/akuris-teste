@@ -1,4 +1,4 @@
-// Sistema de logging estruturado para GovernAI
+// Sistema de logging estruturado para Akuris
 interface LogLevel {
   ERROR: 'error';
   WARN: 'warn';
