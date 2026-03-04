@@ -3773,12 +3773,16 @@ export type Database = {
           contato: string | null
           created_at: string
           creditos_consumidos: number | null
+          data_alvo_certificacao: string | null
           data_inicio_ciclo: string | null
           data_inicio_trial: string | null
           id: string
           logo_url: string | null
           nome: string
+          objetivo_compliance: string | null
           plano_id: string | null
+          porte_empresa: string | null
+          setor_atuacao: string | null
           slug: string | null
           status_licenca: string | null
           updated_at: string
@@ -3789,12 +3793,16 @@ export type Database = {
           contato?: string | null
           created_at?: string
           creditos_consumidos?: number | null
+          data_alvo_certificacao?: string | null
           data_inicio_ciclo?: string | null
           data_inicio_trial?: string | null
           id?: string
           logo_url?: string | null
           nome: string
+          objetivo_compliance?: string | null
           plano_id?: string | null
+          porte_empresa?: string | null
+          setor_atuacao?: string | null
           slug?: string | null
           status_licenca?: string | null
           updated_at?: string
@@ -3805,12 +3813,16 @@ export type Database = {
           contato?: string | null
           created_at?: string
           creditos_consumidos?: number | null
+          data_alvo_certificacao?: string | null
           data_inicio_ciclo?: string | null
           data_inicio_trial?: string | null
           id?: string
           logo_url?: string | null
           nome?: string
+          objetivo_compliance?: string | null
           plano_id?: string | null
+          porte_empresa?: string | null
+          setor_atuacao?: string | null
           slug?: string | null
           status_licenca?: string | null
           updated_at?: string
@@ -4496,6 +4508,61 @@ export type Database = {
             columns: ["framework_id"]
             isOneToOne: false
             referencedRelation: "gap_analysis_frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gap_analysis_soa: {
+        Row: {
+          aplicavel: boolean
+          created_at: string
+          empresa_id: string
+          framework_id: string
+          id: string
+          justificativa: string | null
+          requirement_id: string
+          updated_at: string
+        }
+        Insert: {
+          aplicavel?: boolean
+          created_at?: string
+          empresa_id: string
+          framework_id: string
+          id?: string
+          justificativa?: string | null
+          requirement_id: string
+          updated_at?: string
+        }
+        Update: {
+          aplicavel?: boolean
+          created_at?: string
+          empresa_id?: string
+          framework_id?: string
+          id?: string
+          justificativa?: string | null
+          requirement_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gap_analysis_soa_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gap_analysis_soa_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_frameworks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gap_analysis_soa_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_requirements"
             referencedColumns: ["id"]
           },
         ]
