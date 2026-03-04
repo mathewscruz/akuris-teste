@@ -1,45 +1,35 @@
 
 
-# Plano: Agrupar Score + Domínios + Seções em um único card
-
-## Problema
-O Score Geral ocupa metade da tela sozinho com muito espaço vazio. Os blocos de "Aderência por Domínio" e "Aderência por Seção" ficam abaixo, separados visualmente. O donut e badges não estão centralizados.
+# Plano: Score Geral lado a lado com gráfico + Domínios/Seções abaixo com mais espaço
 
 ## Mudança
 
-Consolidar tudo dentro do **mesmo Card** que hoje exibe apenas o Score Geral:
+Voltar ao layout original onde Score Geral e Evolução do Score ficam lado a lado (grid 2 colunas). Mover Domínios e Seções para **fora** desse card, como cards independentes abaixo do grid, com mais espaçamento.
 
 ```text
-┌─────────────────────────────────────────┐  ┌──────────────────────┐
-│ Score Geral de Conformidade             │  │ Evolução do Score    │
-│                                         │  │                      │
-│   [Donut 120px]                         │  │   [Chart]            │
-│   Em Implementação  ● Nível 3           │  │                      │
-│   ████████████████████████░░  111/117   │  │                      │
-│                                         │  │                      │
-│ ─────────────────────────────────────── │  │                      │
-│ Aderência por Domínio do Anexo A        │  │                      │
-│ ┌─────────┐┌─────────┐┌────────┐┌─────┐│  │                      │
-│ │A.5 64.6%││A.6 63.2%││A.7 35% ││A.8  ││  │                      │
-│ └─────────┘└─────────┘└────────┘└─────┘│  │                      │
-│ ─────────────────────────────────────── │  │                      │
-│ Aderência por Seção                     │  │                      │
-│ ┌──────────────────┐┌─────────────────┐ │  │                      │
-│ │Req. SGSI  32.5%  ││Controles  53.4% │ │  │                      │
-│ └──────────────────┘└─────────────────┘ │  │                      │
-└─────────────────────────────────────────┘  └──────────────────────┘
+┌──────────────────────────┐  ┌──────────────────────────┐
+│ Score Geral              │  │ Evolução do Score        │
+│ [Donut] Badges Progress  │  │ [Chart]                  │
+└──────────────────────────┘  └──────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│ ADERÊNCIA POR DOMÍNIO DO ANEXO A                        │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐    │
+│ │A.5 64.6% │ │A.6 63.2% │ │A.7 35.0% │ │A.8 45.6% │   │
+│ └──────────┘ └──────────┘ └──────────┘ └──────────┘    │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│ ADERÊNCIA POR SEÇÃO                                     │
+│ ┌────────────────────────┐ ┌────────────────────────┐   │
+│ │Req. SGSI  32.5%        │ │Controles  53.4%        │   │
+│ └────────────────────────┘ └────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### Detalhes:
-1. **Centralizar** donut + badges + progress verticalmente dentro do card
-2. **Mover** domainScores e sectionScores para **dentro** do mesmo Card, separados por `Separator`
-3. **Remover** os blocos `<div>` avulsos de domínios/seções que ficam fora do grid
-4. Domínios e seções usam cards menores internos (border only, sem shadow) para manter compactos
-5. Só renderiza as seções de domínio/seção se houver dados
-
-## Arquivo Afetado
+## Arquivo
 
 | Arquivo | Mudança |
 |---------|---------|
-| `src/components/gap-analysis/GenericScoreDashboard.tsx` | Reestruturar layout: score centralizado + domínios + seções dentro do mesmo Card |
+| `src/components/gap-analysis/GenericScoreDashboard.tsx` | Extrair domínios/seções do card de Score, colocá-los como cards full-width abaixo do grid. Aumentar gap entre seções (`gap-3`). |
 
