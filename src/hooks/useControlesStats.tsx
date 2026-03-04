@@ -20,6 +20,7 @@ interface ControlesStats {
 export const useControlesStats = () => {
   return useQuery({
     queryKey: ['controles-stats'],
+    staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<ControlesStats> => {
       const { data: controles, error } = await supabase
         .from('controles')

@@ -141,7 +141,15 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       toast.error('Erro: Empresa não identificada.');
       return;
     }
+
+    // 1. Optimistic update — atualiza UI imediatamente
+    const previousRequirements = [...requirements];
+    setRequirements(prev =>
+      prev.map(r => r.id === requirementId ? { ...r, conformity_status: newStatus } : r)
+    );
+
     try {
+      // 2. Persistir no banco
       const { data: existing } = await supabase
         .from('gap_analysis_evaluations')
         .select('id')
@@ -163,29 +171,21 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
         if (error) throw error;
       }
 
-      await loadRequirements();
-      // Use fresh data for score calculation after reload
-      const { data: freshReqs } = await supabase
-        .from('gap_analysis_requirements')
-        .select('id, peso')
-        .eq('framework_id', frameworkId);
-      const { data: freshEvals } = await supabase
-        .from('gap_analysis_evaluations')
-        .select('requirement_id, conformity_status')
-        .eq('framework_id', frameworkId)
-        .eq('empresa_id', empresaId);
-      
-      const freshMerged = (freshReqs || []).map(req => {
-        const ev = freshEvals?.find(e => e.requirement_id === req.id);
-        return { ...req, conformity_status: ev?.conformity_status || 'nao_avaliado' } as Requirement;
-      });
-      const totalReqs = freshMerged.length;
-      const evaluatedReqs = freshMerged.filter(r => r.conformity_status && r.conformity_status !== 'nao_aplicavel' && r.conformity_status !== 'nao_avaliado').length;
-      const score = calculateScore(freshMerged);
-      await saveScoreHistory(frameworkId, empresaId, score, totalReqs, evaluatedReqs);
+      // 3. Calcular score localmente com dados já em memória (sem queries extras)
+      const updatedReqs = previousRequirements.map(r =>
+        r.id === requirementId ? { ...r, conformity_status: newStatus } : r
+      );
+      const totalReqs = updatedReqs.length;
+      const evaluatedReqs = updatedReqs.filter(r => r.conformity_status && r.conformity_status !== 'nao_aplicavel' && r.conformity_status !== 'nao_avaliado').length;
+      const score = calculateScore(updatedReqs);
+
+      // 4. Salvar histórico e notificar pai em background
+      saveScoreHistory(frameworkId, empresaId, score, totalReqs, evaluatedReqs).catch(() => {});
       onStatusChange?.();
       toast.success('Status atualizado com sucesso!');
     } catch (error: any) {
+      // Rollback optimistic update
+      setRequirements(previousRequirements);
       console.error('Erro ao atualizar status:', error);
       toast.error('Erro ao atualizar status');
     }

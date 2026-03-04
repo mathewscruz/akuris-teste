@@ -16,6 +16,7 @@ interface IncidentesStats {
 export const useIncidentesStats = () => {
   return useQuery({
     queryKey: ['incidentes-stats'],
+    staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<IncidentesStats> => {
       const { data: incidentes, error } = await supabase
         .from('incidentes')

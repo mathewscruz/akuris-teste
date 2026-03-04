@@ -14,6 +14,7 @@ interface ContratosStats {
 export const useContratosStats = () => {
   return useQuery({
     queryKey: ['contratos-stats'],
+    staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<ContratosStats> => {
       const { data: contratos, error } = await supabase
         .from('contratos')

@@ -98,9 +98,9 @@ export const useGapAnalysisStats = () => {
     },
     [],
     {
-      staleTime: 5 * 60 * 1000, // 5 minutos de cache
+      staleTime: 5, // 5 minutos (useOptimizedQuery interpreta em minutos)
       cacheKey: 'gap-analysis-stats',
-      cacheDuration: 5 * 60 * 1000
+      cacheDuration: 5
     }
   );
 };

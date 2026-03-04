@@ -5,12 +5,14 @@ import { toast } from 'sonner';
 
 const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutos
 const WARNING_TIMEOUT = 14 * 60 * 1000; // 14 minutos (1 min antes)
+const THROTTLE_INTERVAL = 30 * 1000; // 30 segundos
 
 export const useInactivityTimeout = () => {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const timeoutRef = useRef<NodeJS.Timeout>();
   const warningTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastResetRef = useRef<number>(0);
 
   const logout = useCallback(async () => {
     await signOut();
@@ -23,20 +25,19 @@ export const useInactivityTimeout = () => {
   const showWarning = useCallback(() => {
     toast.warning('Sessão prestes a expirar', {
       description: 'Sua sessão será encerrada em 1 minuto por inatividade.',
-      duration: 60000, // 1 minuto
+      duration: 60000,
     });
   }, []);
 
   const resetTimer = useCallback(() => {
-    // Limpar timers existentes
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    if (warningTimeoutRef.current) {
-      clearTimeout(warningTimeoutRef.current);
-    }
+    // Throttle: no máximo 1x a cada 30s
+    const now = Date.now();
+    if (now - lastResetRef.current < THROTTLE_INTERVAL) return;
+    lastResetRef.current = now;
 
-    // Criar novos timers
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
+
     warningTimeoutRef.current = setTimeout(showWarning, WARNING_TIMEOUT);
     timeoutRef.current = setTimeout(logout, INACTIVITY_TIMEOUT);
   }, [logout, showWarning]);
@@ -44,28 +45,20 @@ export const useInactivityTimeout = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Eventos que resetam o timer
-    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
 
-    // Adicionar listeners
     events.forEach(event => {
-      document.addEventListener(event, resetTimer);
+      document.addEventListener(event, resetTimer, { passive: true });
     });
 
-    // Iniciar timer
     resetTimer();
 
-    // Cleanup
     return () => {
       events.forEach(event => {
         document.removeEventListener(event, resetTimer);
       });
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      if (warningTimeoutRef.current) {
-        clearTimeout(warningTimeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
     };
   }, [user, resetTimer]);
 };
