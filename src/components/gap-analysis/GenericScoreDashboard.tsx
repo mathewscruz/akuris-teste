@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { FrameworkConfig, getScoreLabel, getMaturityLevel } from "@/lib/framework-configs";
@@ -134,7 +135,7 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Score Geral de Conformidade</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-0">
             {evaluatedRequirements === 0 ? (
               <div className="flex flex-col items-center justify-center py-4 space-y-2">
                 <div className="text-4xl font-bold text-muted-foreground">—</div>
@@ -143,99 +144,98 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
                 </p>
               </div>
             ) : (
-              <div className="flex items-start gap-5">
+              <div className="flex flex-col items-center text-center gap-3 py-2">
                 <ScoreDonut score={overallScore} config={config} size={120} />
-                <div className="flex-1 space-y-3 py-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge 
-                      variant={
-                        overallScore >= (config.scoreType === 'percentage' ? 80 : 4.5) ? 'default' :
-                        overallScore >= (config.scoreType === 'percentage' ? 60 : 3.5) ? 'secondary' :
-                        overallScore >= (config.scoreType === 'percentage' ? 40 : 2.5) ? 'outline' :
-                        'destructive'
-                      }
-                      className="text-xs"
-                    >
-                      {getScoreLabel(overallScore, config)}
-                    </Badge>
-                    {(() => {
-                      const maturity = getMaturityLevel(overallScore, config);
-                      return (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${maturity.bgColor} border text-xs`}>
-                                <span>{maturity.icon}</span>
-                                <span className={`font-semibold ${maturity.color}`}>
-                                  Nível {maturity.level}
-                                </span>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent side="right" className="max-w-xs">
-                              <p className="font-medium">{maturity.name}</p>
-                              <p className="text-xs text-muted-foreground mt-1">{maturity.description}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      );
-                    })()}
+                <div className="flex items-center gap-2 flex-wrap justify-center">
+                  <Badge 
+                    variant={
+                      overallScore >= (config.scoreType === 'percentage' ? 80 : 4.5) ? 'default' :
+                      overallScore >= (config.scoreType === 'percentage' ? 60 : 3.5) ? 'secondary' :
+                      overallScore >= (config.scoreType === 'percentage' ? 40 : 2.5) ? 'outline' :
+                      'destructive'
+                    }
+                    className="text-xs"
+                  >
+                    {getScoreLabel(overallScore, config)}
+                  </Badge>
+                  {(() => {
+                    const maturity = getMaturityLevel(overallScore, config);
+                    return (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${maturity.bgColor} border text-xs`}>
+                              <span>{maturity.icon}</span>
+                              <span className={`font-semibold ${maturity.color}`}>
+                                Nível {maturity.level}
+                              </span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-xs">
+                            <p className="font-medium">{maturity.name}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{maturity.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })()}
+                </div>
+                <div className="w-full max-w-xs space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Progresso da avaliação</span>
+                    <span className="font-medium">{evaluatedRequirements}/{totalRequirements}</span>
                   </div>
-
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Progresso da avaliação</span>
-                      <span className="font-medium">{evaluatedRequirements}/{totalRequirements}</span>
-                    </div>
-                    <Progress value={evalPct} className="h-2" />
-                  </div>
+                  <Progress value={evalPct} className="h-2" />
                 </div>
               </div>
+            )}
+
+            {/* Domain scores inline */}
+            {domainScores.length > 0 && (
+              <>
+                <Separator className="my-4" />
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Aderência por Domínio do Anexo A</h4>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                    {domainScores.map((domain) => (
+                      <div key={domain.domain} className="rounded-md border border-border px-3 py-2">
+                        <p className="text-[11px] font-medium text-muted-foreground truncate mb-1">{domain.name}</p>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-sm font-bold" style={{ color: domain.color }}>{formatScore(domain.score)}</span>
+                          <span className="text-[10px] text-muted-foreground">{domain.evaluatedRequirements}/{domain.totalRequirements}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Section scores inline */}
+            {sectionScores.length > 0 && (
+              <>
+                <Separator className="my-4" />
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Aderência por Seção</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {sectionScores.map((section) => (
+                      <div key={section.section} className="rounded-md border border-border px-3 py-2">
+                        <p className="text-[11px] font-medium text-muted-foreground truncate mb-1">{section.name}</p>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-sm font-bold text-primary">{formatScore(section.score)}</span>
+                          <span className="text-[10px] text-muted-foreground">{section.evaluatedRequirements}/{section.totalRequirements}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
 
         <ScoreEvolutionChart frameworkId={frameworkId} scoreType={config.scoreType} />
       </div>
-
-      {/* Domain scores (ISO 27001 Annex A) */}
-      {domainScores.length > 0 && (
-        <div>
-          <h3 className="text-sm font-medium mb-3">Aderência por Domínio do Anexo A</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {domainScores.map((domain) => (
-              <Card key={domain.domain}>
-                <CardContent className="pt-4 pb-3">
-                  <p className="text-xs font-medium text-muted-foreground mb-2">{domain.name}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xl font-bold" style={{ color: domain.color }}>{formatScore(domain.score)}</span>
-                    <Badge variant="secondary" className="text-xs">{domain.evaluatedRequirements}/{domain.totalRequirements}</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Section scores */}
-      {sectionScores.length > 0 && (
-        <div>
-          <h3 className="text-sm font-medium mb-3">Aderência por Seção</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {sectionScores.map((section) => (
-              <Card key={section.section}>
-                <CardContent className="pt-4 pb-3">
-                  <p className="text-xs font-medium text-muted-foreground mb-2">{section.name}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xl font-bold text-primary">{formatScore(section.score)}</span>
-                    <Badge variant="secondary" className="text-xs">{section.evaluatedRequirements}/{section.totalRequirements}</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
