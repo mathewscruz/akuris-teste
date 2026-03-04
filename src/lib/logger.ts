@@ -89,25 +89,9 @@ class Logger {
     }
   }
 
-  private async sendToMonitoring(level: string, message: string, context?: LogContext): Promise<void> {
-    try {
-      // Implementar integração com serviço de monitoramento (Sentry, LogRocket, etc.)
-      // Por enquanto, apenas armazenar localmente
-      const logEntry = {
-        level,
-        message,
-        context,
-        timestamp: new Date().toISOString(),
-        url: window.location.href,
-        userAgent: navigator.userAgent
-      };
-      
-      // Em uma implementação real, enviar para API de monitoramento
-      localStorage.setItem(`log_${Date.now()}`, JSON.stringify(logEntry));
-      
-    } catch (error) {
-      console.error('Failed to send log to monitoring service:', error);
-    }
+  private async sendToMonitoring(_level: string, _message: string, _context?: LogContext): Promise<void> {
+    // Placeholder para integração futura com serviço de monitoramento (Sentry, LogRocket, etc.)
+    // Removido localStorage sync write para evitar bloqueio da main thread
   }
 }
 

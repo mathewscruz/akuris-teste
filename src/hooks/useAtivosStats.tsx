@@ -17,6 +17,7 @@ interface AtivosStats {
 export const useAtivosStats = () => {
   return useQuery({
     queryKey: ['ativos-stats'],
+    staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<AtivosStats> => {
       const { data: ativos, error } = await supabase
         .from('ativos')

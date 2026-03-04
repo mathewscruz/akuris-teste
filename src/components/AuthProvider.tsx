@@ -139,12 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const forceLogoUpdate = () => {
-    console.log('Forcing logo update...');
     setLogoUpdateKey(prev => prev + 1);
-    // Força um re-render adicional após pequeno delay para garantir que todos os componentes sejam atualizados
-    setTimeout(() => {
-      setLogoUpdateKey(prev => prev + 1);
-    }, 100);
   };
 
   const initializeUserPermissions = async () => {
@@ -286,11 +281,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (isSubscribed) {
               logger.debug('Iniciando verificação pós-login', { userId: session.user.id });
               
-              // Verificar senha temporária PRIMEIRO
-              await checkTemporaryPasswordForUser(session.user.id);
-              
-              // Depois fazer outras operações
-              await fetchProfile(session.user.id);
+              // Paralelizar: senha temporária + profile ao mesmo tempo
+              await Promise.all([
+                checkTemporaryPasswordForUser(session.user.id),
+                fetchProfile(session.user.id),
+              ]);
               await initializeUserPermissions();
             }
           }, 0);
@@ -359,13 +354,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Verificar senha temporária PRIMEIRO
-        await checkTemporaryPasswordForUser(session.user.id);
-        
-        // Depois fazer outras operações
+        // Paralelizar: senha temporária + profile ao mesmo tempo
+        await Promise.all([
+          checkTemporaryPasswordForUser(session.user.id),
+          fetchProfile(session.user.id),
+        ]);
+        // Permissions depois (depende do user estar setado)
         setTimeout(async () => {
           if (isSubscribed) {
-            await fetchProfile(session.user.id);
             await initializeUserPermissions();
           }
         }, 0);

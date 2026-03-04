@@ -14,6 +14,7 @@ interface DocumentosStats {
 export const useDocumentosStats = () => {
   return useQuery({
     queryKey: ['documentos-stats'],
+    staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<DocumentosStats> => {
       const { data: documentos, error } = await supabase
         .from('documentos')
