@@ -59,7 +59,7 @@ export function addAkurisHeader(doc: jsPDF, logoBase64: string | null, y: number
   // Logo
   if (logoBase64) {
     try {
-      doc.addImage(logoBase64, 'PNG', 14, 4, 40, 20);
+      doc.addImage(logoBase64, 'PNG', 14, 8, 36, 12);
     } catch {
       // fallback: text
       doc.setFont('helvetica', 'bold');
@@ -134,7 +134,7 @@ export function addAkurisCover(doc: jsPDF, logoBase64: string | null, title: str
   // Logo
   if (logoBase64) {
     try {
-      doc.addImage(logoBase64, 'PNG', 30, 40, 60, 30);
+      doc.addImage(logoBase64, 'PNG', 30, 40, 60, 20);
     } catch {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(28);
