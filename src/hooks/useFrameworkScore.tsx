@@ -160,10 +160,11 @@ export function useFrameworkScore(frameworkId: string, config: FrameworkConfig, 
               const score = config.statusScores[status as keyof typeof config.statusScores] || 0;
               totalWeightedScore += score * weight;
               totalWeight += weight;
-              
-              if (status !== 'nao_avaliado') {
-                evaluated++;
-              }
+            }
+            
+            // N/A counts as evaluated (user made a decision)
+            if (status !== 'nao_avaliado') {
+              evaluated++;
             }
           });
 
@@ -181,11 +182,20 @@ export function useFrameworkScore(frameworkId: string, config: FrameworkConfig, 
           });
         });
 
-        // Calcular score geral (média dos pilares que têm requisitos)
-        const validPillars = calculatedPillarScores.filter(p => p.totalRequirements > 0);
-        const overall = validPillars.length > 0
-          ? validPillars.reduce((sum, p) => sum + p.score, 0) / validPillars.length
-          : 0;
+        // Calcular score geral flat (soma ponderada / total peso aplicável)
+        let totalFlatWeightedScore = 0;
+        let totalFlatWeight = 0;
+        (requirements || []).forEach((req: Requirement) => {
+          const evaluation = evalMap.get(req.id);
+          const status = evaluation?.conformity_status || 'nao_avaliado';
+          const weight = req.peso || 1;
+          if (status !== 'nao_aplicavel') {
+            const score = config.statusScores[status as keyof typeof config.statusScores] || 0;
+            totalFlatWeightedScore += score * weight;
+            totalFlatWeight += weight;
+          }
+        });
+        const overall = totalFlatWeight > 0 ? totalFlatWeightedScore / totalFlatWeight : 0;
 
         const totalEvaluated = calculatedPillarScores.reduce((sum, p) => sum + p.evaluatedRequirements, 0);
 
