@@ -54,13 +54,13 @@ function getScoreColor(score: number, maxScore: number): string {
 
 function statusLabel(status: string): string {
   const map: Record<string, string> = {
-    conforme: '✓ Conforme',
-    parcial: '◐ Parcial',
-    nao_conforme: '✗ Não Conforme',
-    nao_aplicavel: '− N/A',
-    nao_avaliado: '○ Não Avaliado',
+    conforme: 'Conforme',
+    parcial: 'Parcial',
+    nao_conforme: 'Nao Conforme',
+    nao_aplicavel: 'N/A',
+    nao_avaliado: 'Nao Avaliado',
   };
-  return map[status] || status;
+  return map[status] || formatLabel(status);
 }
 
 export async function exportFrameworkPDF(params: ExportFrameworkPDFParams) {
@@ -100,24 +100,7 @@ export async function exportFrameworkPDF(params: ExportFrameworkPDFParams) {
   doc.addPage();
   let yPos = addAkurisHeader(doc, logo);
 
-  // Info box
-  doc.setFillColor(AKURIS_COLORS.background);
-  doc.setDrawColor(AKURIS_COLORS.border);
-  doc.roundedRect(margin, yPos, contentWidth, 18, 2, 2, 'FD');
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(AKURIS_COLORS.textLight);
-  doc.text('Empresa:', margin + 4, yPos + 6);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(AKURIS_COLORS.text);
-  doc.text(empresaNome, margin + 26, yPos + 6);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(AKURIS_COLORS.textLight);
-  doc.text('Framework:', margin + 4, yPos + 13);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(AKURIS_COLORS.text);
-  doc.text(`${frameworkName} ${frameworkVersion} (${formattedType})`, margin + 30, yPos + 13);
-  yPos += 25;
+  // Info box removed — data already on cover page
 
   // === SCORE GERAL ===
   yPos = addSectionTitle(doc, 'Resultado Geral', yPos, margin);
@@ -165,7 +148,7 @@ export async function exportFrameworkPDF(params: ExportFrameworkPDFParams) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(AKURIS_COLORS.primary);
-    doc.text(`Nível de Maturidade: ${maturity.icon} Nível ${maturity.level} — ${maturity.name}`, margin + 4, yPos + 6);
+    doc.text(`Nivel de Maturidade: Nivel ${maturity.level} - ${maturity.name}`, margin + 4, yPos + 6);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(AKURIS_COLORS.textLight);
