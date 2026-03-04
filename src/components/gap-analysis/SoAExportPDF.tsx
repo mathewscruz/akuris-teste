@@ -1,0 +1,160 @@
+import jsPDF from 'jspdf';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { loadAkurisLogo, addAkurisCover, addAkurisHeader, addAkurisFooter, AKURIS_COLORS } from '@/lib/pdf-utils';
+
+interface SoAItem {
+  codigo: string;
+  titulo: string;
+  categoria: string;
+  aplicavel: boolean;
+  justificativa: string;
+  conformity_status: string;
+  responsavel: string | null;
+  evidencias_count: number;
+}
+
+interface SoAStats {
+  total: number;
+  aplicavel: number;
+  naoAplicavel: number;
+  conforme: number;
+  parcial: number;
+  naoConforme: number;
+  naoAvaliado: number;
+}
+
+interface ExportSoAPDFParams {
+  frameworkName: string;
+  frameworkVersion: string;
+  empresaNome: string;
+  items: SoAItem[];
+  stats: SoAStats;
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  conforme: 'Conforme',
+  parcial: 'Parcial',
+  nao_conforme: 'Nao Conforme',
+  nao_aplicavel: 'N/A',
+  nao_avaliado: 'Nao Avaliado',
+};
+
+export async function exportSoAPDF(params: ExportSoAPDFParams) {
+  const { frameworkName, frameworkVersion, empresaNome, items, stats } = params;
+  const doc = new jsPDF('landscape', 'mm', 'a4');
+  const logo = await loadAkurisLogo();
+  const margin = 14;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const contentWidth = pageWidth - margin * 2;
+
+  // Cover
+  addAkurisCover(
+    doc,
+    logo,
+    'Declaracao de Aplicabilidade (SoA)',
+    `${frameworkName} ${frameworkVersion}`,
+    { empresa: empresaNome, data: format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) }
+  );
+
+  // Summary page
+  doc.addPage('a4', 'landscape');
+  let yPos = addAkurisHeader(doc, logo);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(AKURIS_COLORS.text);
+  doc.text('Resumo da Declaracao de Aplicabilidade', margin, yPos + 8);
+  yPos += 16;
+
+  // Stats boxes
+  const boxWidth = contentWidth / 4;
+  const statItems = [
+    { label: 'Total de Requisitos', value: String(stats.total), color: AKURIS_COLORS.text },
+    { label: 'Aplicaveis', value: String(stats.aplicavel), color: AKURIS_COLORS.primary },
+    { label: 'Nao Aplicaveis', value: String(stats.naoAplicavel), color: AKURIS_COLORS.textLight },
+    { label: 'Conformes', value: String(stats.conforme), color: AKURIS_COLORS.success },
+  ];
+
+  statItems.forEach((stat, i) => {
+    const x = margin + i * boxWidth;
+    doc.setFillColor(AKURIS_COLORS.background);
+    doc.roundedRect(x, yPos, boxWidth - 4, 18, 2, 2, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(AKURIS_COLORS.textLight);
+    doc.text(stat.label, x + 4, yPos + 6);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(stat.color);
+    doc.text(stat.value, x + 4, yPos + 14);
+  });
+  yPos += 26;
+
+  // Table header
+  const colWidths = [22, 80, 22, 30, 35, 15, contentWidth - 204];
+  const headers = ['Codigo', 'Requisito', 'Aplic.', 'Status', 'Responsavel', 'Evid.', 'Justificativa'];
+
+  const drawHeader = (y: number) => {
+    doc.setFillColor(AKURIS_COLORS.primary);
+    doc.rect(margin, y, contentWidth, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor('#FFFFFF');
+    let xPos = margin + 2;
+    headers.forEach((h, i) => {
+      doc.text(h, xPos, y + 5.5);
+      xPos += colWidths[i];
+    });
+    return y + 10;
+  };
+
+  yPos = drawHeader(yPos);
+
+  // Table rows
+  items.forEach((item, idx) => {
+    if (yPos > doc.internal.pageSize.getHeight() - 20) {
+      doc.addPage('a4', 'landscape');
+      yPos = addAkurisHeader(doc, logo);
+      yPos = drawHeader(yPos);
+    }
+
+    const rowColor = idx % 2 === 0 ? '#FFFFFF' : AKURIS_COLORS.background;
+    doc.setFillColor(rowColor);
+    doc.rect(margin, yPos - 3, contentWidth, 7, 'F');
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(AKURIS_COLORS.text);
+
+    let xPos = margin + 2;
+    doc.text(item.codigo.substring(0, 12), xPos, yPos + 1);
+    xPos += colWidths[0];
+
+    const truncTitle = item.titulo.length > 50 ? item.titulo.substring(0, 47) + '...' : item.titulo;
+    doc.text(truncTitle, xPos, yPos + 1);
+    xPos += colWidths[1];
+
+    doc.text(item.aplicavel ? 'Sim' : 'Nao', xPos, yPos + 1);
+    xPos += colWidths[2];
+
+    doc.text(STATUS_LABELS[item.conformity_status] || item.conformity_status, xPos, yPos + 1);
+    xPos += colWidths[3];
+
+    doc.text((item.responsavel || '-').substring(0, 20), xPos, yPos + 1);
+    xPos += colWidths[4];
+
+    doc.text(String(item.evidencias_count), xPos, yPos + 1);
+    xPos += colWidths[5];
+
+    const truncJust = (item.justificativa || '-').substring(0, 40);
+    doc.text(truncJust, xPos, yPos + 1);
+
+    yPos += 7;
+  });
+
+  // Footer on all pages
+  addAkurisFooter(doc);
+
+  doc.save(`SoA_${frameworkName.replace(/[^a-zA-Z0-9]/g, '_')}_${format(new Date(), 'yyyyMMdd')}.pdf`);
+}
