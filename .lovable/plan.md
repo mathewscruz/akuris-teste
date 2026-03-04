@@ -1,22 +1,25 @@
 
 
-# Plano: Reorganizar layout do Score Dashboard
+# Plano: Corrigir Donut + Transformar IA em botão com popup
 
-## 3 Ajustes Solicitados
+## 1. Donut não preenche corretamente
 
-### Anexo 1 — Domínios na mesma linha
-Mudar grid dos domínios de `grid-cols-2 sm:grid-cols-3` para `grid-cols-2 sm:grid-cols-4` para que os 4 domínios (A.5, A.6, A.7, A.8) fiquem na mesma linha.
+O componente `ScoreDonut` usa cores CSS variáveis (`hsl(var(--chart-4))`) que podem ser muito próximas da cor de fundo (`hsl(var(--muted))`), resultando no anel preenchido sendo visualmente indistinguível. Vou trocar as cores para valores mais vibrantes e contrastantes (hex/hsl fixos) para garantir que o preenchimento seja sempre visível.
 
-### Anexo 2 — Score Donut à esquerda, badges/progresso à direita (vertical)
-Reorganizar o bloco do Score Geral para layout horizontal: Donut à esquerda, e à direita uma coluna vertical com Badge "Em Implementação", "Nível 3" e barra de progresso.
+## 2. Consultor IA → Botão com ícone + popup
 
-### Anexo 3 — Gráfico de Evolução ocupa toda a área
-Aumentar `height` do `ResponsiveContainer` de `200` para `300` e remover altura fixa do container vazio para que o chart preencha o card.
+Atualmente `AIRecommendationsCard` é um card inteiro renderizado abaixo do dashboard. Vou:
+
+- Remover o card `AIRecommendationsCard` da posição atual na página
+- Adicionar um botão com ícone `Sparkles` ao lado do botão "Exportar PDF" no `PageHeader`
+- Ao clicar, abrir um `Dialog` que executa a análise IA e mostra os resultados dentro do popup
+- A lógica de fetch da IA será movida para dentro do Dialog
 
 ## Arquivos
 
 | Arquivo | Mudança |
 |---------|---------|
-| `GenericScoreDashboard.tsx` | Layout horizontal no score (donut + info lado a lado); grid domínios `sm:grid-cols-4` |
-| `ScoreEvolutionChart.tsx` | Aumentar altura do chart para ~300px |
+| `GenericScoreDashboard.tsx` | Corrigir cores do `ScoreDonut` para cores mais vibrantes/contrastantes |
+| `GapAnalysisFrameworkDetail.tsx` | Remover `AIRecommendationsCard`, adicionar botão IA no header, criar Dialog com resultados |
+| `AIRecommendationsCard.tsx` | Refatorar para exportar um Dialog (`AIRecommendationsDialog`) em vez de Card |
 
