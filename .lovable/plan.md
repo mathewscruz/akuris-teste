@@ -1,35 +1,29 @@
 
 
-# Plano: Score Geral lado a lado com gráfico + Domínios/Seções abaixo com mais espaço
+# Plano: Agrupar Score + Domínios + Seções dentro do card esquerdo
 
 ## Mudança
 
-Voltar ao layout original onde Score Geral e Evolução do Score ficam lado a lado (grid 2 colunas). Mover Domínios e Seções para **fora** desse card, como cards independentes abaixo do grid, com mais espaçamento.
+Mover "Aderência por Domínio" e "Aderência por Seção" para **dentro** do card "Score Geral de Conformidade" (o card esquerdo do grid 2 colunas), separados por `Separator`. Remover os cards full-width avulsos abaixo.
 
 ```text
-┌──────────────────────────┐  ┌──────────────────────────┐
-│ Score Geral              │  │ Evolução do Score        │
-│ [Donut] Badges Progress  │  │ [Chart]                  │
-└──────────────────────────┘  └──────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│ ADERÊNCIA POR DOMÍNIO DO ANEXO A                        │
-│ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐    │
-│ │A.5 64.6% │ │A.6 63.2% │ │A.7 35.0% │ │A.8 45.6% │   │
-│ └──────────┘ └──────────┘ └──────────┘ └──────────┘    │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│ ADERÊNCIA POR SEÇÃO                                     │
-│ ┌────────────────────────┐ ┌────────────────────────┐   │
-│ │Req. SGSI  32.5%        │ │Controles  53.4%        │   │
-│ └────────────────────────┘ └────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────┐  ┌──────────────────────┐
+│ Score Geral de Conformidade      │  │ Evolução do Score    │
+│   [Donut] Badges Progress        │  │ [Chart]              │
+│ ──────────────────────────────── │  │                      │
+│ ADERÊNCIA POR DOMÍNIO DO ANEXO A │  │                      │
+│ ┌────┐┌────┐┌────┐┌────┐┌────┐  │  │                      │
+│ └────┘└────┘└────┘└────┘└────┘  │  │                      │
+│ ──────────────────────────────── │  │                      │
+│ ADERÊNCIA POR SEÇÃO              │  │                      │
+│ ┌──────────┐ ┌──────────┐       │  │                      │
+│ └──────────┘ └──────────┘       │  │                      │
+└──────────────────────────────────┘  └──────────────────────┘
 ```
 
 ## Arquivo
 
 | Arquivo | Mudança |
 |---------|---------|
-| `src/components/gap-analysis/GenericScoreDashboard.tsx` | Extrair domínios/seções do card de Score, colocá-los como cards full-width abaixo do grid. Aumentar gap entre seções (`gap-3`). |
+| `src/components/gap-analysis/GenericScoreDashboard.tsx` | Mover domínios e seções para dentro do CardContent do Score Geral, separados por Separator. Remover os cards independentes de domínio/seção. Reduzir donut para 100px para liberar espaço vertical. |
 
