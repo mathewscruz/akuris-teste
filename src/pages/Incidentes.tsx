@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { logger } from '@/lib/logger';
 import { useIncidentesStats } from '@/hooks/useIncidentesStats';
 import { Card, CardContent } from '@/components/ui/card';
@@ -45,6 +45,8 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { TratamentoDialog } from '@/components/incidentes/TratamentoDialog';
 import { ComunicacaoDialog } from '@/components/incidentes/ComunicacaoDialog';
 import { EvidenciaDialog } from '@/components/incidentes/EvidenciaDialog';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
 
 interface Incidente {
   id: string;
@@ -66,8 +68,6 @@ interface Incidente {
 }
 
 export default function Incidentes() {
-  const [incidentes, setIncidentes] = useState<Incidente[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIncidente, setSelectedIncidente] = useState<Incidente | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -84,35 +84,31 @@ export default function Incidentes() {
   const [sortField, setSortField] = useState<string>('data_deteccao');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { empresaId } = useEmpresaId();
   
   const { data: statsIncidentes } = useIncidentesStats();
 
-  const loadIncidentes = async () => {
-    try {
-      setLoading(true);
-      
-      const { data: incidentesData, error } = await supabase
+  // React Query for incidentes
+  const { data: incidentes = [], isLoading: loading } = useQuery({
+    queryKey: ['incidentes', empresaId],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from('incidentes')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      return (data || []) as Incidente[];
+    },
+    enabled: !!empresaId,
+    staleTime: 1000 * 60 * 2,
+  });
 
-      setIncidentes(incidentesData || []);
-    } catch (error: any) {
-      toast({
-        title: 'Erro',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
+  const invalidateIncidentes = () => {
+    queryClient.invalidateQueries({ queryKey: ['incidentes'] });
+    queryClient.invalidateQueries({ queryKey: ['incidentes-stats'] });
   };
-
-  useEffect(() => {
-    loadIncidentes();
-  }, []);
 
   // Aplicar filtros
   const filteredIncidentes = incidentes.filter(incidente => {
@@ -177,7 +173,7 @@ export default function Incidentes() {
         description: "Incidente excluído com sucesso!",
       });
 
-      loadIncidentes();
+      invalidateIncidentes();
       setDeleteConfirm({ open: false, incidenteId: '' });
     } catch (error: any) {
       logger.error('Erro ao excluir incidente', { error: error instanceof Error ? error.message : String(error) });
@@ -390,7 +386,7 @@ export default function Incidentes() {
         <IncidenteDialog 
           incidente={selectedIncidente} 
           onSuccess={() => {
-            loadIncidentes();
+            invalidateIncidentes();
             setEditDialogOpen(false);
             setSelectedIncidente(null);
           }}
@@ -424,7 +420,7 @@ export default function Incidentes() {
       {selectedIncidente && (
         <ComunicacaoDialog
           incidenteId={selectedIncidente.id}
-          onSuccess={loadIncidentes}
+          onSuccess={invalidateIncidentes}
           trigger={<span className="hidden" />}
           externalOpen={comunicacaoDialogOpen}
           onExternalOpenChange={(open) => {
@@ -438,7 +434,7 @@ export default function Incidentes() {
       {selectedIncidente && (
         <EvidenciaDialog
           incidenteId={selectedIncidente.id}
-          onSuccess={loadIncidentes}
+          onSuccess={invalidateIncidentes}
           trigger={<span className="hidden" />}
           externalOpen={evidenciaDialogOpen}
           onExternalOpenChange={(open) => {
