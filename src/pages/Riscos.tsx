@@ -23,6 +23,7 @@ import { useRiscosStats } from '@/hooks/useRiscosStats';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateOnly } from '@/lib/date-utils';
 import { differenceInDays } from 'date-fns';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { RiscoDialog } from '@/components/riscos/RiscoDialog';
 import { TratamentosDialog } from '@/components/riscos/TratamentosDialog';
@@ -79,8 +80,8 @@ export function Riscos() {
   const location = useLocation();
   const { data: stats, refetch: refetchStats } = useRiscosStats();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [riscos, setRiscos] = useState<Risco[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [nivelFilter, setNivelFilter] = useState<string>('');
@@ -93,7 +94,6 @@ export function Riscos() {
   const [tratamentosRisco, setTratamentosRisco] = useState<Risco | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [riscoToDelete, setRiscoToDelete] = useState<Risco | null>(null);
-  const [matrizConfig, setMatrizConfig] = useState<MatrizConfig | null>(null);
   const [categoriasDialogOpen, setCategoriasDialogOpen] = useState(false);
   
   // Novos estados para dialogs
@@ -101,12 +101,13 @@ export function Riscos() {
   const [historicoRisco, setHistoricoRisco] = useState<Risco | null>(null);
   const [aprovacaoRisco, setAprovacaoRisco] = useState<Risco | null>(null);
   
-  
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  const fetchRiscos = async () => {
-    try {
+  // React Query for riscos
+  const { data: riscos = [], isLoading: loading } = useQuery({
+    queryKey: ['riscos', profile?.empresa_id],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('riscos')
         .select(`
@@ -164,7 +165,7 @@ export function Riscos() {
             profiles?.map(p => [p.user_id, { nome: p.nome, foto_url: p.foto_url }]) || []
           );
           
-          const mappedData = normalizedData.map(risco => {
+          return normalizedData.map(risco => {
             const profileData = (risco.responsavel && risco.responsavel.trim() !== '') 
               ? profileMap.get(risco.responsavel) 
               : null;
@@ -174,27 +175,21 @@ export function Riscos() {
               responsavel_foto: profileData?.foto_url || null
             };
           });
-          
-          setRiscos(mappedData);
-        } else {
-          setRiscos(normalizedData);
         }
-      } else {
-        setRiscos(data || []);
+        
+        return normalizedData;
       }
-    } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar riscos: " + error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+      
+      return data || [];
+    },
+    enabled: !!profile?.empresa_id,
+    staleTime: 1000 * 60 * 2,
+  });
 
-  const fetchMatrizConfig = async () => {
-    try {
+  // React Query for matriz config
+  const { data: matrizConfig = null } = useQuery({
+    queryKey: ['riscos-matriz-config', profile?.empresa_id],
+    queryFn: async () => {
       const { data } = await supabase
         .from('riscos_matriz_configuracao')
         .select('niveis_risco')
@@ -202,29 +197,27 @@ export function Riscos() {
         .single();
 
       if (data) {
-        setMatrizConfig({
+        return {
           niveis_risco: data.niveis_risco as Array<{ min: number; max: number; nivel: string; cor?: string }>
-        });
+        } as MatrizConfig;
       }
-    } catch (error) {
-      logger.error('Erro ao carregar configuração da matriz', { error: error instanceof Error ? error.message : String(error) });
-    }
+      return null;
+    },
+    enabled: !!profile?.empresa_id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const invalidateRiscos = () => {
+    queryClient.invalidateQueries({ queryKey: ['riscos'] });
+    refetchStats();
   };
-
-
-  useEffect(() => {
-    if (profile) {
-      fetchRiscos();
-      fetchMatrizConfig();
-    }
-  }, [profile]);
 
   useEffect(() => {
     const itemId = location.state?.itemId;
     if (itemId && riscos.length > 0) {
       const risco = riscos.find(r => r.id === itemId);
       if (risco) {
-        setEditingRisco(risco);
+        setEditingRisco(risco as Risco);
         setRiscoDialogOpen(true);
         window.history.replaceState({}, document.title);
       }
@@ -288,7 +281,7 @@ export function Riscos() {
       });
       setDeleteDialogOpen(false);
       setRiscoToDelete(null);
-      fetchRiscos();
+      invalidateRiscos();
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -306,19 +299,18 @@ export function Riscos() {
   const handleDialogSuccess = () => {
     setRiscoDialogOpen(false);
     setEditingRisco(null);
-    fetchRiscos();
-    refetchStats();
+    invalidateRiscos();
   };
 
   const handleMatrizDialogSuccess = () => {
     setMatrizDialogOpen(false);
-    fetchRiscos();
-    fetchMatrizConfig();
+    invalidateRiscos();
+    queryClient.invalidateQueries({ queryKey: ['riscos-matriz-config'] });
   };
 
   const handleCategoriasDialogSuccess = () => {
     setCategoriasDialogOpen(false);
-    fetchRiscos();
+    invalidateRiscos();
   };
 
   const handleSort = (field: string) => {
@@ -384,7 +376,6 @@ export function Riscos() {
 
   // Mini sparkline SVG component
   const MiniSparkline = ({ trend, color }: { trend?: { direction: 'up' | 'down' | 'neutral' }; color: string }) => {
-    // Simple visual sparkline
     const upPath = "M0,14 L4,12 L8,10 L12,8 L16,11 L20,7 L24,5 L28,3";
     const downPath = "M0,3 L4,5 L8,7 L12,5 L16,8 L20,10 L24,12 L28,14";
     const flatPath = "M0,8 L4,9 L8,7 L12,8 L16,9 L20,7 L24,8 L28,8";
@@ -770,7 +761,7 @@ export function Riscos() {
           open={tratamentosDialogOpen}
           onOpenChange={setTratamentosDialogOpen}
           risco={tratamentosRisco}
-          onSuccess={fetchRiscos}
+          onSuccess={invalidateRiscos}
         />
 
         <MatrizDialog
@@ -817,7 +808,7 @@ export function Riscos() {
             open={!!aprovacaoRisco}
             onOpenChange={(open) => !open && setAprovacaoRisco(null)}
             risco={aprovacaoRisco}
-            onSuccess={() => { setAprovacaoRisco(null); fetchRiscos(); }}
+            onSuccess={() => { setAprovacaoRisco(null); invalidateRiscos(); }}
           />
         )}
 
