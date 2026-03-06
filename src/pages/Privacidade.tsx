@@ -758,7 +758,7 @@ export default function Privacidade() {
         </TabsContent>
 
         <TabsContent value="descobertas" className="space-y-4">
-          <DescoberDadosTab onRefresh={loadData} />
+          <DescoberDadosTab onRefresh={invalidatePrivacidade} />
         </TabsContent>
       </Tabs>
 
