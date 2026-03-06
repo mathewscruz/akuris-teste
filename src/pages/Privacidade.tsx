@@ -75,14 +75,12 @@ export default function Privacidade() {
     queryFn: async () => {
       if (!empresaId) return null;
       
-      const [dadosRes, mapeamentosRes, ropaRes, solicitacoesRes, ropaDadosRes, incidentesRes] = await Promise.all([
-        supabase.from('dados_pessoais').select('*').eq('empresa_id', empresaId).order('nome'),
-        supabase.from('dados_mapeamento').select('id, dados_pessoais_id').eq('empresa_id', empresaId),
-        supabase.from('ropa_registros').select('*').eq('empresa_id', empresaId).order('nome_tratamento'),
-        supabase.from('dados_solicitacoes_titular').select('*').eq('empresa_id', empresaId).order('data_solicitacao', { ascending: false }),
-        supabase.from('ropa_dados_vinculados').select('id, dados_pessoais_id'),
-        (supabase.from('incidentes').select('id') as any).eq('tipo', 'privacidade').eq('empresa_id', empresaId),
-      ]);
+      const dadosRes = await supabase.from('dados_pessoais').select('*').eq('empresa_id', empresaId).order('nome');
+      const mapeamentosRes = await supabase.from('dados_mapeamento').select('id, dados_pessoais_id').eq('empresa_id', empresaId);
+      const ropaRes = await supabase.from('ropa_registros').select('*').eq('empresa_id', empresaId).order('nome_tratamento');
+      const solicitacoesRes = await supabase.from('dados_solicitacoes_titular').select('*').eq('empresa_id', empresaId).order('data_solicitacao', { ascending: false });
+      const ropaDadosRes = await supabase.from('ropa_dados_vinculados').select('id, dados_pessoais_id');
+      const incidentesRes = await (supabase.from('incidentes').select('id') as any).eq('tipo', 'privacidade').eq('empresa_id', empresaId);
 
       const mapeamentosCounts: Record<string, number> = {};
       (mapeamentosRes.data || []).forEach((m: any) => {
