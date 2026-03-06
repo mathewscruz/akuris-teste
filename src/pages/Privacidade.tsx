@@ -794,7 +794,7 @@ export default function Privacidade() {
           setShowSolicitacaoDialog(false);
           setSelectedSolicitacao(null);
         }}
-        onSave={loadData}
+        onSave={invalidatePrivacidade}
         solicitacao={selectedSolicitacao}
       />
       
