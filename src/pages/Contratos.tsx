@@ -207,7 +207,7 @@ export default function Contratos() {
         description: `${deleteConfirm.type === 'contrato' ? 'Contrato' : 'Fornecedor'} excluído com sucesso`,
       });
 
-      fetchData();
+      invalidateData();
       setDeleteConfirm({ open: false, id: '', type: 'contrato' });
     } catch (error) {
       console.error('Erro ao excluir:', error);
