@@ -183,41 +183,6 @@ export default function Documentos() {
     }
   }, [searchParams, documentos, setSearchParams]);
 
-  const fetchDocumentos = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('documentos')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setDocumentos(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar documentos:', error);
-      toast({
-        title: "Erro ao carregar documentos",
-        description: "Tente novamente em alguns instantes.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCategorias = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('documentos_categorias')
-        .select('*')
-        .order('nome');
-
-      if (error) throw error;
-      setCategorias(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar categorias:', error);
-    }
-  };
-
   const aplicarFiltros = () => {
     let filtered = [...documentos];
 
