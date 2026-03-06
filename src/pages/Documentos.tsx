@@ -70,10 +70,10 @@ interface Categoria {
 export default function Documentos() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [documentos, setDocumentos] = useState<Documento[]>([]);
+  const { empresaId } = useEmpresaId();
+  const queryClient = useQueryClient();
   const [documentosFiltrados, setDocumentosFiltrados] = useState<Documento[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoria, setSelectedCategoria] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -106,10 +106,47 @@ export default function Documentos() {
   // Buscar estatísticas dos documentos
   const { data: statsDocumentos } = useDocumentosStats();
 
+  // React Query para documentos
+  const { data: documentos = [], isLoading: loading } = useQuery({
+    queryKey: ['documentos', empresaId],
+    queryFn: async () => {
+      if (!empresaId) return [];
+      const { data, error } = await supabase
+        .from('documentos')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []) as Documento[];
+    },
+    enabled: !!empresaId,
+  });
+
+  const invalidateDocumentos = () => {
+    queryClient.invalidateQueries({ queryKey: ['documentos'] });
+    queryClient.invalidateQueries({ queryKey: ['documentos-stats'] });
+  };
+
+  // Fetch categorias via React Query
+  const { data: categoriasData = [] } = useQuery({
+    queryKey: ['documentos-categorias', empresaId],
+    queryFn: async () => {
+      if (!empresaId) return [];
+      const { data, error } = await supabase
+        .from('documentos_categorias')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .order('nome');
+      if (error) throw error;
+      return (data || []) as Categoria[];
+    },
+    enabled: !!empresaId,
+  });
+
   useEffect(() => {
-    fetchDocumentos();
-    fetchCategorias();
-  }, []);
+    setCategorias(categoriasData);
+  }, [categoriasData]);
 
   useEffect(() => {
     aplicarFiltros();
