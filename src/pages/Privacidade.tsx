@@ -76,7 +76,7 @@ export default function Privacidade() {
       if (!empresaId) return null;
       
       const dadosRes = await supabase.from('dados_pessoais').select('*').eq('empresa_id', empresaId).order('nome');
-      const mapeamentosRes = await supabase.from('dados_mapeamento').select('id, dados_pessoais_id').eq('empresa_id', empresaId);
+      const mapeamentosRes = await (supabase.from('dados_mapeamento' as any).select('id, dados_pessoais_id') as any).eq('empresa_id', empresaId);
       const ropaRes = await supabase.from('ropa_registros').select('*').eq('empresa_id', empresaId).order('nome_tratamento');
       const solicitacoesRes = await supabase.from('dados_solicitacoes_titular').select('*').eq('empresa_id', empresaId).order('data_solicitacao', { ascending: false });
       const ropaDadosRes = await supabase.from('ropa_dados_vinculados').select('id, dados_pessoais_id');
