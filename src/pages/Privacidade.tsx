@@ -147,69 +147,6 @@ export default function Privacidade() {
     queryClient.invalidateQueries({ queryKey: ['privacidade'] });
   };
 
-  const loadData = async () => {
-    try {
-      // Query with aggregated counts for catalog
-      const dadosRes = await supabase.from('dados_pessoais').select('*').order('nome');
-      const mapeamentosRes = await supabase.from('dados_mapeamento').select('id, dados_pessoais_id');
-      const ropaRes = await supabase.from('ropa_registros').select('*').order('nome_tratamento');
-      const solicitacoesRes = await supabase.from('dados_solicitacoes_titular').select('*').order('data_solicitacao', { ascending: false });
-      const ropaDadosRes = await supabase.from('ropa_dados_vinculados').select('id, dados_pessoais_id');
-      const incidentesRes = await (supabase.from('incidentes').select('id') as any).eq('tipo', 'privacidade');
-
-      const incidentesAbertos = (incidentesRes.data || []).length;
-      setIncidentesPrivacidade(incidentesAbertos);
-
-      // Aggregate counts per dados_pessoais_id
-      const mapeamentosCounts: Record<string, number> = {};
-      (mapeamentosRes.data || []).forEach((m: any) => {
-        mapeamentosCounts[m.dados_pessoais_id] = (mapeamentosCounts[m.dados_pessoais_id] || 0) + 1;
-      });
-      
-      const ropasCounts: Record<string, number> = {};
-      (ropaDadosRes.data || []).forEach((r: any) => {
-        ropasCounts[r.dados_pessoais_id] = (ropasCounts[r.dados_pessoais_id] || 0) + 1;
-      });
-
-      // Enrich dados with counts
-      const dadosEnriquecidos = (dadosRes.data || []).map((dado: any) => ({
-        ...dado,
-        mapeamentos_count: mapeamentosCounts[dado.id] || 0,
-        ropas_count: ropasCounts[dado.id] || 0
-      }));
-
-      setDadosPessoais(dadosEnriquecidos);
-      setRopaRegistros(ropaRes.data || []);
-      setSolicitacoes(solicitacoesRes.data || []);
-
-      // Calcular estatísticas
-      const dados = dadosRes.data || [];
-      const sensiveis = dados.filter((d: any) => d.tipo_dados === 'sensivel' || d.sensibilidade === 'muito_sensivel').length;
-      const allSolicitacoes = solicitacoesRes.data || [];
-      const pendentes = allSolicitacoes.filter((s: any) => s.status === 'pendente').length;
-      
-      // Calcular solicitações fora do prazo LGPD (15 dias)
-      const hoje = new Date();
-      const foraPrazo = allSolicitacoes.filter((s: any) => {
-        if (s.status === 'atendida' || s.status === 'rejeitada') return false;
-        const prazo = s.prazo_resposta ? new Date(s.prazo_resposta) : null;
-        return prazo && prazo < hoje;
-      }).length;
-      setSolicitacoesForaPrazo(foraPrazo);
-
-      setStats({
-        totalDados: dados.length,
-        dadosSensiveis: sensiveis,
-        mapeamentos: (mapeamentosRes.data || []).length,
-        ropaAtivos: (ropaRes.data || []).filter((r: any) => r.status === 'ativo').length,
-        solicitacoesPendentes: pendentes
-      });
-    } catch (error) {
-      logger.error('Erro ao carregar dados de privacidade', { error: error instanceof Error ? error.message : String(error) });
-      toast({ title: "Erro ao carregar dados", variant: "destructive" });
-    }
-  };
-
   const getSensibilidadeBadge = (tipo: string, sensibilidade: string) => {
     const colorClass = getSensibilidadeColor(tipo, sensibilidade);
     const label = (tipo === 'sensivel' || sensibilidade === 'muito_sensivel') 
