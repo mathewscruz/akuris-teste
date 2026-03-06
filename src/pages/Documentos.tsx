@@ -828,7 +828,7 @@ export default function Documentos() {
         <CategoriasDialog
           open={categoriasDialog}
           onOpenChange={setCategoriasDialog}
-          onSuccess={fetchCategorias}
+          onSuccess={() => queryClient.invalidateQueries({ queryKey: ['documentos-categorias'] })}
         />
 
         {vinculacoesDialog.documento && (
