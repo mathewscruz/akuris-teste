@@ -883,7 +883,7 @@ export default function Documentos() {
         <UploadMultiplosDialog
           open={uploadMultiplos}
           onOpenChange={setUploadMultiplos}
-          onSuccess={fetchDocumentos}
+          onSuccess={invalidateDocumentos}
           categorias={categorias}
         />
 
