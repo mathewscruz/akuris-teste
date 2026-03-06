@@ -768,7 +768,7 @@ export default function Privacidade() {
           setShowDadosDialog(false);
           setSelectedDado(null);
         }}
-        onSave={loadData}
+        onSave={invalidatePrivacidade}
         dados={selectedDado}
       />
       <MapeamentoDialog
