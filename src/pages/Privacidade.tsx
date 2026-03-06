@@ -785,7 +785,7 @@ export default function Privacidade() {
           setShowRopaWizard(false);
           setPreSelectedDadoId(undefined);
         }}
-        onSave={loadData}
+        onSave={invalidatePrivacidade}
         preSelectedDadoId={preSelectedDadoId}
       />
       <SolicitacaoTitularDialog
