@@ -8,21 +8,6 @@
    ======================================== */
 
 /* Custom Animations */
-@keyframes grid-move {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(-50px); }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(5deg); }
-}
-
-@keyframes glow-pulse {
-  0%, 100% { opacity: 0.4; filter: blur(20px); }
-  50% { opacity: 0.8; filter: blur(30px); }
-}
-
 @keyframes fade-in-up {
   from {
     opacity: 0;
@@ -34,45 +19,26 @@
   }
 }
 
-@keyframes flow-particle {
-  0% {
-    transform: translateX(-100%) scale(0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-    transform: translateX(-80%) scale(1);
-  }
-  90% {
-    opacity: 1;
-    transform: translateX(80%) scale(1);
-  }
-  100% {
-    transform: translateX(100%) scale(0);
-    opacity: 0;
-  }
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
-@keyframes rotate-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.animate-scroll-left {
+  animation: scroll-left 30s linear infinite;
+}
+.animate-scroll-left:hover {
+  animation-play-state: paused;
 }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+.lp-fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
 }
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.8); opacity: 0.8; }
-  50% { transform: scale(1.2); opacity: 0.2; }
-  100% { transform: scale(0.8); opacity: 0.8; }
-}
-
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+.lp-fade-up.lp-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 @keyframes accent-bar-pulse {
