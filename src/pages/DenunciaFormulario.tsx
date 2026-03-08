@@ -94,7 +94,7 @@ export default function DenunciaFormulario() {
       }
 
       try {
-        console.log('🔍 [DEBUG] Carregando configuração para empresa slug:', empresaSlug);
+        logger.debug('Carregando configuração para empresa slug', { module: 'DenunciaFormulario', action: empresaSlug });
         
         // Normalizar slug (lowercase e trim)
         const normalizedSlug = empresaSlug.toLowerCase().trim();
