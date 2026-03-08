@@ -31,6 +31,7 @@ export function MapeamentoDialog({ isOpen, onClose, onSave, mapeamento }: Mapeam
   const [ativos, setAtivos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { empresaId } = useEmpresaId();
 
   useEffect(() => {
     if (isOpen) {
