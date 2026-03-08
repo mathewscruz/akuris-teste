@@ -360,13 +360,13 @@ const LandingPage = () => {
         </section>
 
         {/* ===== 3. MÓDULOS ===== */}
-        <section id="modulos" className="relative py-16 sm:py-20 lg:py-28 bg-[#0F1A2E]" aria-labelledby="modulos-title">
+        <section id="modulos" className="relative py-16 sm:py-20 lg:py-28 bg-[#F1F5F9]" aria-labelledby="modulos-title">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12 sm:mb-16 lp-fade-up">
-              <h2 id="modulos-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+              <h2 id="modulos-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-gray-900">
                 Tudo em uma <span className="text-[#7552FF]">única plataforma</span>
               </h2>
-              <p className="text-gray-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
+              <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
                 Módulos integrados para cobrir todo o ciclo de governança, riscos e conformidade da sua empresa
               </p>
             </div>
@@ -375,13 +375,13 @@ const LandingPage = () => {
               {modules.map((mod, index) => (
                 <article
                   key={index}
-                  className="group bg-[#111B2E] rounded-xl p-5 sm:p-6 border border-[#1E2D45] hover:border-[#2A3F5F] transition-all duration-200"
+                  className="group bg-white rounded-xl p-5 sm:p-6 border border-gray-200 shadow-sm hover:border-[#7552FF]/30 hover:shadow-md transition-all duration-200"
                 >
-                  <div className="inline-flex p-3 rounded-lg bg-[#0A1628] border border-[#1E2D45] mb-4">
+                  <div className="inline-flex p-3 rounded-lg bg-[#F8F6FF] border border-[#7552FF]/10 mb-4">
                     <mod.icon className="h-5 w-5 text-[#7552FF]" />
                   </div>
-                  <h3 className="text-base sm:text-lg font-semibold mb-2 text-white">{mod.title}</h3>
-                  <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">{mod.description}</p>
+                  <h3 className="text-base sm:text-lg font-semibold mb-2 text-gray-900">{mod.title}</h3>
+                  <p className="text-gray-500 text-xs sm:text-sm leading-relaxed">{mod.description}</p>
                   <button
                     onClick={() => setSelectedFeature(index)}
                     className="mt-4 flex items-center text-[#7552FF] text-xs sm:text-sm font-medium hover:text-[#8B6FFF] transition-colors"
