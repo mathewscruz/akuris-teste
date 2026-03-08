@@ -580,7 +580,7 @@ const LandingPage = () => {
                     </div>
                     <div>
                       <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-500 mb-2">Telefone <span className="text-gray-600">(opcional)</span></label>
-                      <Input id="contact-phone" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="(00) 00000-0000" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500" />
+                      <Input id="contact-phone" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="(00) 00000-0000" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-[#7552FF] focus:ring-[#7552FF]" />
                     </div>
                   </div>
 
