@@ -117,7 +117,7 @@ const Auth = () => {
           });
 
           if (mfaResponse.error) {
-            console.error('Erro ao enviar MFA, login direto:', mfaResponse.error);
+            logger.error('Erro ao enviar MFA, login direto', { module: 'Auth', error: String(mfaResponse.error) });
             mfaInProgressRef.current = false;
             setMfaPending(false);
             setMfaPassword('');
