@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { logger } from '@/lib/logger';
+import { exportCSV } from '@/lib/csv-utils';
 import { useIncidentesStats } from '@/hooks/useIncidentesStats';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
