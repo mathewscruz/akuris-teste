@@ -155,7 +155,7 @@ export default function DenunciaFormulario() {
           .order('nome');
 
         if (!categoriasError && categoriasData) {
-          console.log('✅ [SUCCESS] Categorias carregadas:', categoriasData.length);
+          logger.debug('Categorias carregadas', { module: 'DenunciaFormulario' });
           setCategorias(categoriasData);
         }
 
