@@ -11,6 +11,7 @@ import Ativos from '@/pages/Ativos';
 import AtivosLicencas from '@/pages/AtivosLicencas';
 import AtivosChaves from '@/pages/AtivosChaves';
 import { Riscos } from '@/pages/Riscos';
+import RiscosAceite from '@/pages/RiscosAceite';
 import GapAnalysis from '@/pages/GapAnalysis';
 import GapAnalysisFrameworks from '@/pages/GapAnalysisFrameworks';
 import GapAnalysisFrameworkDetail from '@/pages/GapAnalysisFrameworkDetail';
