@@ -52,7 +52,7 @@ export default function DenunciaExternaRedirect() {
         }
 
         if (empresa) {
-          console.log('Empresa encontrada:', empresa.nome, 'slug:', empresa.slug);
+          logger.debug('Empresa encontrada, redirecionando', { module: 'DenunciaExternaRedirect', action: empresa.slug });
           navigate(`/${empresa.slug}/denuncia`, { replace: true });
         } else {
           console.error('Empresa não encontrada para ID:', config.empresa_id);
