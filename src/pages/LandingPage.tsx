@@ -443,7 +443,7 @@ const LandingPage = () => {
               {howItWorks.map((item, index) => (
                 <div key={index} className="relative">
                   <div className="relative bg-[#111B2E] rounded-xl p-6 sm:p-8 border border-[#1E2D45] text-center">
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-[#7552FF] flex items-center justify-center text-white font-bold text-sm">
                       {item.step}
                     </div>
                     <div className="inline-flex p-4 rounded-lg bg-[#0A1628] border border-[#1E2D45] mb-6 mt-3">
