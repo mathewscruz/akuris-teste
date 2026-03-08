@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { formatStatus, getSensibilidadeColorSimple, getCriticidadeColor } from "@/lib/text-utils";
 
