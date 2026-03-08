@@ -131,7 +131,7 @@ export default function DenunciaFormulario() {
           .single();
 
         if (configError) {
-          console.error('❌ [ERROR] Erro ao buscar configurações:', configError);
+          logger.error('Erro ao buscar configurações', { module: 'DenunciaFormulario', error: String(configError) });
           setLoading(false);
           return;
         }
