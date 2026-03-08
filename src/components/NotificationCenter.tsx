@@ -292,6 +292,7 @@ const NotificationCenter: React.FC = () => {
         .from('ativos_chaves_criptograficas')
         .select('id, nome, data_proxima_rotacao, tipo_chave, ambiente')
         .eq('status', 'ativa')
+        .eq('empresa_id', userEmpresaId || '')
         .not('data_proxima_rotacao', 'is', null);
 
       (chaves || []).forEach(chave => {

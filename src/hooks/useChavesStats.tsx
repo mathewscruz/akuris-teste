@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInDays } from "date-fns";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface ChavesStats {
   total: number;
@@ -13,12 +14,15 @@ interface ChavesStats {
 }
 
 export const useChavesStats = () => {
+  const { empresaId } = useEmpresaId();
+
   return useQuery({
-    queryKey: ['chaves-stats'],
+    queryKey: ['chaves-stats', empresaId],
     queryFn: async (): Promise<ChavesStats> => {
       const { data: chaves, error } = await supabase
         .from('ativos_chaves_criptograficas')
-        .select('*');
+        .select('*')
+        .eq('empresa_id', empresaId!);
 
       if (error) throw error;
 
@@ -57,5 +61,6 @@ export const useChavesStats = () => {
         porAmbiente
       };
     },
+    enabled: !!empresaId,
   });
 };

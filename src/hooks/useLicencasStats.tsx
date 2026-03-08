@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInDays } from "date-fns";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface LicencasStats {
   total: number;
@@ -13,12 +14,15 @@ interface LicencasStats {
 }
 
 export const useLicencasStats = () => {
+  const { empresaId } = useEmpresaId();
+
   return useQuery({
-    queryKey: ['licencas-stats'],
+    queryKey: ['licencas-stats', empresaId],
     queryFn: async (): Promise<LicencasStats> => {
       const { data: licencas, error } = await supabase
         .from('ativos_licencas')
-        .select('*');
+        .select('*')
+        .eq('empresa_id', empresaId!);
 
       if (error) throw error;
 
@@ -61,5 +65,6 @@ export const useLicencasStats = () => {
         porCriticidade
       };
     },
+    enabled: !!empresaId,
   });
 };
