@@ -17,7 +17,7 @@ export default function DenunciaExternaRedirect() {
       }
 
       try {
-        console.log('Buscando empresa por token:', token);
+        logger.debug('Buscando empresa por token', { module: 'DenunciaExternaRedirect', action: token });
         
         // Primeiro buscar configuração para obter empresa_id
         const { data: config, error: configError } = await supabase
