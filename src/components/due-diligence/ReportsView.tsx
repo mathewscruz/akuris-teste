@@ -300,19 +300,19 @@ export function ReportsView() {
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 flex-wrap">
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button variant="outline" className="flex items-center gap-2" onClick={handleExportPDF}>
               <Download className="h-4 w-4" />
               Relatório Completo (PDF)
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button variant="outline" className="flex items-center gap-2" onClick={() => handleExportCSV('scores')}>
               <Download className="h-4 w-4" />
-              Scores por Fornecedor (Excel)
+              Scores por Fornecedor (CSV)
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button variant="outline" className="flex items-center gap-2" onClick={() => handleExportCSV('trends')}>
               <Download className="h-4 w-4" />
               Análise de Tendências (CSV)
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button variant="outline" className="flex items-center gap-2" onClick={handleExportPDF}>
               <Download className="h-4 w-4" />
               Dashboard Executivo (PDF)
             </Button>
