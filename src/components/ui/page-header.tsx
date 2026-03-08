@@ -63,10 +63,10 @@ export function PageHeader({
       )}
 
       {/* Main header content */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-2">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+        <div className="space-y-1 sm:space-y-2 min-w-0">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{title}</h1>
             {badge && (
               <Badge variant={badge.variant} className="text-xs">
                 {badge.label}
@@ -74,13 +74,13 @@ export function PageHeader({
             )}
           </div>
           {description && (
-            <p className="text-muted-foreground text-base max-w-2xl leading-relaxed">
+            <p className="text-muted-foreground text-sm sm:text-base max-w-2xl leading-relaxed">
               {description}
             </p>
           )}
         </div>
         {actions && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
             {actions}
           </div>
         )}

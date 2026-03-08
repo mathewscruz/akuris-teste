@@ -673,8 +673,8 @@ export function Riscos() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-between items-center gap-2">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
             {idsFilter.length > 0 && (
               <Badge variant="secondary" className="flex items-center gap-1 whitespace-nowrap">
                 Filtro da Matriz ({idsFilter.length})
@@ -684,12 +684,12 @@ export function Riscos() {
               </Badge>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <Download className="mr-2 h-4 w-4" />
-                  Exportar
+                  <Download className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Exportar</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -704,16 +704,16 @@ export function Riscos() {
               </DropdownMenuContent>
             </DropdownMenu>
             <Button variant="outline" size="sm" onClick={() => setCategoriasDialogOpen(true)} className="whitespace-nowrap">
-              <Tag className="mr-2 h-4 w-4" />
-              Categorias
+              <Tag className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Categorias</span>
             </Button>
             <Button variant="outline" size="sm" onClick={() => setMatrizDialogOpen(true)} className="whitespace-nowrap">
-              <Settings className="mr-2 h-4 w-4" />
-              Matriz
+              <Settings className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Matriz</span>
             </Button>
             <Button size="sm" onClick={openCreateDialog}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Risco
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Novo Risco</span>
             </Button>
           </div>
         </div>

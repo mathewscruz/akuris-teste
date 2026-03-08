@@ -122,25 +122,29 @@ export function KPIPills(props: KPIPillsProps) {
   ];
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-      {pills.map((pill) => (
-        <button
-          key={pill.label}
-          onClick={() => pill.onClick ? pill.onClick() : navigate(pill.route)}
-          className="group flex items-center gap-2 px-3 py-2 rounded-lg border bg-card hover:bg-accent/50 hover:border-primary/30 transition-all duration-200 cursor-pointer flex-shrink-0"
-        >
-          <div className={`p-1 rounded-md ${pill.bgColor} group-hover:scale-110 transition-transform`}>
-            <pill.icon className={`h-3.5 w-3.5 ${pill.color}`} />
-          </div>
-          <span className="text-sm font-bold text-foreground">{pill.value}</span>
-          <span className="text-[11px] text-muted-foreground">{pill.label}</span>
-          {pill.alertBadge && (
-            <Badge variant={pill.alertBadge.variant} className="text-[10px] px-1.5 py-0 h-4 hidden md:flex">
-              {pill.alertBadge.label}
-            </Badge>
-          )}
-        </button>
-      ))}
+    <div className="relative">
+      {/* Fade indicator for scroll */}
+      <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none sm:hidden" />
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide sm:scrollbar-thin">
+        {pills.map((pill) => (
+          <button
+            key={pill.label}
+            onClick={() => pill.onClick ? pill.onClick() : navigate(pill.route)}
+            className="group flex items-center gap-2 px-3 py-2 rounded-lg border bg-card hover:bg-accent/50 hover:border-primary/30 transition-all duration-200 cursor-pointer flex-shrink-0"
+          >
+            <div className={`p-1 rounded-md ${pill.bgColor} group-hover:scale-110 transition-transform`}>
+              <pill.icon className={`h-3.5 w-3.5 ${pill.color}`} />
+            </div>
+            <span className="text-sm font-bold text-foreground">{pill.value}</span>
+            <span className="text-[11px] text-muted-foreground whitespace-nowrap">{pill.label}</span>
+            {pill.alertBadge && (
+              <Badge variant={pill.alertBadge.variant} className="text-[10px] px-1.5 py-0 h-4 hidden md:flex">
+                {pill.alertBadge.label}
+              </Badge>
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

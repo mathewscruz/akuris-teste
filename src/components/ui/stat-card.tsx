@@ -127,7 +127,7 @@ export function StatCard({
       
       <CardContent className="pl-7">
         <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold tracking-tight text-foreground">
+          <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             {value}
           </span>
           {actions && <div className="ml-auto">{actions}</div>}
