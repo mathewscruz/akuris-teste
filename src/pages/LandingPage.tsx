@@ -416,7 +416,7 @@ const LandingPage = () => {
                   </div>
                   <Button
                     onClick={() => { setSelectedFeature(null); scrollToSection("contato"); }}
-                    className="w-full bg-blue-600 hover:bg-blue-500"
+                    className="w-full bg-[#7552FF] hover:bg-[#8B6FFF]"
                   >
                     Fale Conosco
                     <ArrowRight className="ml-2 h-4 w-4" />
