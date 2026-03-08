@@ -99,23 +99,29 @@ export function ReminderSettings() {
 
   const loadStats = async () => {
     try {
-      // Contar usuários convidados (com senha temporária)
+      const empresaId = settings.empresa_id;
+      if (!empresaId) return;
+
+      // Contar usuários convidados (com senha temporária) da empresa
       const { count: totalInvited } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
+        .eq('empresa_id', empresaId)
         .not('temporary_passwords', 'is', null)
 
-      // Contar lembretes pendentes (ativos)
+      // Contar lembretes pendentes (ativos) da empresa
       const { count: pendingReminders } = await supabase
         .from('user_invitation_reminders')
-        .select('*', { count: 'exact', head: true })
+        .select('*, profiles!inner(empresa_id)', { count: 'exact', head: true })
         .eq('status', 'active')
+        .eq('profiles.empresa_id', empresaId)
 
-      // Contar convites completados (usuários que fizeram login)
+      // Contar convites completados da empresa
       const { count: completedInvitations } = await supabase
         .from('user_invitation_reminders')
-        .select('*', { count: 'exact', head: true })
+        .select('*, profiles!inner(empresa_id)', { count: 'exact', head: true })
         .eq('status', 'completed')
+        .eq('profiles.empresa_id', empresaId)
 
       const effectiveness = totalInvited > 0 
         ? Math.round(((completedInvitations || 0) / totalInvited) * 100)
