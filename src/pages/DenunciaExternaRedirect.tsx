@@ -47,7 +47,7 @@ export default function DenunciaExternaRedirect() {
           .single();
 
         if (empresaError) {
-          console.error('Erro na consulta de empresa:', empresaError);
+          logger.error('Erro na consulta de empresa', { module: 'DenunciaExternaRedirect', error: String(empresaError) });
           throw empresaError;
         }
 
