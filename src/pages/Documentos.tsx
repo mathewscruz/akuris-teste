@@ -534,15 +534,14 @@ export default function Documentos() {
                 <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
                   <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
                     <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Categoria" />
+                      <SelectValue placeholder="Classificação" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Todas as categorias</SelectItem>
-                      {categorias.map((categoria) => (
-                        <SelectItem key={categoria.id} value={categoria.nome}>
-                          {categoria.nome}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="all">Todas as classificações</SelectItem>
+                      <SelectItem value="publica">Pública</SelectItem>
+                      <SelectItem value="interna">Interna</SelectItem>
+                      <SelectItem value="restrita">Restrita</SelectItem>
+                      <SelectItem value="confidencial">Confidencial</SelectItem>
                     </SelectContent>
                   </Select>
                   
