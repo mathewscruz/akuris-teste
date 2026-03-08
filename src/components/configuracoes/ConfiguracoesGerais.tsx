@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import { Upload, Building2, Bell, Mail, Save, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { EmailTestDialog } from './EmailTestDialog';
 
 interface Props {
