@@ -209,7 +209,7 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen bg-[#0A1628] text-white overflow-x-hidden">
       {/* Accessibility */}
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-blue-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-md">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-[#7552FF] focus:text-white focus:px-4 focus:py-2 focus:rounded-md">
         Pular para o conteúdo principal
       </a>
 
@@ -277,7 +277,7 @@ const LandingPage = () => {
           aria-labelledby="hero-title"
           style={{
             backgroundImage: `
-              radial-gradient(ellipse 60% 50% at 50% 40%, rgba(59,130,246,0.08) 0%, transparent 70%),
+              radial-gradient(ellipse 60% 50% at 50% 40%, rgba(117,82,255,0.08) 0%, transparent 70%),
               linear-gradient(rgba(30,45,69,0.3) 1px, transparent 1px),
               linear-gradient(90deg, rgba(30,45,69,0.3) 1px, transparent 1px)
             `,
@@ -290,9 +290,9 @@ const LandingPage = () => {
               <div className="text-center lg:text-left">
                 <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-bold leading-tight mb-6 lp-fade-up lp-visible">
                   Gestão de{" "}
-                  <span className="text-blue-400">Riscos</span>,{" "}
-                  <span className="text-blue-400">Compliance</span>{" "}
-                  e <span className="text-blue-400">Governança</span>
+                   <span className="text-[#7552FF]">Riscos</span>,{" "}
+                   <span className="text-[#7552FF]">Compliance</span>{" "}
+                   e <span className="text-[#7552FF]">Governança</span>
                 </h1>
 
                 <p className="text-lg sm:text-xl text-gray-300 max-w-xl mb-10 lp-fade-up lp-visible leading-relaxed mx-auto lg:mx-0">
@@ -304,7 +304,7 @@ const LandingPage = () => {
                   <Button
                     size="lg"
                     onClick={() => scrollToSection("contato")}
-                    className="bg-blue-600 hover:bg-blue-500 text-white text-base px-8 h-12 w-full sm:w-auto"
+                    className="bg-[#7552FF] hover:bg-[#8B6FFF] text-white text-base px-8 h-12 w-full sm:w-auto"
                   >
                     Solicitar Demonstração
                     <ArrowRight className="ml-2 h-5 w-5" />
@@ -360,11 +360,11 @@ const LandingPage = () => {
         </section>
 
         {/* ===== 3. MÓDULOS ===== */}
-        <section id="modulos" className="relative py-16 sm:py-20 lg:py-28" aria-labelledby="modulos-title">
+        <section id="modulos" className="relative py-16 sm:py-20 lg:py-28 bg-[#0F1A2E]" aria-labelledby="modulos-title">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12 sm:mb-16 lp-fade-up">
               <h2 id="modulos-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-                Tudo em uma <span className="text-blue-400">única plataforma</span>
+                Tudo em uma <span className="text-[#7552FF]">única plataforma</span>
               </h2>
               <p className="text-gray-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
                 Módulos integrados para cobrir todo o ciclo de governança, riscos e conformidade da sua empresa
@@ -378,13 +378,13 @@ const LandingPage = () => {
                   className="group bg-[#111B2E] rounded-xl p-5 sm:p-6 border border-[#1E2D45] hover:border-[#2A3F5F] transition-all duration-200"
                 >
                   <div className="inline-flex p-3 rounded-lg bg-[#0A1628] border border-[#1E2D45] mb-4">
-                    <mod.icon className="h-5 w-5 text-blue-400" />
+                    <mod.icon className="h-5 w-5 text-[#7552FF]" />
                   </div>
                   <h3 className="text-base sm:text-lg font-semibold mb-2 text-white">{mod.title}</h3>
                   <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">{mod.description}</p>
                   <button
                     onClick={() => setSelectedFeature(index)}
-                    className="mt-4 flex items-center text-blue-400 text-xs sm:text-sm font-medium hover:text-blue-300 transition-colors"
+                    className="mt-4 flex items-center text-[#7552FF] text-xs sm:text-sm font-medium hover:text-[#8B6FFF] transition-colors"
                   >
                     Saiba mais <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                   </button>
@@ -402,7 +402,7 @@ const LandingPage = () => {
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-3 text-xl">
                     <div className="w-10 h-10 rounded-lg bg-[#0A1628] border border-[#1E2D45] flex items-center justify-center">
-                      {(() => { const Icon = modules[selectedFeature].icon; return <Icon className="h-5 w-5 text-blue-400" />; })()}
+                      {(() => { const Icon = modules[selectedFeature].icon; return <Icon className="h-5 w-5 text-[#7552FF]" />; })()}
                     </div>
                     {modules[selectedFeature].title}
                   </DialogTitle>
@@ -416,7 +416,7 @@ const LandingPage = () => {
                   </div>
                   <Button
                     onClick={() => { setSelectedFeature(null); scrollToSection("contato"); }}
-                    className="w-full bg-blue-600 hover:bg-blue-500"
+                    className="w-full bg-[#7552FF] hover:bg-[#8B6FFF]"
                   >
                     Fale Conosco
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -432,7 +432,7 @@ const LandingPage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12 sm:mb-16 lp-fade-up">
               <h2 id="como-funciona-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-                Como o <span className="text-blue-400">Akuris</span> funciona
+                Como o <span className="text-[#7552FF]">Akuris</span> funciona
               </h2>
               <p className="text-gray-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
                 Em três passos simples, transforme sua gestão de governança e compliance
@@ -443,11 +443,11 @@ const LandingPage = () => {
               {howItWorks.map((item, index) => (
                 <div key={index} className="relative">
                   <div className="relative bg-[#111B2E] rounded-xl p-6 sm:p-8 border border-[#1E2D45] text-center">
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-[#7552FF] flex items-center justify-center text-white font-bold text-sm">
                       {item.step}
                     </div>
                     <div className="inline-flex p-4 rounded-lg bg-[#0A1628] border border-[#1E2D45] mb-6 mt-3">
-                      <item.icon className="h-7 w-7 sm:h-8 sm:w-8 text-blue-400" />
+                      <item.icon className="h-7 w-7 sm:h-8 sm:w-8 text-[#7552FF]" />
                     </div>
                     <h3 className="text-lg sm:text-xl font-semibold text-white mb-3">{item.title}</h3>
                     <p className="text-gray-400 text-sm leading-relaxed">{item.description}</p>
@@ -459,11 +459,11 @@ const LandingPage = () => {
         </section>
 
         {/* ===== 5. TESTIMONIALS ===== */}
-        <section className="relative py-16 sm:py-20 lg:py-28" aria-labelledby="testimonials-title">
+        <section className="relative py-16 sm:py-20 lg:py-28 bg-[#0F1A2E]" aria-labelledby="testimonials-title">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12 sm:mb-16 lp-fade-up">
               <h2 id="testimonials-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-                O que dizem nossos <span className="text-blue-400">clientes</span>
+                O que dizem nossos <span className="text-[#7552FF]">clientes</span>
               </h2>
               <p className="text-gray-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
                 Empresas de diversos segmentos confiam no Akuris para transformar sua governança
@@ -491,7 +491,7 @@ const LandingPage = () => {
         <section className="relative py-16 sm:py-20 lg:py-24 bg-[#0D1F37]" aria-labelledby="pricing-cta-title">
           <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center lp-fade-up">
             <h2 id="pricing-cta-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              Planos que cabem no seu <span className="text-blue-400">orçamento</span>
+              Planos que cabem no seu <span className="text-[#7552FF]">orçamento</span>
             </h2>
             <p className="text-lg sm:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
               Do plano gratuito ao enterprise. Escolha o melhor para o estágio da sua empresa.
@@ -500,7 +500,7 @@ const LandingPage = () => {
               <Link to="/planos">
                 <Button
                   size="lg"
-                  className="bg-blue-600 hover:bg-blue-500 text-white text-base px-10 h-12 w-full sm:w-auto"
+                  className="bg-[#7552FF] hover:bg-[#8B6FFF] text-white text-base px-10 h-12 w-full sm:w-auto"
                 >
                   Ver Planos e Preços
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -519,13 +519,13 @@ const LandingPage = () => {
         </section>
 
         {/* ===== 7. CONTATO ===== */}
-        <section id="contato" className="relative py-16 sm:py-20 lg:py-28" aria-labelledby="contato-title">
+        <section id="contato" className="relative py-16 sm:py-20 lg:py-28 bg-[#0F1A2E]" aria-labelledby="contato-title">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="flex flex-col lg:flex-row gap-10 lg:gap-16">
               <div className="w-full lg:flex-1 space-y-6 sm:space-y-8 lp-fade-up">
                 <h2 id="contato-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold">
                   Pronto para transformar sua{" "}
-                  <span className="text-blue-400">Governança</span>?
+                  <span className="text-[#7552FF]">Governança</span>?
                 </h2>
                 <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
                   Entre em contato com nossa equipe e descubra como o Akuris pode
@@ -540,7 +540,7 @@ const LandingPage = () => {
                   ].map((item, i) => (
                     <div key={i} className="flex items-center gap-4 text-gray-300">
                       <div className="w-10 h-10 rounded-lg bg-[#111B2E] border border-[#1E2D45] flex items-center justify-center shrink-0">
-                        <item.icon className="h-5 w-5 text-blue-400" />
+                        <item.icon className="h-5 w-5 text-[#7552FF]" />
                       </div>
                       <span className="text-sm sm:text-base">{item.text}</span>
                     </div>
@@ -565,31 +565,31 @@ const LandingPage = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="contact-name" className="block text-sm font-medium text-gray-300 mb-2">Nome *</label>
-                      <Input id="contact-name" name="name" value={formData.name} onChange={handleInputChange} required placeholder="Seu nome" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500" />
+                      <Input id="contact-name" name="name" value={formData.name} onChange={handleInputChange} required placeholder="Seu nome" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-[#7552FF] focus:ring-[#7552FF]" />
                     </div>
                     <div>
                       <label htmlFor="contact-email" className="block text-sm font-medium text-gray-300 mb-2">Email *</label>
-                      <Input id="contact-email" name="email" type="email" value={formData.email} onChange={handleInputChange} required placeholder="seu@email.com" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500" />
+                      <Input id="contact-email" name="email" type="email" value={formData.email} onChange={handleInputChange} required placeholder="seu@email.com" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-[#7552FF] focus:ring-[#7552FF]" />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="contact-company" className="block text-sm font-medium text-gray-500 mb-2">Empresa <span className="text-gray-600">(opcional)</span></label>
-                      <Input id="contact-company" name="company" value={formData.company} onChange={handleInputChange} placeholder="Nome da empresa" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500" />
+                      <Input id="contact-company" name="company" value={formData.company} onChange={handleInputChange} placeholder="Nome da empresa" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-[#7552FF] focus:ring-[#7552FF]" />
                     </div>
                     <div>
                       <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-500 mb-2">Telefone <span className="text-gray-600">(opcional)</span></label>
-                      <Input id="contact-phone" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="(00) 00000-0000" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500" />
+                      <Input id="contact-phone" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="(00) 00000-0000" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-[#7552FF] focus:ring-[#7552FF]" />
                     </div>
                   </div>
 
                   <div>
                     <label htmlFor="contact-message" className="block text-sm font-medium text-gray-300 mb-2">Mensagem *</label>
-                    <Textarea id="contact-message" name="message" value={formData.message} onChange={handleInputChange} required placeholder="Como podemos ajudar sua empresa?" rows={4} className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500 resize-none" />
+                    <Textarea id="contact-message" name="message" value={formData.message} onChange={handleInputChange} required placeholder="Como podemos ajudar sua empresa?" rows={4} className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-[#7552FF] focus:ring-[#7552FF] resize-none" />
                   </div>
 
-                  <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-500 text-white">
+                  <Button type="submit" disabled={isSubmitting} className="w-full bg-[#7552FF] hover:bg-[#8B6FFF] text-white">
                     {isSubmitting ? "Enviando..." : "Enviar Mensagem"}
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
