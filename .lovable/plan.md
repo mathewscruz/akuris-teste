@@ -1,80 +1,108 @@
 
 
-# Varredura Geral — Oportunidades de Melhoria de UX
+# Reestruturação UX — Módulo Configurações
 
-Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
+## Diagnóstico (visão de P.O.)
 
----
+O módulo tem até **9 abas** para super_admin. A organização atual é funcional, mas apresenta problemas de arquitetura de informação que geram confusão e cliques desnecessários:
 
-## 1. ErrorBoundary ausente na maioria das paginas
+```text
+ESTADO ATUAL (até 9 abas):
+┌─────────┬──────────┬───────────┬────────────┬──────────┐
+│Empresas │Usuários  │Permissões │Integrações │Denúncia  │
+├─────────┼──────────┼───────────┼────────────┼──────────┤
+│Créd. IA │Assinatura│Organização│  Geral     │          │
+└─────────┴──────────┴───────────┴────────────┴──────────┘
+```
 
-**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
+**Problemas identificados:**
 
-**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
+1. **"Geral" é um saco de gatos** — Mistura logo da empresa (identidade), preferências pessoais de notificação, teste de email e lembretes de convite. São 4 assuntos sem relação entre si.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
+2. **"Organização" vs "Geral" — naming confuso** — Ambos parecem "configurações da empresa". O usuário não sabe onde clicar para encontrar o logo ou o setor de atuação.
 
----
+3. **Logo da empresa separado do contexto da empresa** — Logo está em "Geral", setor/porte/objetivo está em "Organização". São ambos dados da empresa e deveriam estar juntos.
 
-## 2. Feedback de "carregando" inconsistente entre modulos
+4. **Lembretes de convite dentro de "Geral"** — É uma funcionalidade de gestão de usuários (convites pendentes). Deveria estar acessível a partir do contexto de Usuários.
 
-**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
+5. **Usuários e Permissões separados** — São dois lados da mesma moeda (quem acessa e o que pode fazer). A separação força o admin a alternar entre abas constantemente.
 
-**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
+6. **Assinatura e Créditos IA separados** — Para super_admin, são dois aspectos financeiros/de plano. Poderiam coexistir.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
-
----
-
-## 3. Paginas sem EmptyState padronizado
-
-**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
-
-**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+7. **Ordem das abas não segue prioridade de uso** — "Organização" (configuração feita 1x) está ao lado de "Assinatura" (consultada raramente), enquanto "Geral" (usada frequentemente) está no final.
 
 ---
 
-## 4. Ausencia de atalhos de teclado documentados para o usuario
+## Proposta de reestruturação
 
-**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+```text
+ESTADO PROPOSTO (6 abas, agrupamento lógico):
+┌─────────┬──────────────────┬────────────┬──────────┬─────────────┬──────────────┐
+│Empresas*│Usuários & Acessos│Organização │Integrações│Denúncia    │Assinatura    │
+└─────────┴──────────────────┴────────────┴──────────┴─────────────┴──────────────┘
+                                                         * super_admin only
+```
 
-**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+### Mudanças concretas:
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+**1. Fundir "Usuários" + "Permissões" + "Lembretes" → "Usuários & Acessos"**
+- Conteúdo: UserManagement, PermissionMatrix, ReminderSettings
+- Layout: sub-tabs internas (Usuários | Perfis de Permissão | Lembretes)
+- Motivo: tudo relacionado a "quem acessa e com que permissões"
+
+**2. Fundir "Organização" + "Identidade Visual" + "Email" → "Organização"**
+- Conteúdo: CompanyContextSettings (setor, porte, objetivo), Logo upload, Teste de email
+- Motivo: tudo sobre "quem somos e como nos apresentamos"
+
+**3. Fundir "Assinatura" + "Créditos IA" → "Assinatura"**
+- Conteúdo: AssinaturaTab + CreditosIAManager (apenas para super_admin, como seção adicional)
+- Motivo: ambos são sobre o plano/billing da empresa
+
+**4. Eliminar aba "Geral"**
+- Notificações pessoais (localStorage) → movidas para o **UserProfilePopover** (menu do usuário no header), onde faz mais sentido como preferência pessoal
+- Logo → movido para "Organização"
+- Teste de email → movido para "Organização"
+- Lembretes → movido para "Usuários & Acessos"
+
+**5. Manter "Integrações" e "Denúncia" como estão** — escopo correto.
 
 ---
 
-## 5. Botao de "Voltar" no header nao tem tooltip
+## Impacto nos arquivos
 
-**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+### `src/pages/Configuracoes.tsx`
+- Reduzir de 9 para 6 abas
+- Aba "Usuários & Acessos": renderizar sub-tabs internas com GerenciamentoUsuariosEnhanced, PermissionMatrix e ReminderSettings
+- Aba "Organização": renderizar CompanyContextSettings + seção de Identidade Visual (logo) + seção de Teste de Email
+- Aba "Assinatura": renderizar AssinaturaTab + CreditosIAManager (condicional super_admin)
+- Remover abas "Permissões", "Créditos IA", "Geral"
 
-**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+### `src/components/configuracoes/ConfiguracoesGerais.tsx`
+- Extrair a seção de Logo para um componente reutilizável `CompanyLogoUpload.tsx`
+- Extrair a seção de Teste de Email para ficar junto com "Organização"
+- Mover preferências de notificação para `UserProfilePopover.tsx`
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
+### `src/components/UserProfilePopover.tsx`
+- Adicionar seção simples de "Preferências de Notificação" (os 2 switches + digest frequency) — é configuração pessoal, não da empresa
+
+### Novos componentes:
+- `src/components/configuracoes/CompanyLogoUpload.tsx` — extraído de ConfiguracoesGerais
+- `src/components/configuracoes/UsersAccessTab.tsx` — wrapper com sub-tabs (Usuários | Permissões | Lembretes)
+- `src/components/configuracoes/OrganizacaoTab.tsx` — wrapper que agrupa CompanyContextSettings + CompanyLogoUpload + EmailTest
+
+### Arquivos que deixam de existir:
+- `src/components/configuracoes/ConfiguracoesGerais.tsx` — conteúdo redistribuído
 
 ---
 
-## Resumo de Prioridade
+## Resultado esperado
 
-| # | Melhoria | Impacto | Esforco |
-|---|----------|---------|---------|
-| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
-| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
-| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
-| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
-| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
-
-Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
+| Antes | Depois | Benefício |
+|-------|--------|-----------|
+| 9 abas (super_admin) | 6 abas | Menos carga cognitiva |
+| Logo em "Geral", contexto em "Organização" | Tudo em "Organização" | Agrupamento lógico |
+| Permissões separada de Usuários | Sub-tab dentro de "Usuários & Acessos" | Fluxo contínuo |
+| Notificação pessoal em "Geral" | No popover do perfil | Localização intuitiva |
+| "Geral" como catch-all | Eliminada | Sem ambiguidade |
+| Créditos IA separado de Assinatura | Seção dentro de Assinatura | Billing centralizado |
 
