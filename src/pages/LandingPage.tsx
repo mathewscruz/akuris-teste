@@ -277,7 +277,7 @@ const LandingPage = () => {
           aria-labelledby="hero-title"
           style={{
             backgroundImage: `
-              radial-gradient(ellipse 60% 50% at 50% 40%, rgba(59,130,246,0.08) 0%, transparent 70%),
+              radial-gradient(ellipse 60% 50% at 50% 40%, rgba(117,82,255,0.08) 0%, transparent 70%),
               linear-gradient(rgba(30,45,69,0.3) 1px, transparent 1px),
               linear-gradient(90deg, rgba(30,45,69,0.3) 1px, transparent 1px)
             `,
