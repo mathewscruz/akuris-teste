@@ -1,0 +1,33 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useEmpresaId } from './useEmpresaId';
+
+export function useContinuidadeStats() {
+  const { empresaId } = useEmpresaId();
+
+  return useQuery({
+    queryKey: ['continuidade-stats', empresaId],
+    queryFn: async () => {
+      if (!empresaId) return { total: 0, ativos: 0, emRevisao: 0, testesRealizados: 0, tarefasPendentes: 0 };
+
+      const [planosRes, testesRes, tarefasRes] = await Promise.all([
+        supabase.from('continuidade_planos').select('id, status').eq('empresa_id', empresaId),
+        supabase.from('continuidade_testes').select('id').eq('empresa_id', empresaId),
+        supabase.from('continuidade_tarefas').select('id, status').eq('empresa_id', empresaId),
+      ]);
+
+      const planos = planosRes.data || [];
+      const testes = testesRes.data || [];
+      const tarefas = tarefasRes.data || [];
+
+      return {
+        total: planos.length,
+        ativos: planos.filter(p => p.status === 'ativo').length,
+        emRevisao: planos.filter(p => p.status === 'em_revisao').length,
+        testesRealizados: testes.length,
+        tarefasPendentes: tarefas.filter(t => t.status === 'pendente').length,
+      };
+    },
+    enabled: !!empresaId,
+  });
+}

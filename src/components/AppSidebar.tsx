@@ -25,7 +25,8 @@ import {
   KeyRound,
   ListTodo,
   FileBarChart,
-  GraduationCap
+  GraduationCap,
+  ShieldAlert
 } from 'lucide-react';
 import logoMini from '@/assets/akuris-logo.png';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -127,6 +128,12 @@ const getMenuItems = (t: (key: string) => string) => [
       { title: t('sidebar.whistleblowing'), url: '/denuncia', icon: MessageSquare, moduleName: 'denuncia' },
       { title: t('sidebar.policies'), url: '/politicas', icon: GraduationCap, moduleName: 'politicas' },
     ],
+  },
+  {
+    title: t('sidebar.businessContinuity'),
+    url: '/continuidade',
+    icon: ShieldAlert,
+    moduleName: 'continuidade',
   },
   {
     title: t('sidebar.reports'),
