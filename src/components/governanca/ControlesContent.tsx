@@ -526,57 +526,37 @@ export default function ControlesContent() {
       label: 'Ações',
       sortable: false,
       render: (value: any, controle: Controle) => (
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEdit(controle)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedControleForTests(controle);
-                    setTestesDialogOpen(true);
-                  }}
-                >
-                  <TestTube className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Gerenciar Testes</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedControleForVinculacao(controle);
-                    setVinculacaoDialogOpen(true);
-                  }}
-                >
-                  <Link className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Gerenciar Vinculações</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDelete(controle.id)}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleEdit(controle)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              setSelectedControleForTests(controle);
+              setTestesDialogOpen(true);
+            }}>
+              <TestTube className="h-4 w-4 mr-2" />
+              Gerenciar Testes
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              setSelectedControleForVinculacao(controle);
+              setVinculacaoDialogOpen(true);
+            }}>
+              <Link className="h-4 w-4 mr-2" />
+              Gerenciar Vinculações
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleDelete(controle.id)} className="text-destructive focus:text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )
     }
   ];
