@@ -28,7 +28,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function RevisaoAcessos() {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const { data: stats, loading: statsLoading } = useReviewStats();
   const { deleteReview } = useReviewData();
   const { toast } = useToast();
