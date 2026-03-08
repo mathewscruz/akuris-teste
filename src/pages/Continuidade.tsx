@@ -171,7 +171,7 @@ export default function Continuidade() {
           action={{ label: 'Criar Plano', onClick: () => setPlanoDialog({ open: true }) }}
         />
       ) : (
-        <DataTable data={planos} columns={columns} searchable searchField="nome" />
+        <DataTable data={planos} columns={columns} searchable />
       )}
 
       {/* Dialogs */}
