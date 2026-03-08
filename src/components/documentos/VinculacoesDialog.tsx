@@ -205,6 +205,10 @@ export function VinculacoesDialog({ open, onOpenChange, documento, empresaId }: 
           return;
       }
 
+      if (empresaId) {
+        query = query.eq('empresa_id', empresaId);
+      }
+
       const { data, error } = await query.order('nome');
       if (error) throw error;
 
