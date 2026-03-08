@@ -222,7 +222,8 @@ async function fetchExecutivoData(empresaId: string) {
 }
 
 async function fetchComplianceData(empresaId: string) {
-  const { data: frameworks } = await (supabase.from('gap_analysis_frameworks').select('id, nome, versao, tipo_framework').eq('ativo', true) as any);
+  const fwResult = await (supabase as any).from('gap_analysis_frameworks').select('id, nome, versao, tipo_framework').eq('ativo', true);
+  const frameworks = fwResult?.data || [];
   const { data: controles } = await supabase.from('controles').select('*').eq('empresa_id', empresaId);
   const { data: politicas } = await supabase.from('politicas').select('*').eq('empresa_id', empresaId);
   const { data: auditorias } = await supabase.from('auditorias').select('*').eq('empresa_id', empresaId);
