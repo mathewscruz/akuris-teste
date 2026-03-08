@@ -570,6 +570,7 @@ export function Riscos() {
         { value: 'all', label: 'Todos' },
         { value: 'identificado', label: 'Identificado' },
         { value: 'analisado', label: 'Analisado' },
+        { value: 'em_tratamento', label: 'Em Tratamento' },
         { value: 'tratado', label: 'Tratado' },
         { value: 'monitorado', label: 'Monitorado' },
         { value: 'aceito', label: 'Aceito' }
