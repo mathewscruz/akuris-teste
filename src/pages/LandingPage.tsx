@@ -496,15 +496,14 @@ const LandingPage = () => {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link to="/registro">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-[#2A3F5F] bg-transparent text-gray-200 hover:bg-[#111B2E] hover:text-white text-base px-10 h-12 w-full sm:w-auto"
-                >
-                  Começar Grátis
-                </Button>
-              </Link>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => scrollToSection("contato")}
+                className="border-[#2A3F5F] bg-transparent text-gray-200 hover:bg-[#111B2E] hover:text-white text-base px-10 h-12 w-full sm:w-auto"
+              >
+                Fale Conosco
+              </Button>
             </div>
           </div>
         </section>
