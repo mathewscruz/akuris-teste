@@ -406,51 +406,37 @@ export function FornecedoresManager() {
                         </div>
                         
                         <div className="flex items-center gap-2 ml-4">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button size="sm" variant="outline" onClick={() => {
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
                                 const event = new CustomEvent('navigateToDueDiligence', {
                                   detail: { tab: 'assessments', filter: { fornecedorId: fornecedor.id, fornecedorNome: fornecedor.nome } }
                                 });
                                 window.dispatchEvent(event);
                               }}>
-                                <Eye className="w-4 h-4 mr-1" />Ver Avaliações
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Ver avaliações deste fornecedor</TooltipContent>
-                          </Tooltip>
-                          
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button size="sm" onClick={() => {
+                                <Eye className="h-4 w-4 mr-2" />Ver Avaliações
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
                                 const event = new CustomEvent('createAssessment', {
                                   detail: { fornecedorId: fornecedor.id, fornecedorNome: fornecedor.nome }
                                 });
                                 window.dispatchEvent(event);
                               }}>
-                                <Plus className="w-4 h-4 mr-1" />Nova Avaliação
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Criar nova avaliação</TooltipContent>
-                          </Tooltip>
-                          
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="sm" onClick={() => handleEdit(fornecedor)}>
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Editar</TooltipContent>
-                          </Tooltip>
-                          
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, fornecedor })}>
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Remover</TooltipContent>
-                          </Tooltip>
+                                <Plus className="h-4 w-4 mr-2" />Nova Avaliação
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEdit(fornecedor)}>
+                                <Edit2 className="h-4 w-4 mr-2" />Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive" onClick={() => setDeleteDialog({ open: true, fornecedor })}>
+                                <Trash2 className="h-4 w-4 mr-2" />Remover
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
                     </CardContent>
