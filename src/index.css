@@ -433,6 +433,19 @@ input:-webkit-autofill:focus {
       radial-gradient(ellipse at 50% 100%, hsl(230, 60%, 22%, 0.4) 0%, transparent 60%),
       linear-gradient(180deg, hsl(230, 25%, 5%) 0%, hsl(228, 20%, 7%) 100%);
   }
+  /* Scrollbar hide utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Safe area for mobile devices */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

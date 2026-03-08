@@ -277,13 +277,13 @@ export function DataTable<T extends Record<string, any>>({
 
       {/* Pagination */}
       {paginated && totalPages > 1 && (
-        <div className="flex items-center justify-between p-4 border-t">
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              Mostrando {((currentPage - 1) * pageSize) + 1} a {Math.min(currentPage * pageSize, data.length)} de {data.length}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-t">
+          <div className="flex items-center gap-3">
+            <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+              {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, data.length)} de {data.length}
             </span>
             <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
-              <SelectTrigger className="w-[80px] h-8">
+              <SelectTrigger className="w-[70px] h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
