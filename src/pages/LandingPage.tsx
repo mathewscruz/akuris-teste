@@ -384,7 +384,7 @@ const LandingPage = () => {
                   <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">{mod.description}</p>
                   <button
                     onClick={() => setSelectedFeature(index)}
-                    className="mt-4 flex items-center text-blue-400 text-xs sm:text-sm font-medium hover:text-blue-300 transition-colors"
+                    className="mt-4 flex items-center text-[#7552FF] text-xs sm:text-sm font-medium hover:text-[#8B6FFF] transition-colors"
                   >
                     Saiba mais <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                   </button>
