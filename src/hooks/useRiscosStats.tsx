@@ -26,7 +26,8 @@ export interface RiscosStats {
 
 // Função auxiliar para normalizar comparação de nível
 const normalizeNivel = (nivel: string | null | undefined): string => {
-  return (nivel || '').toLowerCase().trim();
+  return (nivel || '').toLowerCase().trim()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 };
 
 // Função para calcular score de risco (quanto menor, melhor)
