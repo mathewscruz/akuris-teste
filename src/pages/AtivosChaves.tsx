@@ -105,6 +105,7 @@ export default function AtivosChaves() {
       
       return (data || []) as ChaveCriptografica[];
     },
+    enabled: !!empresaId,
   });
 
   const handleNew = () => {
