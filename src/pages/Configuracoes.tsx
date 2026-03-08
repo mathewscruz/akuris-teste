@@ -158,6 +158,11 @@ const Configuracoes = () => {
             )}
           </div>
         </TabsContent>
+        {isSuperAdmin && (
+          <TabsContent value="financeiro-ia">
+            <FinanceiroIATab />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
