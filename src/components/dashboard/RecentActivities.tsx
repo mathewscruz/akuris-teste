@@ -133,7 +133,7 @@ export function RecentActivities({ className }: { className?: string }) {
           id: `risco-${risco.id}`,
           type: 'creation',
           title: risco.nome,
-          description: 'Novo risco identificado',
+          description: t('activities.newRisk'),
           created_at: risco.created_at,
           module: 'riscos',
           icon: getIcon('riscos'),
