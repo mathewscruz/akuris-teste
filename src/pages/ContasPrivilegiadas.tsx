@@ -54,6 +54,7 @@ export default function ContasPrivilegiadas() {
   }>({ open: false, id: '', nome: '' });
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useEmpresaId();
 
   // Buscar contas privilegiadas
   const { data: contas = [], isLoading } = useQuery({
