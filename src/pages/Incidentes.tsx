@@ -395,14 +395,28 @@ export default function Incidentes() {
       {/* Botão de ação */}
       <div className="flex justify-end">
         <IncidenteDialog 
-          incidente={selectedIncidente} 
+          onSuccess={() => {
+            invalidateIncidentes();
+          }}
+        />
+      </div>
+
+      {/* Dialog de Edição - controlado pelo dropdown */}
+      {selectedIncidente && editDialogOpen && (
+        <IncidenteDialog
+          incidente={selectedIncidente}
+          externalOpen={editDialogOpen}
+          onExternalOpenChange={(open) => {
+            setEditDialogOpen(open);
+            if (!open) setSelectedIncidente(null);
+          }}
           onSuccess={() => {
             invalidateIncidentes();
             setEditDialogOpen(false);
             setSelectedIncidente(null);
           }}
         />
-      </div>
+      )}
 
       {/* Lista de Incidentes com DataTable */}
       <Card className="rounded-lg border overflow-hidden">
