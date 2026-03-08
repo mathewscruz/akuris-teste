@@ -48,9 +48,10 @@ interface AprovacaoDialogProps {
   onOpenChange: (open: boolean) => void;
   documento: Documento;
   onSuccess: () => void;
+  empresaId?: string | null;
 }
 
-export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: AprovacaoDialogProps) {
+export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empresaId }: AprovacaoDialogProps) {
   const [aprovacoes, setAprovacoes] = useState<Aprovacao[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -253,11 +254,16 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
 
   const fetchProfiles = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('profiles')
         .select('user_id, nome, email, role')
-        .in('role', ['admin', 'super_admin'])
-        .order('nome');
+        .in('role', ['admin', 'super_admin']);
+
+      if (empresaId) {
+        query = query.eq('empresa_id', empresaId);
+      }
+
+      const { data, error } = await query.order('nome');
 
       if (error) throw error;
       setProfiles(data || []);

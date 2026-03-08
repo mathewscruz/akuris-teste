@@ -32,6 +32,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { logger } from '@/lib/logger';
 import { useDocumentosStats } from '@/hooks/useDocumentosStats';
+import { PageSkeleton } from '@/components/ui/page-skeleton';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { capitalizeText, getItemStatusColor, getTipoColor, getClassificacaoColor, formatStatus } from '@/lib/text-utils';
 import { formatDateOnly } from '@/lib/date-utils';
@@ -201,7 +202,15 @@ export default function Documentos() {
     }
 
     if (selectedStatus !== 'all') {
-      filtered = filtered.filter(doc => doc.status === selectedStatus);
+      if (selectedStatus === 'vencido') {
+        const hoje = new Date();
+        filtered = filtered.filter(doc => {
+          if (!doc.data_vencimento) return false;
+          return new Date(doc.data_vencimento) < hoje;
+        });
+      } else {
+        filtered = filtered.filter(doc => doc.status === selectedStatus);
+      }
     }
 
     if (selectedTipo !== 'all') {
@@ -397,11 +406,12 @@ export default function Documentos() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Carregando documentos...</p>
-        </div>
+      <div className="space-y-6">
+        <PageHeader
+          title="Documentos"
+          description="Gerencie documentos, políticas e procedimentos da empresa de forma centralizada"
+        />
+        <PageSkeleton variant="table" />
       </div>
     );
   }
@@ -533,15 +543,14 @@ export default function Documentos() {
                 <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
                   <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
                     <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Categoria" />
+                      <SelectValue placeholder="Classificação" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Todas as categorias</SelectItem>
-                      {categorias.map((categoria) => (
-                        <SelectItem key={categoria.id} value={categoria.nome}>
-                          {categoria.nome}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="all">Todas as classificações</SelectItem>
+                      <SelectItem value="publica">Pública</SelectItem>
+                      <SelectItem value="interna">Interna</SelectItem>
+                      <SelectItem value="restrita">Restrita</SelectItem>
+                      <SelectItem value="confidencial">Confidencial</SelectItem>
                     </SelectContent>
                   </Select>
                   
@@ -571,6 +580,8 @@ export default function Documentos() {
                       <SelectItem value="certificado">Certificado</SelectItem>
                       <SelectItem value="contrato">Contrato</SelectItem>
                       <SelectItem value="relatorio">Relatório</SelectItem>
+                      <SelectItem value="documento">Documento</SelectItem>
+                      <SelectItem value="manual">Manual</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -829,6 +840,7 @@ export default function Documentos() {
           open={categoriasDialog}
           onOpenChange={setCategoriasDialog}
           onSuccess={() => queryClient.invalidateQueries({ queryKey: ['documentos-categorias'] })}
+          empresaId={empresaId}
         />
 
         {vinculacoesDialog.documento && (
@@ -836,6 +848,7 @@ export default function Documentos() {
             open={vinculacoesDialog.open}
             onOpenChange={(open) => setVinculacoesDialog({ open })}
             documento={vinculacoesDialog.documento}
+            empresaId={empresaId}
           />
         )}
 
@@ -845,6 +858,7 @@ export default function Documentos() {
             onOpenChange={(open) => setAprovacaoDialog({ open })}
             documento={aprovacaoDialog.documento}
             onSuccess={invalidateDocumentos}
+            empresaId={empresaId}
           />
         )}
 

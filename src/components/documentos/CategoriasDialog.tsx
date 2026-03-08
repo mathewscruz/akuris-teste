@@ -23,6 +23,7 @@ interface CategoriasDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  empresaId?: string | null;
 }
 
 const cores = [
@@ -30,7 +31,7 @@ const cores = [
   '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
 ];
 
-export function CategoriasDialog({ open, onOpenChange, onSuccess }: CategoriasDialogProps) {
+export function CategoriasDialog({ open, onOpenChange, onSuccess, empresaId }: CategoriasDialogProps) {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -51,10 +52,15 @@ export function CategoriasDialog({ open, onOpenChange, onSuccess }: CategoriasDi
   const fetchCategorias = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('documentos_categorias')
-        .select('*')
-        .order('nome');
+        .select('*');
+
+      if (empresaId) {
+        query = query.eq('empresa_id', empresaId);
+      }
+
+      const { data, error } = await query.order('nome');
 
       if (error) throw error;
       setCategorias(data || []);

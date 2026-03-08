@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface DocumentosStats {
   total: number;
@@ -12,13 +13,17 @@ interface DocumentosStats {
 }
 
 export const useDocumentosStats = () => {
+  const { empresaId } = useEmpresaId();
+
   return useQuery({
-    queryKey: ['documentos-stats'],
+    queryKey: ['documentos-stats', empresaId],
+    enabled: !!empresaId,
     staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<DocumentosStats> => {
       const { data: documentos, error } = await supabase
         .from('documentos')
-        .select('status, data_vencimento, classificacao, data_aprovacao');
+        .select('status, data_vencimento, classificacao, data_aprovacao')
+        .eq('empresa_id', empresaId!);
 
       if (error) throw error;
 

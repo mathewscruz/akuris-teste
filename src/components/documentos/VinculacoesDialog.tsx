@@ -33,6 +33,7 @@ interface VinculacoesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   documento: Documento;
+  empresaId?: string | null;
 }
 
 const modulosDisponiveis = [
@@ -52,7 +53,7 @@ const tiposVinculacao = [
   'revisao'
 ];
 
-export function VinculacoesDialog({ open, onOpenChange, documento }: VinculacoesDialogProps) {
+export function VinculacoesDialog({ open, onOpenChange, documento, empresaId }: VinculacoesDialogProps) {
   const [vinculacoes, setVinculacoes] = useState<Vinculacao[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -202,6 +203,10 @@ export function VinculacoesDialog({ open, onOpenChange, documento }: Vinculacoes
         default:
           setItemsDisponiveis([]);
           return;
+      }
+
+      if (empresaId) {
+        query = query.eq('empresa_id', empresaId);
       }
 
       const { data, error } = await query.order('nome');
