@@ -164,7 +164,7 @@ export default function DenunciaFormulario() {
           logger.debug('Logotipo encontrado na base de dados', { module: 'DenunciaFormulario' });
           setLogoUrl(empresaData.logo_url);
         } else {
-          console.log('ℹ️ [INFO] Nenhum logotipo cadastrado para esta empresa');
+          logger.debug('Nenhum logotipo cadastrado para esta empresa', { module: 'DenunciaFormulario' });
         }
       } catch (error) {
         console.error('❌ [ERROR] Erro geral ao carregar configuração:', error);
