@@ -41,7 +41,7 @@ import PoliticaPrivacidade from '@/pages/PoliticaPrivacidade';
 import PlanosAcao from '@/pages/PlanosAcao';
 import Relatorios from '@/pages/Relatorios';
 import Politicas from '@/pages/Politicas';
-import Planos from '@/pages/Planos';
+
 import Registro from '@/pages/Registro';
 import CheckoutSuccess from '@/pages/CheckoutSuccess';
 import DefinirSenha from '@/pages/DefinirSenha';
@@ -239,11 +239,6 @@ function App() {
                 <ProtectedRoute moduleName="configuracoes" fallbackToRoleCheck={false}>
                   <Configuracoes />
                 </ProtectedRoute>
-              </Layout>
-            } />
-            <Route path="/planos" element={
-              <Layout>
-                <Planos />
               </Layout>
             } />
             <Route path="*" element={<NotFound />} />

@@ -237,7 +237,6 @@ const LandingPage = () => {
               <button onClick={() => scrollToSection("modulos")} className="text-sm text-gray-300 hover:text-white transition-colors">Módulos</button>
               <button onClick={() => scrollToSection("como-funciona")} className="text-sm text-gray-300 hover:text-white transition-colors">Como Funciona</button>
               <button onClick={() => scrollToSection("contato")} className="text-sm text-gray-300 hover:text-white transition-colors">Contato</button>
-              <Link to="/planos" className="text-sm text-gray-300 hover:text-white transition-colors">Planos</Link>
               <Link to="/auth">
                 <button className="h-10 px-5 rounded-lg text-sm font-medium border border-[#2A3F5F] bg-transparent text-gray-200 hover:bg-[#111B2E] hover:text-white transition-all">
                   Acessar Plataforma
@@ -260,7 +259,6 @@ const LandingPage = () => {
               <button onClick={() => scrollToSection("modulos")} className="block w-full text-left text-gray-300 hover:text-white py-2">Módulos</button>
               <button onClick={() => scrollToSection("como-funciona")} className="block w-full text-left text-gray-300 hover:text-white py-2">Como Funciona</button>
               <button onClick={() => scrollToSection("contato")} className="block w-full text-left text-gray-300 hover:text-white py-2">Contato</button>
-              <Link to="/planos" className="block text-gray-300 hover:text-white py-2">Planos</Link>
               <Link to="/auth" className="block">
                 <button className="w-full h-10 px-4 rounded-lg text-sm font-medium border border-[#2A3F5F] bg-transparent text-gray-200 hover:bg-[#111B2E] hover:text-white transition-all">
                   Acessar Plataforma
@@ -495,14 +493,6 @@ const LandingPage = () => {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#7552FF]/5 rounded-full blur-[120px] pointer-events-none" />
 
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 lp-fade-up">
-            {/* Badge */}
-            <div className="flex justify-center mb-6">
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#7552FF]/10 border border-[#7552FF]/20 text-[#A78BFA] text-xs font-semibold uppercase tracking-widest">
-                <Sparkles className="h-3.5 w-3.5" />
-                Nosso carro-chefe
-              </span>
-            </div>
-
             {/* Headline */}
             <h2 id="gap-analysis-title" className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-center mb-6 leading-tight">
               Sua empresa em conformidade.{" "}
@@ -511,7 +501,7 @@ const LandingPage = () => {
 
             {/* Subheadline */}
             <p className="text-center text-gray-300 text-base sm:text-lg lg:text-xl max-w-3xl mx-auto mb-14 leading-relaxed">
-              Chega de gastar <span className="text-white font-semibold">R$ 50 mil com consultoria externa</span> pra te dizer o que você já desconfiava. Com o Gap Analysis da Akuris, <span className="text-white font-medium">você mesmo conduz a adequação da sua empresa</span> — da ISO 27001 à LGPD — com um passo a passo claro, prático e que qualquer pessoa do time consegue seguir.
+              Chega de gastar <span className="text-white font-semibold">com consultoria externa</span> pra te dizer o que você já desconfiava. Com o Gap Analysis da Akuris, <span className="text-white font-medium">você mesmo conduz a adequação da sua empresa</span>, da ISO 27001 à LGPD, com um passo a passo claro, prático e que qualquer pessoa do time consegue seguir.
             </p>
 
             {/* 3 Bullets */}
@@ -532,7 +522,7 @@ const LandingPage = () => {
                 </div>
                 <h3 className="text-white font-bold text-lg mb-2">Orientação em cada requisito</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  O sistema te diz exatamente o que fazer, como fazer e o que entregar. É como ter um consultor sênior do lado — disponível 24h, sem cobrar hora extra.
+                  O sistema te diz exatamente o que fazer, como fazer e o que entregar. É como ter um consultor sênior do lado. Disponível 24h, sem cobrar hora extra.
                 </p>
               </div>
 
@@ -542,31 +532,11 @@ const LandingPage = () => {
                 </div>
                 <h3 className="text-white font-bold text-lg mb-2">Artefatos gerados na hora</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  SoA, planos de remediação, relatórios de auditoria — tudo gerado automaticamente. Pronto pra apresentar pro auditor, pro board ou pra quem cobrar.
+                  SoA, planos de remediação, relatórios de auditoria. Tudo gerado automaticamente. Pronto pra apresentar pro auditor, pro board ou pra quem cobrar.
                 </p>
               </div>
             </div>
 
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/registro">
-                <Button
-                  size="lg"
-                  className="bg-[#7552FF] hover:bg-[#8B6FFF] text-white text-base px-10 h-13 w-full sm:w-auto font-semibold shadow-lg shadow-[#7552FF]/25"
-                >
-                  Quero auditar minha empresa
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => scrollToSection("contato")}
-                className="border-[#2A3F5F] bg-transparent text-gray-200 hover:bg-[#111B2E] hover:text-white text-base px-10 h-13 w-full sm:w-auto"
-              >
-                Fale com um especialista
-              </Button>
-            </div>
           </div>
         </section>
 
@@ -670,7 +640,6 @@ const LandingPage = () => {
               <ul className="space-y-2.5">
                 <li><button onClick={() => scrollToSection("modulos")} className="text-gray-400 hover:text-white text-sm transition-colors">Módulos</button></li>
                 <li><button onClick={() => scrollToSection("como-funciona")} className="text-gray-400 hover:text-white text-sm transition-colors">Como Funciona</button></li>
-                <li><Link to="/planos" className="text-gray-400 hover:text-white text-sm transition-colors">Planos</Link></li>
               </ul>
             </div>
 
