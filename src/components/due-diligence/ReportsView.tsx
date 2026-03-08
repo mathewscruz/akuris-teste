@@ -12,6 +12,77 @@ import { loadAkurisLogo, addAkurisHeader, addAkurisFooter, addSectionTitle, draw
 
 export function ReportsView() {
   const { data: reportsData, isLoading, error } = useReportsData();
+  const { toast } = useToast();
+
+  const handleExportPDF = async () => {
+    if (!reportsData) return;
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 20;
+      const contentWidth = pageWidth - margin * 2;
+      const logo = await loadAkurisLogo();
+
+      let y = addAkurisHeader(doc, logo);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(AKURIS_COLORS.text);
+      doc.text('Relatorio Due Diligence', pageWidth / 2, y, { align: 'center' });
+      y += 12;
+
+      y = addSectionTitle(doc, 'Metricas Gerais', y, margin);
+      doc.setFontSize(10);
+      doc.setTextColor(AKURIS_COLORS.text);
+      doc.text(`Score Medio: ${reportsData.overallMetrics.averageScore.toFixed(1)}%`, margin + 8, y); y += 6;
+      doc.text(`Fornecedores Avaliados: ${reportsData.overallMetrics.totalSuppliers}`, margin + 8, y); y += 6;
+      doc.text(`Taxa de Resposta: ${reportsData.overallMetrics.responseRate.toFixed(0)}%`, margin + 8, y); y += 6;
+      doc.text(`Tempo Medio: ${reportsData.overallMetrics.averageCompletionTime.toFixed(1)} dias`, margin + 8, y); y += 12;
+
+      if (reportsData.topSuppliers.length > 0) {
+        y = addSectionTitle(doc, 'Melhores Fornecedores', y, margin);
+        drawTableHeader(doc, [
+          { text: 'Fornecedor', x: margin + 2 },
+          { text: 'Categoria', x: margin + 80 },
+          { text: 'Score', x: margin + 140 },
+        ], y, margin, contentWidth);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        reportsData.topSuppliers.forEach((f, i) => {
+          if (i % 2 === 0) { doc.setFillColor(248, 247, 255); doc.rect(margin, y - 3.5, contentWidth, 5.5, 'F'); }
+          doc.setFontSize(7); doc.setTextColor(AKURIS_COLORS.text);
+          doc.text(f.nome.substring(0, 40), margin + 2, y);
+          doc.text(f.categoria || '-', margin + 80, y);
+          doc.text(`${f.score.toFixed(1)}%`, margin + 140, y);
+          y += 5.5;
+        });
+      }
+
+      addAkurisFooter(doc);
+      doc.save(`relatorio_due_diligence_${new Date().toISOString().split('T')[0]}.pdf`);
+      toast({ title: "PDF gerado", description: "Relatorio exportado com sucesso." });
+    } catch {
+      toast({ title: "Erro", description: "Erro ao gerar PDF.", variant: "destructive" });
+    }
+  };
+
+  const handleExportCSV = (type: 'scores' | 'trends') => {
+    if (!reportsData) return;
+    if (type === 'scores') {
+      const allSuppliers = [...reportsData.topSuppliers, ...reportsData.lowPerformingSuppliers];
+      exportCSV(
+        ['Fornecedor', 'Categoria', 'Score'],
+        allSuppliers.map(s => [s.nome, s.categoria, s.score.toFixed(1)]),
+        'due_diligence_scores'
+      );
+    } else {
+      exportCSV(
+        ['Categoria', 'Score'],
+        reportsData.categoryPerformance.map(c => [c.category, c.score.toFixed(1)]),
+        'due_diligence_tendencias'
+      );
+    }
+    toast({ title: "CSV exportado" });
+  };
 
   if (isLoading) {
     return (
