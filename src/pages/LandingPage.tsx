@@ -309,14 +309,6 @@ const LandingPage = () => {
                     Solicitar Demonstração
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={() => scrollToSection("contato")}
-                    className="border-[#2A3F5F] bg-transparent text-gray-200 hover:bg-[#111B2E] hover:text-white text-base px-8 h-12"
-                  >
-                    Fale Conosco
-                  </Button>
                 </div>
               </div>
 
