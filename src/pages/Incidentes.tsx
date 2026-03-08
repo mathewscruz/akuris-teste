@@ -470,11 +470,15 @@ export default function Incidentes() {
       )}
 
       {/* Dialog de Tratamentos - controlado pelo dropdown */}
-      {selectedIncidente && tratamentoDialogOpen && (
+      {selectedIncidente && (
         <TratamentoDialog
           incidenteId={selectedIncidente.id}
           onSuccess={invalidateIncidentes}
-          trigger={<span className="hidden" />}
+          externalOpen={tratamentoDialogOpen}
+          onExternalOpenChange={(open) => {
+            setTratamentoDialogOpen(open);
+            if (!open) setSelectedIncidente(null);
+          }}
         />
       )}
 
