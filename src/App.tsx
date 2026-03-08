@@ -130,11 +130,7 @@ function App() {
               </Layout>
             } />
             <Route path="/gap-analysis" element={
-              <Layout>
-                <ProtectedRoute moduleName="gap-analysis" fallbackToRoleCheck={false}>
-                  <GapAnalysis />
-                </ProtectedRoute>
-              </Layout>
+              <Navigate to="/gap-analysis/frameworks" replace />
             } />
             <Route path="/gap-analysis/frameworks" element={
               <Layout>
