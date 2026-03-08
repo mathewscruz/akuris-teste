@@ -88,7 +88,7 @@ export default function GapAnalysisFrameworkDetail() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [selectedAdherenceAssessment, setSelectedAdherenceAssessment] = useState<any>(null);
   const [adherenceView, setAdherenceView] = useState<'list' | 'result'>('list');
-  
+  const [showDocGen, setShowDocGen] = useState(false);
 
   useEffect(() => {
     if (!frameworkId) return;
