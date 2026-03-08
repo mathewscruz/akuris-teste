@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface ContratosStats {
   total: number;
@@ -12,20 +13,25 @@ interface ContratosStats {
 }
 
 export const useContratosStats = () => {
+  const { empresaId } = useEmpresaId();
+
   return useQuery({
-    queryKey: ['contratos-stats'],
+    queryKey: ['contratos-stats', empresaId],
     staleTime: 5 * 60 * 1000,
+    enabled: !!empresaId,
     queryFn: async (): Promise<ContratosStats> => {
       const { data: contratos, error } = await supabase
         .from('contratos')
-        .select('status, valor, data_fim, renovacao_automatica, fornecedor_id');
+        .select('status, valor, data_fim, renovacao_automatica, fornecedor_id')
+        .eq('empresa_id', empresaId!);
 
       if (error) throw error;
 
       const { data: fornecedores } = await supabase
         .from('fornecedores')
         .select('id')
-        .eq('status', 'ativo');
+        .eq('status', 'ativo')
+        .eq('empresa_id', empresaId!);
 
       const total = contratos?.length || 0;
       const ativos = contratos?.filter(c => c.status === 'ativo').length || 0;

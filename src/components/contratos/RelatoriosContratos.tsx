@@ -61,12 +61,13 @@ export default function RelatoriosContratos() {
   }, []);
 
   useEffect(() => {
-    if (open) {
+    if (open && empresaId) {
       carregarDados();
     }
-  }, [open, filtros]);
+  }, [open, filtros, empresaId]);
 
   const carregarDados = async () => {
+    if (!empresaId) return;
     setLoading(true);
     try {
       const { dataInicio, dataFim } = calcularPeriodo();
@@ -78,6 +79,7 @@ export default function RelatoriosContratos() {
           *,
           fornecedores!inner(nome, avaliacao_risco)
         `)
+        .eq('empresa_id', empresaId)
         .gte('created_at', dataInicio.toISOString())
         .lte('created_at', dataFim.toISOString());
 
@@ -88,6 +90,7 @@ export default function RelatoriosContratos() {
           *,
           contratos!inner(numero_contrato, nome)
         `)
+        .eq('contratos.empresa_id', empresaId)
         .gte('data_prevista', format(dataInicio, 'yyyy-MM-dd'))
         .lte('data_prevista', format(dataFim, 'yyyy-MM-dd'));
 
@@ -98,13 +101,15 @@ export default function RelatoriosContratos() {
           *,
           contratos!inner(numero_contrato, nome)
         `)
+        .eq('contratos.empresa_id', empresaId)
         .gte('created_at', dataInicio.toISOString())
         .lte('created_at', dataFim.toISOString());
 
       // Carregar fornecedores
       const { data: fornecedores } = await supabase
         .from('fornecedores')
-        .select('*');
+        .select('*')
+        .eq('empresa_id', empresaId);
 
       setDados({
         contratos: contratos || [],
