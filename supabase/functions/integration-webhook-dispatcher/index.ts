@@ -343,7 +343,7 @@ serve(async (req) => {
               'Content-Type': 'application/json',
               ...(integration.configuracoes?.headers || {})
             };
-            const webhookResponse = await fetch(integration.webhook_url, {
+            const webhookResponse = await fetchWithRetry(integration.webhook_url, {
               method: 'POST',
               headers: webhookHeaders,
               body: JSON.stringify(webhookPayload)
