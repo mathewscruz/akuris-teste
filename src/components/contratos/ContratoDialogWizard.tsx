@@ -141,10 +141,20 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
 
   const fetchUsuarios = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('empresa_id')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (!profile?.empresa_id) return;
+
       const { data, error } = await supabase
         .from('profiles')
         .select('user_id, nome')
         .eq('ativo', true)
+        .eq('empresa_id', profile.empresa_id)
         .order('nome');
 
       if (error) throw error;

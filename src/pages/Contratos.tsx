@@ -12,6 +12,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { PageSkeleton } from '@/components/ui/page-skeleton';
 import { Plus, Search, FileText, DollarSign, Users, AlertCircle, Edit, TrendingUp, Trash2, Building2, FileStack, Milestone, FilePlus2, Download, MoreHorizontal } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -321,7 +322,7 @@ export default function Contratos() {
   }, [filteredFornecedores, currentPageFornecedores, itemsPerPage]);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-96">Carregando...</div>;
+    return <PageSkeleton variant="table" />;
   }
 
   return (
@@ -634,8 +635,7 @@ export default function Contratos() {
                         <SelectItem value="todos">Todos Status</SelectItem>
                         <SelectItem value="ativo">Ativo</SelectItem>
                         <SelectItem value="inativo">Inativo</SelectItem>
-                        <SelectItem value="pendente">Pendente</SelectItem>
-                        <SelectItem value="bloqueado">Bloqueado</SelectItem>
+                        <SelectItem value="suspenso">Suspenso</SelectItem>
                       </SelectContent>
                     </Select>
                     <Select value={categoriaFornecedorFilter} onValueChange={setCategoriaFornecedorFilter}>
@@ -716,33 +716,28 @@ export default function Contratos() {
                           </TableCell>
                           <TableCell>{fornecedor.avaliacao_risco ? getRiskBadge(fornecedor.avaliacao_risco) : '-'}</TableCell>
                           <TableCell>{getStatusBadge(fornecedor.status)}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center justify-end gap-1">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleEdit(fornecedor, 'fornecedor')}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Editar</TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleDelete(fornecedor.id, 'fornecedor')}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Excluir</TooltipContent>
-                              </Tooltip>
-                            </div>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEdit(fornecedor, 'fornecedor')}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => handleDelete(fornecedor.id, 'fornecedor')}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       ))

@@ -43,15 +43,31 @@ export default function RelatoriosContratos() {
   const [filtros, setFiltros] = useState<FiltrosRelatorio>({
     periodo: 'mes'
   });
+  const [empresaId, setEmpresaId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (open) {
+    const fetchEmpresa = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('empresa_id')
+        .eq('user_id', user.id)
+        .single();
+      setEmpresaId(data?.empresa_id || null);
+    };
+    fetchEmpresa();
+  }, []);
+
+  useEffect(() => {
+    if (open && empresaId) {
       carregarDados();
     }
-  }, [open, filtros]);
+  }, [open, filtros, empresaId]);
 
   const carregarDados = async () => {
+    if (!empresaId) return;
     setLoading(true);
     try {
       const { dataInicio, dataFim } = calcularPeriodo();
@@ -63,6 +79,7 @@ export default function RelatoriosContratos() {
           *,
           fornecedores!inner(nome, avaliacao_risco)
         `)
+        .eq('empresa_id', empresaId)
         .gte('created_at', dataInicio.toISOString())
         .lte('created_at', dataFim.toISOString());
 
@@ -73,6 +90,7 @@ export default function RelatoriosContratos() {
           *,
           contratos!inner(numero_contrato, nome)
         `)
+        .eq('contratos.empresa_id', empresaId)
         .gte('data_prevista', format(dataInicio, 'yyyy-MM-dd'))
         .lte('data_prevista', format(dataFim, 'yyyy-MM-dd'));
 
@@ -83,13 +101,15 @@ export default function RelatoriosContratos() {
           *,
           contratos!inner(numero_contrato, nome)
         `)
+        .eq('contratos.empresa_id', empresaId)
         .gte('created_at', dataInicio.toISOString())
         .lte('created_at', dataFim.toISOString());
 
       // Carregar fornecedores
       const { data: fornecedores } = await supabase
         .from('fornecedores')
-        .select('*');
+        .select('*')
+        .eq('empresa_id', empresaId);
 
       setDados({
         contratos: contratos || [],
