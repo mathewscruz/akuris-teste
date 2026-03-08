@@ -81,17 +81,19 @@ export default function ContasPrivilegiadas() {
 
   // Buscar sistemas para o dropdown no dialog
   const { data: sistemas = [] } = useQuery({
-    queryKey: ['sistemas-privilegiados'],
+    queryKey: ['sistemas-privilegiados', empresaId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sistemas_privilegiados' as any)
         .select('*')
+        .eq('empresa_id', empresaId)
         .eq('ativo', true)
         .order('nome_sistema');
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!empresaId,
   });
 
   // Calcular métricas do dashboard
