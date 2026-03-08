@@ -201,7 +201,15 @@ export default function Documentos() {
     }
 
     if (selectedStatus !== 'all') {
-      filtered = filtered.filter(doc => doc.status === selectedStatus);
+      if (selectedStatus === 'vencido') {
+        const hoje = new Date();
+        filtered = filtered.filter(doc => {
+          if (!doc.data_vencimento) return false;
+          return new Date(doc.data_vencimento) < hoje;
+        });
+      } else {
+        filtered = filtered.filter(doc => doc.status === selectedStatus);
+      }
     }
 
     if (selectedTipo !== 'all') {
