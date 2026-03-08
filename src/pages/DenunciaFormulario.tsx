@@ -108,7 +108,7 @@ export default function DenunciaFormulario() {
           .single();
 
         if (empresaError) {
-          console.error('❌ [ERROR] Erro ao buscar empresa:', empresaError);
+          logger.error('Erro ao buscar empresa', { module: 'DenunciaFormulario', error: String(empresaError) });
           setLoading(false);
           return;
         }
