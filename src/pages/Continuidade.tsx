@@ -145,9 +145,26 @@ export default function Continuidade() {
         title="Continuidade de Negócios"
         description="Gerencie planos de continuidade (BCP) e recuperação de desastres (DRP)"
         actions={
-          <Button onClick={() => setPlanoDialog({ open: true })}>
-            <Plus className="h-4 w-4 mr-2" /> Novo Plano
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => {
+              if (planos.length === 0) return;
+              exportCSV(
+                ['Nome', 'Tipo', 'Status', 'RTO', 'RPO', 'Criado em'],
+                planos.map((p: any) => [
+                  p.nome || '', tipoMap[p.tipo] || p.tipo || '',
+                  statusMap[p.status]?.label || p.status || '',
+                  p.rto || '', p.rpo || '',
+                  p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : ''
+                ]),
+                'continuidade_planos'
+              );
+            }}>
+              <Download className="h-4 w-4 mr-2" />CSV
+            </Button>
+            <Button onClick={() => setPlanoDialog({ open: true })}>
+              <Plus className="h-4 w-4 mr-2" /> Novo Plano
+            </Button>
+          </div>
         }
       />
 
