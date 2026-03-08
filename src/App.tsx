@@ -123,6 +123,13 @@ function App() {
                 </ProtectedRoute>
               </Layout>
             } />
+            <Route path="/riscos/aceite" element={
+              <Layout>
+                <ProtectedRoute moduleName="riscos" fallbackToRoleCheck={false}>
+                  <RiscosAceite />
+                </ProtectedRoute>
+              </Layout>
+            } />
             <Route path="/gap-analysis" element={
               <Layout>
                 <ProtectedRoute moduleName="gap-analysis" fallbackToRoleCheck={false}>
