@@ -219,6 +219,15 @@ export function ContratoDialog({ contrato, open, onOpenChange, onSuccess, fornec
 
       if (error) throw error;
 
+      if (!contrato) {
+        notify('contrato_criado', {
+          titulo: `Novo contrato: ${formData.nome}`,
+          descricao: formData.objeto,
+          link: `${window.location.origin}/contratos`,
+          dados: { tipo: formData.tipo, numero: formData.numero_contrato },
+        });
+      }
+
       toast({
         title: "Sucesso",
         description: `Contrato ${contrato ? 'atualizado' : 'criado'} com sucesso`,

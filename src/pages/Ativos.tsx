@@ -218,6 +218,8 @@ const Ativos = () => {
     }
   };
 
+  const { notify } = useIntegrationNotify();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile?.empresa_id) {
@@ -237,10 +239,23 @@ const Ativos = () => {
         const { error } = await supabase.from('ativos').update(ativoData).eq('id', editingAtivo.id);
         if (error) throw error;
         toast({ title: "Sucesso", description: "Ativo atualizado com sucesso!" });
+        notify('ativo_atualizado', {
+          titulo: `Ativo atualizado: ${formData.nome}`,
+          descricao: formData.descricao,
+          link: `${window.location.origin}/ativos`,
+          dados: { tipo: formData.tipo, criticidade: formData.criticidade },
+        });
       } else {
         const { error } = await supabase.from('ativos').insert(ativoData);
         if (error) throw error;
         toast({ title: "Sucesso", description: "Ativo criado com sucesso!" });
+        notify('ativo_criado', {
+          titulo: `Novo ativo: ${formData.nome}`,
+          descricao: formData.descricao,
+          link: `${window.location.origin}/ativos`,
+          dados: { tipo: formData.tipo, criticidade: formData.criticidade },
+          gravidade: formData.criticidade === 'critico' ? 'critica' : formData.criticidade === 'alto' ? 'alta' : 'media',
+        });
       }
       setIsDialogOpen(false);
       setEditingAtivo(null);
