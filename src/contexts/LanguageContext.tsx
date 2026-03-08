@@ -18,7 +18,9 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(() => {
     const saved = localStorage.getItem('governaii-locale');
-    return (saved === 'en' ? 'en' : 'pt') as Locale;
+    if (saved === 'en' || saved === 'pt') return saved;
+    const browserLang = navigator.language || '';
+    return browserLang.startsWith('pt') ? 'pt' : 'en';
   });
 
   const setLocale = useCallback((newLocale: Locale) => {
