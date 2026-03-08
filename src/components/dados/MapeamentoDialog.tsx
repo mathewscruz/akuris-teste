@@ -41,10 +41,12 @@ export function MapeamentoDialog({ isOpen, onClose, onSave, mapeamento }: Mapeam
   }, [isOpen]);
 
   const loadDadosPessoais = async () => {
+    if (!empresaId) return;
     try {
       const { data, error } = await supabase
         .from('dados_pessoais')
         .select('*')
+        .eq('empresa_id', empresaId)
         .order('nome');
       
       if (error) throw error;
@@ -55,10 +57,12 @@ export function MapeamentoDialog({ isOpen, onClose, onSave, mapeamento }: Mapeam
   };
 
   const loadAtivos = async () => {
+    if (!empresaId) return;
     try {
       const { data, error } = await supabase
         .from('ativos')
         .select('*')
+        .eq('empresa_id', empresaId)
         .order('nome');
       
       if (error) throw error;
