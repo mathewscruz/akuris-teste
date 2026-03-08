@@ -36,6 +36,7 @@ const riscoSchema = z.object({
   impacto_residual: z.string().optional(),
   aceito: z.boolean().default(false),
   justificativa_aceite: z.string().optional(),
+  aprovador_aceite: z.string().optional(),
   ativos_vinculados: z.array(z.string()).default([]),
   data_proxima_revisao: z.string().optional()
 });
