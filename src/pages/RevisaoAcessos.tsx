@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Download, Eye, Edit, Trash2 } from "lucide-react";
+import { Plus, Download, Eye, Edit, Trash2, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
