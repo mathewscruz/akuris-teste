@@ -1683,6 +1683,267 @@ export type Database = {
           },
         ]
       }
+      continuidade_planos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_ultima_revisao: string | null
+          descricao: string | null
+          empresa_id: string
+          escopo: string | null
+          id: string
+          nome: string
+          objetivos: string | null
+          proxima_revisao: string | null
+          responsavel_id: string | null
+          rpo_horas: number | null
+          rto_horas: number | null
+          status: string
+          tipo: string
+          updated_at: string
+          versao: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_ultima_revisao?: string | null
+          descricao?: string | null
+          empresa_id: string
+          escopo?: string | null
+          id?: string
+          nome: string
+          objetivos?: string | null
+          proxima_revisao?: string | null
+          responsavel_id?: string | null
+          rpo_horas?: number | null
+          rto_horas?: number | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+          versao?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_ultima_revisao?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          escopo?: string | null
+          id?: string
+          nome?: string
+          objetivos?: string | null
+          proxima_revisao?: string | null
+          responsavel_id?: string | null
+          rpo_horas?: number | null
+          rto_horas?: number | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+          versao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "continuidade_planos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "continuidade_planos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "continuidade_planos_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      continuidade_tarefas: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          empresa_id: string
+          id: string
+          ordem: number | null
+          plano_id: string
+          prazo: string | null
+          prioridade: string
+          responsavel_id: string | null
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          ordem?: number | null
+          plano_id: string
+          prazo?: string | null
+          prioridade?: string
+          responsavel_id?: string | null
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          ordem?: number | null
+          plano_id?: string
+          prazo?: string | null
+          prioridade?: string
+          responsavel_id?: string | null
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "continuidade_tarefas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "continuidade_tarefas_plano_id_fkey"
+            columns: ["plano_id"]
+            isOneToOne: false
+            referencedRelation: "continuidade_planos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "continuidade_tarefas_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      continuidade_testes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_teste: string
+          descricao: string | null
+          empresa_id: string
+          id: string
+          licoes_aprendidas: string | null
+          observacoes: string | null
+          participantes: string[] | null
+          plano_id: string
+          resultado: string | null
+          tipo_teste: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_teste: string
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          licoes_aprendidas?: string | null
+          observacoes?: string | null
+          participantes?: string[] | null
+          plano_id: string
+          resultado?: string | null
+          tipo_teste?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_teste?: string
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          licoes_aprendidas?: string | null
+          observacoes?: string | null
+          participantes?: string[] | null
+          plano_id?: string
+          resultado?: string | null
+          tipo_teste?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "continuidade_testes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "continuidade_testes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "continuidade_testes_plano_id_fkey"
+            columns: ["plano_id"]
+            isOneToOne: false
+            referencedRelation: "continuidade_planos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      continuidade_vinculos: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          id: string
+          plano_id: string
+          registro_id: string
+          tipo_vinculo: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          id?: string
+          plano_id: string
+          registro_id: string
+          tipo_vinculo: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          plano_id?: string
+          registro_id?: string
+          tipo_vinculo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "continuidade_vinculos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "continuidade_vinculos_plano_id_fkey"
+            columns: ["plano_id"]
+            isOneToOne: false
+            referencedRelation: "continuidade_planos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contrato_aditivos: {
         Row: {
           aprovado_por: string | null
