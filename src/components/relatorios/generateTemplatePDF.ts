@@ -206,7 +206,7 @@ async function fetchExecutivoData(empresaId: string) {
     supabase.from('incidentes').select('*').eq('empresa_id', empresaId).gte('data_deteccao', ninetyDaysAgo.toISOString()),
     supabase.from('controles').select('*').eq('empresa_id', empresaId),
     // Frameworks are global - fetch all active ones
-    supabase.from('gap_analysis_frameworks').select('id, nome').eq('ativo', true),
+    supabase.from('gap_analysis_frameworks').select('id, nome').eq('ativo', true).limit(100),
   ]);
   const r = riscos || []; const i = incidentes || []; const c = controles || []; const f = frameworks || [];
   return {
