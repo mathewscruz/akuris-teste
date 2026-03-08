@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Shield, Clock, CheckCircle, Eye, UserCheck, Calendar } from 'lucide-react';
