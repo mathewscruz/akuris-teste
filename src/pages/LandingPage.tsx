@@ -447,7 +447,7 @@ const LandingPage = () => {
                       {item.step}
                     </div>
                     <div className="inline-flex p-4 rounded-lg bg-[#0A1628] border border-[#1E2D45] mb-6 mt-3">
-                      <item.icon className="h-7 w-7 sm:h-8 sm:w-8 text-blue-400" />
+                      <item.icon className="h-7 w-7 sm:h-8 sm:w-8 text-[#7552FF]" />
                     </div>
                     <h3 className="text-lg sm:text-xl font-semibold text-white mb-3">{item.title}</h3>
                     <p className="text-gray-400 text-sm leading-relaxed">{item.description}</p>
