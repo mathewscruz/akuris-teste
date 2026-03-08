@@ -219,7 +219,7 @@ export default function DenunciaFormulario() {
       });
 
       if (denunciaError) {
-        console.error('Erro ao criar denúncia:', denunciaError);
+        logger.error('Erro ao criar denúncia', { module: 'DenunciaFormulario', error: String(denunciaError) });
         toast.error('Erro ao registrar denúncia');
         return;
       }
