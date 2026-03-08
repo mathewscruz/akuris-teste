@@ -6,16 +6,18 @@ import { useToast } from '@/hooks/use-toast';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import { DataTable, Column } from '@/components/ui/data-table';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { CheckCircle, AlertTriangle, Clock, CalendarX, MoreHorizontal, Eye, CalendarClock, XCircle, Download, FileText } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Clock, CalendarX, MoreHorizontal, Eye, CalendarClock, XCircle } from 'lucide-react';
 import { formatDateOnly } from '@/lib/date-utils';
 import { getNivelRiscoColor } from '@/lib/text-utils';
 import { differenceInDays } from 'date-fns';
 import { AceiteDetalheDialog } from '@/components/riscos/AceiteDetalheDialog';
+import { AprovacaoRiscoDialog } from '@/components/riscos/AprovacaoRiscoDialog';
 
 interface RiscoAceito {
   id: string;
@@ -28,6 +30,8 @@ interface RiscoAceito {
   data_proxima_revisao?: string;
   responsavel?: string;
   created_at: string;
+  created_by?: string;
+  status_aceite?: string;
   aprovador_nome?: string;
   responsavel_nome?: string;
 }
@@ -37,11 +41,15 @@ export default function RiscosAceite() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchTermPendente, setSearchTermPendente] = useState('');
   const [revisaoFilter, setRevisaoFilter] = useState('');
   const [nivelFilter, setNivelFilter] = useState('');
   const [selectedRisco, setSelectedRisco] = useState<RiscoAceito | null>(null);
   const [detalheOpen, setDetalheOpen] = useState(false);
+  const [aprovacaoOpen, setAprovacaoOpen] = useState(false);
+  const [aprovacaoRisco, setAprovacaoRisco] = useState<any>(null);
 
+  // Riscos aceitos (aprovados)
   const { data: riscos = [], isLoading } = useQuery({
     queryKey: ['riscos-aceitos', profile?.empresa_id],
     queryFn: async () => {
@@ -50,38 +58,61 @@ export default function RiscosAceite() {
         .select(`
           id, nome, nivel_risco_inicial, nivel_risco_residual,
           justificativa_aceite, data_aceite, aprovador_aceite,
-          data_proxima_revisao, responsavel, created_at
+          data_proxima_revisao, responsavel, created_at, created_by, status_aceite
         `)
         .eq('empresa_id', profile!.empresa_id)
         .eq('aceito', true)
         .order('data_aceite', { ascending: false });
 
       if (error) throw error;
-
-      // Buscar nomes dos aprovadores e responsáveis
-      const userIds = new Set<string>();
-      data?.forEach(r => {
-        if (r.aprovador_aceite) userIds.add(r.aprovador_aceite);
-        if (r.responsavel) userIds.add(r.responsavel);
-      });
-
-      let profileMap = new Map<string, string>();
-      if (userIds.size > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, nome')
-          .in('user_id', Array.from(userIds));
-        profiles?.forEach(p => profileMap.set(p.user_id, p.nome));
-      }
-
-      return (data || []).map(r => ({
-        ...r,
-        aprovador_nome: r.aprovador_aceite ? profileMap.get(r.aprovador_aceite) || null : null,
-        responsavel_nome: r.responsavel ? profileMap.get(r.responsavel) || null : null,
-      }));
+      return await enrichWithNames(data || []);
     },
     enabled: !!profile?.empresa_id,
   });
+
+  // Riscos pendentes de aprovação de aceite
+  const { data: riscosPendentes = [], isLoading: isLoadingPendentes } = useQuery({
+    queryKey: ['riscos-aceite-pendentes', profile?.empresa_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('riscos')
+        .select(`
+          id, nome, nivel_risco_inicial, nivel_risco_residual,
+          justificativa_aceite, data_aceite, aprovador_aceite,
+          data_proxima_revisao, responsavel, created_at, created_by, status_aceite
+        `)
+        .eq('empresa_id', profile!.empresa_id)
+        .eq('status_aceite', 'pendente')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return await enrichWithNames(data || []);
+    },
+    enabled: !!profile?.empresa_id,
+  });
+
+  async function enrichWithNames(data: any[]) {
+    const userIds = new Set<string>();
+    data.forEach(r => {
+      if (r.aprovador_aceite) userIds.add(r.aprovador_aceite);
+      if (r.responsavel) userIds.add(r.responsavel);
+    });
+
+    let profileMap = new Map<string, string>();
+    if (userIds.size > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, nome')
+        .in('user_id', Array.from(userIds));
+      profiles?.forEach(p => profileMap.set(p.user_id, p.nome));
+    }
+
+    return data.map(r => ({
+      ...r,
+      aprovador_nome: r.aprovador_aceite ? profileMap.get(r.aprovador_aceite) || null : null,
+      responsavel_nome: r.responsavel ? profileMap.get(r.responsavel) || null : null,
+    }));
+  }
 
   const getRevisaoStatus = (dataRevisao?: string): 'vencida' | 'proxima' | 'ok' | 'sem_data' => {
     if (!dataRevisao) return 'sem_data';
@@ -98,24 +129,32 @@ export default function RiscosAceite() {
     return matchesSearch && matchesNivel && matchesRevisao;
   });
 
+  const filteredPendentes = riscosPendentes.filter(r =>
+    r.nome.toLowerCase().includes(searchTermPendente.toLowerCase())
+  );
+
   const totalAceitos = riscos.length;
+  const totalPendentes = riscosPendentes.length;
   const revisoesVencidas = riscos.filter(r => getRevisaoStatus(r.data_proxima_revisao) === 'vencida').length;
   const revisoesProximas = riscos.filter(r => getRevisaoStatus(r.data_proxima_revisao) === 'proxima').length;
-  const semDataRevisao = riscos.filter(r => getRevisaoStatus(r.data_proxima_revisao) === 'sem_data').length;
+
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['riscos-aceitos'] });
+    queryClient.invalidateQueries({ queryKey: ['riscos-aceite-pendentes'] });
+    queryClient.invalidateQueries({ queryKey: ['riscos'] });
+    queryClient.invalidateQueries({ queryKey: ['riscos-stats'] });
+  };
 
   const handleRevogarAceite = async (risco: RiscoAceito) => {
     try {
       const { error } = await supabase
         .from('riscos')
-        .update({ aceito: false, justificativa_aceite: null, data_aceite: null, aprovador_aceite: null })
+        .update({ aceito: false, justificativa_aceite: null, data_aceite: null, aprovador_aceite: null, status_aceite: null })
         .eq('id', risco.id);
 
       if (error) throw error;
-
       toast({ title: "Sucesso", description: "Aceite de risco revogado com sucesso." });
-      queryClient.invalidateQueries({ queryKey: ['riscos-aceitos'] });
-      queryClient.invalidateQueries({ queryKey: ['riscos'] });
-      queryClient.invalidateQueries({ queryKey: ['riscos-stats'] });
+      invalidateAll();
     } catch (error: any) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     }
@@ -124,7 +163,6 @@ export default function RiscosAceite() {
   const handleAgendarRevisao = async (risco: RiscoAceito, dias: number) => {
     const novaData = new Date();
     novaData.setDate(novaData.getDate() + dias);
-    
     try {
       const { error } = await supabase
         .from('riscos')
@@ -132,9 +170,8 @@ export default function RiscosAceite() {
         .eq('id', risco.id);
 
       if (error) throw error;
-
       toast({ title: "Sucesso", description: `Revisão agendada para ${formatDateOnly(novaData.toISOString())}` });
-      queryClient.invalidateQueries({ queryKey: ['riscos-aceitos'] });
+      invalidateAll();
     } catch (error: any) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     }
@@ -154,40 +191,14 @@ export default function RiscosAceite() {
   };
 
   const columns: Array<Column<RiscoAceito>> = [
+    { key: 'nome', label: 'Risco', sortable: true, render: (value: any) => <span className="font-medium">{value}</span> },
+    { key: 'nivel_risco_inicial', label: 'Nível', render: (value: string) => <Badge className={`${getNivelRiscoColor(value)} border whitespace-nowrap`}>{value}</Badge> },
+    { key: 'justificativa_aceite', label: 'Justificativa', render: (value: string) => value ? <span className="text-sm text-muted-foreground line-clamp-2 max-w-[200px]">{value}</span> : '-' },
+    { key: 'data_aceite', label: 'Data Aceite', sortable: true, render: (value: string) => value ? formatDateOnly(value) : '-' },
+    { key: 'aprovador_nome', label: 'Aprovador', render: (value: string) => value || '-' },
     {
-      key: 'nome',
-      label: 'Risco',
-      sortable: true,
-      render: (value: any) => <span className="font-medium">{value}</span>,
-    },
-    {
-      key: 'nivel_risco_inicial',
-      label: 'Nível',
-      render: (value: string) => <Badge className={`${getNivelRiscoColor(value)} border whitespace-nowrap`}>{value}</Badge>,
-    },
-    {
-      key: 'justificativa_aceite',
-      label: 'Justificativa',
-      render: (value: string) => value ? (
-        <span className="text-sm text-muted-foreground line-clamp-2 max-w-[200px]">{value}</span>
-      ) : '-',
-    },
-    {
-      key: 'data_aceite',
-      label: 'Data Aceite',
-      sortable: true,
-      render: (value: string) => value ? formatDateOnly(value) : '-',
-    },
-    {
-      key: 'aprovador_nome',
-      label: 'Aprovador',
-      render: (value: string) => value || '-',
-    },
-    {
-      key: 'data_proxima_revisao',
-      label: 'Revisão',
-      sortable: true,
-      render: (value: string, risco: RiscoAceito) => (
+      key: 'data_proxima_revisao', label: 'Revisão', sortable: true,
+      render: (value: string) => (
         <div className="flex flex-col gap-1">
           <span className="text-sm">{value ? formatDateOnly(value) : '-'}</span>
           {getRevisaoBadge(value)}
@@ -195,32 +206,24 @@ export default function RiscosAceite() {
       ),
     },
     {
-      key: 'actions',
-      label: 'Ações',
-      className: 'w-[60px]',
+      key: 'actions', label: 'Ações', className: 'w-[60px]',
       render: (_: any, risco: RiscoAceito) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => { setSelectedRisco(risco); setDetalheOpen(true); }}>
-              <Eye className="mr-2 h-4 w-4" />
-              Ver Detalhes
+              <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleAgendarRevisao(risco, 30)}>
-              <CalendarClock className="mr-2 h-4 w-4" />
-              Agendar Revisão (30d)
+              <CalendarClock className="mr-2 h-4 w-4" /> Agendar Revisão (30d)
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleAgendarRevisao(risco, 90)}>
-              <CalendarClock className="mr-2 h-4 w-4" />
-              Agendar Revisão (90d)
+              <CalendarClock className="mr-2 h-4 w-4" /> Agendar Revisão (90d)
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleRevogarAceite(risco)} className="text-destructive focus:text-destructive">
-              <XCircle className="mr-2 h-4 w-4" />
-              Revogar Aceite
+              <XCircle className="mr-2 h-4 w-4" /> Revogar Aceite
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -228,35 +231,40 @@ export default function RiscosAceite() {
     },
   ];
 
+  const pendentesColumns: Array<Column<RiscoAceito>> = [
+    { key: 'nome', label: 'Risco', sortable: true, render: (value: any) => <span className="font-medium">{value}</span> },
+    { key: 'nivel_risco_inicial', label: 'Nível', render: (value: string) => <Badge className={`${getNivelRiscoColor(value)} border whitespace-nowrap`}>{value}</Badge> },
+    { key: 'justificativa_aceite', label: 'Justificativa', render: (value: string) => value ? <span className="text-sm text-muted-foreground line-clamp-2 max-w-[200px]">{value}</span> : '-' },
+    { key: 'aprovador_nome', label: 'Aprovador', render: (value: string) => value || '-' },
+    { key: 'data_proxima_revisao', label: 'Data Revisão', render: (value: string) => value ? formatDateOnly(value) : '-' },
+    {
+      key: 'actions', label: 'Ações', className: 'w-[60px]',
+      render: (_: any, risco: RiscoAceito) => (
+        <Button variant="outline" size="sm" onClick={() => { setAprovacaoRisco(risco); setAprovacaoOpen(true); }}>
+          <Eye className="mr-2 h-4 w-4" /> Revisar
+        </Button>
+      ),
+    },
+  ];
+
   const filters = [
     {
-      key: 'revisao',
-      label: 'Status Revisão',
-      type: 'select' as const,
+      key: 'revisao', label: 'Status Revisão', type: 'select' as const,
       options: [
-        { value: 'all', label: 'Todos' },
-        { value: 'vencida', label: 'Vencida' },
-        { value: 'proxima', label: 'Próxima (7d)' },
-        { value: 'ok', label: 'Em dia' },
+        { value: 'all', label: 'Todos' }, { value: 'vencida', label: 'Vencida' },
+        { value: 'proxima', label: 'Próxima (7d)' }, { value: 'ok', label: 'Em dia' },
         { value: 'sem_data', label: 'Sem data' },
       ],
-      value: revisaoFilter,
-      onChange: (value: string) => setRevisaoFilter(value === 'all' ? '' : value),
+      value: revisaoFilter, onChange: (value: string) => setRevisaoFilter(value === 'all' ? '' : value),
     },
     {
-      key: 'nivel',
-      label: 'Nível',
-      type: 'select' as const,
+      key: 'nivel', label: 'Nível', type: 'select' as const,
       options: [
-        { value: 'all', label: 'Todos' },
-        { value: 'Crítico', label: 'Crítico' },
-        { value: 'Muito Alto', label: 'Muito Alto' },
-        { value: 'Alto', label: 'Alto' },
-        { value: 'Médio', label: 'Médio' },
-        { value: 'Baixo', label: 'Baixo' },
+        { value: 'all', label: 'Todos' }, { value: 'Crítico', label: 'Crítico' },
+        { value: 'Muito Alto', label: 'Muito Alto' }, { value: 'Alto', label: 'Alto' },
+        { value: 'Médio', label: 'Médio' }, { value: 'Baixo', label: 'Baixo' },
       ],
-      value: nivelFilter,
-      onChange: (value: string) => setNivelFilter(value === 'all' ? '' : value),
+      value: nivelFilter, onChange: (value: string) => setNivelFilter(value === 'all' ? '' : value),
     },
   ];
 
@@ -269,7 +277,6 @@ export default function RiscosAceite() {
             <Card key={i}><CardContent className="p-6"><Skeleton className="h-4 w-24 mb-3" /><Skeleton className="h-8 w-16" /></CardContent></Card>
           ))}
         </div>
-        <Card><CardContent className="p-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
       </div>
     );
   }
@@ -282,61 +289,77 @@ export default function RiscosAceite() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Riscos Aceitos"
-          value={totalAceitos}
-          description="Total de riscos aceitos"
-          icon={<CheckCircle className="h-4 w-4" />}
-          variant="default"
-        />
-        <StatCard
-          title="Revisões Vencidas"
-          value={revisoesVencidas}
-          description="Precisam de atenção imediata"
-          icon={<CalendarX className="h-4 w-4" />}
-          variant={revisoesVencidas > 0 ? "destructive" : "default"}
-        />
-        <StatCard
-          title="Revisões Próximas"
-          value={revisoesProximas}
-          description="Nos próximos 7 dias"
-          icon={<Clock className="h-4 w-4" />}
-          variant={revisoesProximas > 0 ? "warning" : "default"}
-        />
-        <StatCard
-          title="Sem Data de Revisão"
-          value={semDataRevisao}
-          description="Sem revisão agendada"
-          icon={<AlertTriangle className="h-4 w-4" />}
-          variant={semDataRevisao > 0 ? "warning" : "default"}
-        />
+        <StatCard title="Riscos Aceitos" value={totalAceitos} description="Total aprovados" icon={<CheckCircle className="h-4 w-4" />} variant="default" />
+        <StatCard title="Pendentes de Aprovação" value={totalPendentes} description="Aguardando decisão" icon={<Clock className="h-4 w-4" />} variant={totalPendentes > 0 ? "warning" : "default"} />
+        <StatCard title="Revisões Vencidas" value={revisoesVencidas} description="Precisam de atenção" icon={<CalendarX className="h-4 w-4" />} variant={revisoesVencidas > 0 ? "destructive" : "default"} />
+        <StatCard title="Revisões Próximas" value={revisoesProximas} description="Nos próximos 7 dias" icon={<AlertTriangle className="h-4 w-4" />} variant={revisoesProximas > 0 ? "warning" : "default"} />
       </div>
 
-      <Card className="rounded-lg border overflow-hidden">
-        <CardContent className="p-0">
-          <DataTable
-            data={filteredRiscos}
-            columns={columns}
-            loading={isLoading}
-            searchable
-            searchPlaceholder="Buscar riscos aceitos..."
-            searchValue={searchTerm}
-            onSearchChange={setSearchTerm}
-            filters={filters}
-            emptyState={{
-              icon: <CheckCircle className="h-8 w-8" />,
-              title: 'Nenhum risco aceito',
-              description: 'Riscos aceitos formalmente aparecerão aqui.',
-            }}
-          />
-        </CardContent>
-      </Card>
+      <Tabs defaultValue={totalPendentes > 0 ? "pendentes" : "aceitos"} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="pendentes" className="relative">
+            Pendentes de Aprovação
+            {totalPendentes > 0 && (
+              <Badge className="ml-2 bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">{totalPendentes}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="aceitos">Riscos Aceitos ({totalAceitos})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pendentes">
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <DataTable
+                data={filteredPendentes}
+                columns={pendentesColumns}
+                loading={isLoadingPendentes}
+                searchable
+                searchPlaceholder="Buscar pendentes..."
+                searchValue={searchTermPendente}
+                onSearchChange={setSearchTermPendente}
+                emptyState={{
+                  icon: <Clock className="h-8 w-8" />,
+                  title: 'Nenhum aceite pendente',
+                  description: 'Não há riscos aguardando aprovação de aceite.',
+                }}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="aceitos">
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <DataTable
+                data={filteredRiscos}
+                columns={columns}
+                loading={isLoading}
+                searchable
+                searchPlaceholder="Buscar riscos aceitos..."
+                searchValue={searchTerm}
+                onSearchChange={setSearchTerm}
+                filters={filters}
+                emptyState={{
+                  icon: <CheckCircle className="h-8 w-8" />,
+                  title: 'Nenhum risco aceito',
+                  description: 'Riscos aceitos formalmente aparecerão aqui.',
+                }}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {selectedRisco && (
-        <AceiteDetalheDialog
-          open={detalheOpen}
-          onOpenChange={setDetalheOpen}
-          risco={selectedRisco}
+        <AceiteDetalheDialog open={detalheOpen} onOpenChange={setDetalheOpen} risco={selectedRisco} />
+      )}
+
+      {aprovacaoRisco && (
+        <AprovacaoRiscoDialog
+          open={aprovacaoOpen}
+          onOpenChange={setAprovacaoOpen}
+          risco={aprovacaoRisco}
+          onSuccess={() => { setAprovacaoOpen(false); invalidateAll(); }}
         />
       )}
     </div>
