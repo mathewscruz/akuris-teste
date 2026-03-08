@@ -279,7 +279,6 @@ export default function RiscosAceite() {
       <PageHeader
         title="Aceite de Risco"
         description="Gerencie riscos aceitos formalmente, suas revisões e fluxo de aprovação"
-        backTo="/riscos"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
