@@ -491,7 +491,7 @@ const LandingPage = () => {
         <section className="relative py-16 sm:py-20 lg:py-24 bg-[#0D1F37]" aria-labelledby="pricing-cta-title">
           <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center lp-fade-up">
             <h2 id="pricing-cta-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              Planos que cabem no seu <span className="text-blue-400">orçamento</span>
+              Planos que cabem no seu <span className="text-[#7552FF]">orçamento</span>
             </h2>
             <p className="text-lg sm:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
               Do plano gratuito ao enterprise. Escolha o melhor para o estágio da sua empresa.
