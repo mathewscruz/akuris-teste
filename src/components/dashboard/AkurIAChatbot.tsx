@@ -17,17 +17,18 @@ function SimpleMarkdown({ content }: { content: string }) {
       {lines.map((line, i) => {
         // Bold
         let processed = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        const sanitize = (html: string) => DOMPurify.sanitize(html, { ALLOWED_TAGS: ['strong', 'em', 'br', 'p', 'ul', 'ol', 'li', 'span'], ALLOWED_ATTR: [] });
         // Bullet lists
         if (/^[-•]\s/.test(processed)) {
           processed = '• ' + processed.replace(/^[-•]\s/, '');
-          return <p key={i} className="pl-2" dangerouslySetInnerHTML={{ __html: processed }} />;
+          return <p key={i} className="pl-2" dangerouslySetInnerHTML={{ __html: sanitize(processed) }} />;
         }
         // Numbered lists
         if (/^\d+\.\s/.test(processed)) {
-          return <p key={i} className="pl-2" dangerouslySetInnerHTML={{ __html: processed }} />;
+          return <p key={i} className="pl-2" dangerouslySetInnerHTML={{ __html: sanitize(processed) }} />;
         }
         if (processed.trim() === '') return <br key={i} />;
-        return <p key={i} dangerouslySetInnerHTML={{ __html: processed }} />;
+        return <p key={i} dangerouslySetInnerHTML={{ __html: sanitize(processed) }} />;
       })}
     </div>
   );

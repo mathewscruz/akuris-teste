@@ -522,7 +522,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
             // Processar tooltips na linha
             const lineWithTooltips = renderLineWithTooltips(line.trim());
             parts.push(
-              <div key={`p-${pIndex}-l-${lIndex}`} className="mb-2" dangerouslySetInnerHTML={{ __html: lineWithTooltips }} />
+              <div key={`p-${pIndex}-l-${lIndex}`} className="mb-2" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(lineWithTooltips, { ALLOWED_TAGS: ['strong', 'em', 'br', 'span', 'div', 'p', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'tr', 'td', 'th', 'thead', 'tbody'], ALLOWED_ATTR: ['class', 'style', 'title'] }) }} />
             );
           }
         });
