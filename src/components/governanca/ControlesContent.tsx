@@ -246,18 +246,20 @@ export default function ControlesContent() {
     }
   }, [searchParams, controles, setSearchParams]);
 
-  // Buscar categorias
+  // Buscar categorias filtradas por empresa
   const { data: categorias = [] } = useQuery({
-    queryKey: ['controles_categorias'],
+    queryKey: ['controles_categorias', empresaId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('controles_categorias')
         .select('*')
+        .eq('empresa_id', empresaId!)
         .order('nome');
       
       if (error) throw error;
       return data as Categoria[];
-    }
+    },
+    enabled: !!empresaId
   });
 
   // Deletar controle
