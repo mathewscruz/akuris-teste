@@ -402,7 +402,7 @@ export default function Contratos() {
                         className="pl-9"
                       />
                     </div>
-                    <div className="flex gap-2">
+                     <div className="flex gap-2 flex-wrap">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button variant="outline" size="icon" onClick={handleExportCSV}>
@@ -414,8 +414,8 @@ export default function Contratos() {
                       <RelatoriosContratos />
                       <TemplatesContratos />
                       <Button size="sm" onClick={() => { setSelectedContrato(null); setDialogOpen(true); }}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Novo Contrato
+                        <Plus className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Novo Contrato</span>
                       </Button>
                     </div>
                   </div>
