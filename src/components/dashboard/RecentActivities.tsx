@@ -193,7 +193,7 @@ export function RecentActivities({ className }: { className?: string }) {
           id: `auditoria-${auditoria.id}`,
           type: 'creation',
           title: auditoria.nome,
-          description: 'Nova auditoria iniciada',
+          description: t('activities.newAudit'),
           created_at: auditoria.created_at,
           module: 'auditorias',
           icon: getIcon('auditorias'),
