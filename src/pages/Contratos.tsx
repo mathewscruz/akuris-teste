@@ -634,8 +634,7 @@ export default function Contratos() {
                         <SelectItem value="todos">Todos Status</SelectItem>
                         <SelectItem value="ativo">Ativo</SelectItem>
                         <SelectItem value="inativo">Inativo</SelectItem>
-                        <SelectItem value="pendente">Pendente</SelectItem>
-                        <SelectItem value="bloqueado">Bloqueado</SelectItem>
+                        <SelectItem value="suspenso">Suspenso</SelectItem>
                       </SelectContent>
                     </Select>
                     <Select value={categoriaFornecedorFilter} onValueChange={setCategoriaFornecedorFilter}>
