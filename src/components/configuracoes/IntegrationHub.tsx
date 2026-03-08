@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { 
   Plug, 
   CheckCircle2, 
@@ -222,7 +222,6 @@ const CATEGORIAS = {
 };
 
 export function IntegrationHub() {
-  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [configuredIntegrations, setConfiguredIntegrations] = useState<IntegrationConfig[]>([]);
   const [empresaId, setEmpresaId] = useState<string | null>(null);
@@ -268,6 +267,7 @@ export function IntegrationHub() {
       }
     } catch (error) {
       console.error('Erro ao buscar integrações:', error);
+      toast.error('Erro ao carregar integrações');
     } finally {
       setLoading(false);
     }
@@ -285,8 +285,7 @@ export function IntegrationHub() {
 
   const handleConfigureClick = (integration: Integration) => {
     if (!integration.disponivel) {
-      toast({
-        title: 'Em breve',
+      toast.info('Em breve', {
         description: `A integração com ${integration.nome} estará disponível em breve.`,
       });
       return;
