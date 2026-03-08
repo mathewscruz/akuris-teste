@@ -60,9 +60,14 @@ export const useDashboardStats = () => {
           .in('status', ['aberto', 'investigacao'])
       ]);
 
-      // Processar riscos
-      const riscosAltos = riscosResult.data?.length || 0;
-      riscosResult.data?.forEach(r => {
+      // Processar riscos - filtrar no JS com normalização de acentos
+      const normalizeStr = (s: string) => (s || '').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const riscosAltosCriticos = riscosResult.data?.filter(r => {
+        const nivel = normalizeStr(r.nivel_risco_inicial || '');
+        return nivel === 'alto' || nivel === 'critico' || nivel === 'muito alto';
+      }) || [];
+      const riscosAltos = riscosAltosCriticos.length;
+      riscosAltosCriticos.forEach(r => {
         alertDetails.push({ id: r.id, title: r.nome, description: r.descricao || undefined, type: 'risco' });
       });
 
