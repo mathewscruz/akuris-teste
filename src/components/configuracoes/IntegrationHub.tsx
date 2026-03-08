@@ -165,7 +165,6 @@ const CATEGORIAS = {
   automacao: { nome: 'Automação', descricao: 'Plataformas de automação e webhooks' },
   itsm: { nome: 'ITSM / Gestão de TI', descricao: 'Ferramentas de gestão de serviços' },
   cloud: { nome: 'Cloud & Identidade', descricao: 'Provedores de nuvem e gestão de identidade' },
-  armazenamento: { nome: 'Armazenamento', descricao: 'Armazenamento e backup de documentos' }
 };
 
 export function IntegrationHub() {
