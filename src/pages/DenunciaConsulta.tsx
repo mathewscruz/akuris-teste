@@ -86,7 +86,7 @@ export default function DenunciaConsulta() {
 
       setEmpresa(empresaData);
     } catch (error) {
-      console.error('Erro ao carregar empresa:', error);
+      logger.error('Erro ao carregar empresa', { module: 'DenunciaConsulta', error: String(error) });
       toast({
         title: "Erro",
         description: "Erro interno do sistema",

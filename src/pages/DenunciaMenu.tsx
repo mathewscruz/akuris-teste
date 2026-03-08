@@ -64,7 +64,7 @@ export default function DenunciaMenu() {
           logger.debug('Nenhum logotipo cadastrado para esta empresa', { module: 'DenunciaMenu' });
         }
       } catch (error) {
-        console.error('❌ [ERROR] Erro geral ao carregar configuração:', error);
+        logger.error('Erro geral ao carregar configuração', { module: 'DenunciaMenu', error: String(error) });
       } finally {
         setLoading(false);
       }
