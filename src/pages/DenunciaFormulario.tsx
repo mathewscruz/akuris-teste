@@ -125,7 +125,7 @@ export default function DenunciaFormulario() {
         // Buscar configurações da empresa
         logger.debug('Buscando configurações para empresa', { module: 'DenunciaFormulario' });
         const { data: configData, error: configError } = await supabase
-          .from('denuncias_configuracoes')
+          .from('denuncias_configuracoes_public' as any)
           .select('*')
           .eq('empresa_id', empresaData.id)
           .single();

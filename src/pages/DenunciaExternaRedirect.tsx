@@ -21,7 +21,7 @@ export default function DenunciaExternaRedirect() {
         
         // Primeiro buscar configuração para obter empresa_id
         const { data: config, error: configError } = await supabase
-          .from('denuncias_configuracoes')
+          .from('denuncias_configuracoes_public' as any)
           .select('empresa_id')
           .eq('token_publico', token)
           .eq('ativo', true)
