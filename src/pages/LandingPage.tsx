@@ -47,10 +47,13 @@ const LandingPage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<number | null>(null);
+  const [mockupProgress, setMockupProgress] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
+      const progress = Math.min(window.scrollY / 500, 1);
+      setMockupProgress(progress);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
