@@ -219,7 +219,7 @@ async function fetchExecutivoData(empresaId: string) {
         { label: 'Frameworks Monitorados', value: f.length },
       ]},
       { title: 'Incidentes Recentes', tableHeaders: ['Titulo', 'Gravidade', 'Status'],
-        tableRows: i.slice(0, 15).map(x => [x.titulo, x.gravidade || '-', x.status || '-']),
+        tableRows: i.slice(0, 15).map(x => [x.titulo, x.criticidade || '-', x.status || '-']),
         colWidths: [80, 45, 45] },
     ] as Section[]
   };
