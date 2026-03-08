@@ -36,6 +36,7 @@ const riscoSchema = z.object({
   impacto_residual: z.string().optional(),
   aceito: z.boolean().default(false),
   justificativa_aceite: z.string().optional(),
+  aprovador_aceite: z.string().optional(),
   ativos_vinculados: z.array(z.string()).default([]),
   data_proxima_revisao: z.string().optional()
 });
@@ -110,6 +111,7 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
       consequencias: '',
       aceito: false,
       justificativa_aceite: '',
+      aprovador_aceite: '',
       ativos_vinculados: [],
       data_proxima_revisao: ''
     }
@@ -146,6 +148,7 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
         consequencias: risco.consequencias || '',
         aceito: risco.aceito || false,
         justificativa_aceite: risco.justificativa_aceite || '',
+        aprovador_aceite: risco.aprovador_aceite || '',
         ativos_vinculados: [],
         data_proxima_revisao: risco.data_proxima_revisao || ''
       });
@@ -307,6 +310,20 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
       return;
     }
 
+    // Validar aceite: aprovador e justificativa obrigatórios
+    if (data.aceito && !data.aprovador_aceite) {
+      toast.error('Selecione um aprovador para o aceite do risco');
+      return;
+    }
+    if (data.aceito && !data.justificativa_aceite) {
+      toast.error('A justificativa é obrigatória para o aceite do risco');
+      return;
+    }
+    if (data.aceito && !data.data_proxima_revisao) {
+      toast.error('A data da próxima revisão é obrigatória para o aceite do risco');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -329,6 +346,9 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
           )
         : null;
 
+      // Se aceite marcado: NÃO marcar aceito=true, enviar para aprovação
+      const isNovoAceite = data.aceito && (!risco?.status_aceite || risco?.status_aceite === 'rejeitado');
+
       const riscoData: any = {
         nome: data.nome,
         descricao: data.descricao,
@@ -346,9 +366,11 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
         controles_existentes: data.controles_existentes || null,
         causas: data.causas || null,
         consequencias: data.consequencias || null,
-        aceito: data.aceito,
+        aceito: isNovoAceite ? false : (data.aceito && risco?.status_aceite === 'aprovado'),
         justificativa_aceite: data.justificativa_aceite || null,
+        aprovador_aceite: data.aprovador_aceite || null,
         data_proxima_revisao: data.data_proxima_revisao || null,
+        status_aceite: isNovoAceite ? 'pendente' : (data.aceito ? (risco?.status_aceite || null) : null),
         ...(risco?.id ? {} : { created_by: profile.user_id }),
       };
 
@@ -448,7 +470,39 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
         console.warn('Erro ao registrar histórico de avaliação:', histError);
       }
 
-      toast.success(risco?.id ? 'Risco atualizado com sucesso!' : 'Risco cadastrado com sucesso!');
+      // Se é um novo aceite, enviar notificação e e-mail ao aprovador
+      if (isNovoAceite && data.aprovador_aceite) {
+        try {
+          // Notificação in-app
+          await supabase.from('notifications').insert({
+            user_id: data.aprovador_aceite,
+            title: 'Solicitação de Aceite de Risco',
+            message: `O risco "${data.nome}" foi enviado para sua aprovação de aceite.`,
+            type: 'info',
+            link_to: '/riscos'
+          });
+
+          // E-mail via edge function
+          await supabase.functions.invoke('send-risco-aceite-notification', {
+            body: {
+              risco_id: riscoId,
+              risco_nome: data.nome,
+              aprovador_id: data.aprovador_aceite,
+              solicitante_id: profile.user_id,
+              empresa_id: profile.empresa_id,
+              tipo: 'solicitacao'
+            }
+          });
+        } catch (notifError) {
+          console.warn('Erro ao enviar notificação de aceite:', notifError);
+        }
+      }
+
+      toast.success(
+        isNovoAceite 
+          ? 'Risco salvo e enviado para aprovação de aceite!' 
+          : (risco?.id ? 'Risco atualizado com sucesso!' : 'Risco cadastrado com sucesso!')
+      );
       onSuccess();
     } catch (error: any) {
       console.error('❌ Erro ao salvar risco:', error);
@@ -971,7 +1025,7 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
                   <div className="text-left">
                     <CardTitle>Aceite do Risco (Opcional)</CardTitle>
                     <CardDescription>
-                      Formalização da decisão de aceitar o risco
+                      Solicite aprovação formal para aceitar este risco
                     </CardDescription>
                   </div>
                   <ChevronDown className={cn(
@@ -983,6 +1037,20 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent className="space-y-4 pt-4">
+                {/* Mostrar status atual se já em fluxo */}
+                {risco?.status_aceite && (
+                  <div className={cn(
+                    "p-3 rounded-lg text-sm flex items-center gap-2",
+                    risco.status_aceite === 'pendente' && "bg-yellow-50 text-yellow-800 border border-yellow-200",
+                    risco.status_aceite === 'aprovado' && "bg-green-50 text-green-800 border border-green-200",
+                    risco.status_aceite === 'rejeitado' && "bg-red-50 text-red-800 border border-red-200"
+                  )}>
+                    {risco.status_aceite === 'pendente' && '⏳ Aceite pendente de aprovação'}
+                    {risco.status_aceite === 'aprovado' && '✅ Aceite aprovado'}
+                    {risco.status_aceite === 'rejeitado' && '❌ Aceite rejeitado — você pode reenviar'}
+                  </div>
+                )}
+
                 <FormField
                   control={form.control}
                   name="aceito"
@@ -992,12 +1060,13 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
                         <Checkbox
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          disabled={risco?.status_aceite === 'pendente' || risco?.status_aceite === 'aprovado'}
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>Aceitar este risco formalmente</FormLabel>
+                        <FormLabel>Solicitar aceite formal deste risco</FormLabel>
                         <FormDescription>
-                          Marque se a organização decidiu aceitar o risco
+                          Ao marcar, será necessário indicar um aprovador e aguardar a aprovação
                         </FormDescription>
                       </div>
                     </FormItem>
@@ -1008,10 +1077,31 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
                   <>
                     <FormField
                       control={form.control}
+                      name="aprovador_aceite"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Aprovador do Aceite *</FormLabel>
+                          <FormControl>
+                            <UserSelect
+                              value={field.value || ''}
+                              onValueChange={field.onChange}
+                              placeholder="Selecione quem aprovará o aceite"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Esta pessoa receberá uma notificação e e-mail para aprovar ou rejeitar
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
                       name="justificativa_aceite"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Justificativa do Aceite</FormLabel>
+                          <FormLabel>Justificativa do Aceite *</FormLabel>
                           <FormControl>
                             <Textarea 
                               placeholder="Justifique a decisão de aceitar o risco..." 
@@ -1019,6 +1109,23 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
                               {...field} 
                             />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="data_proxima_revisao"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data Próxima Revisão *</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Data obrigatória para reavaliar o aceite do risco
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
