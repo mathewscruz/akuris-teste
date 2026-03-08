@@ -126,12 +126,16 @@ export function IncidenteDialog({ incidente, onSuccess, trigger, externalOpen, o
 
   useEffect(() => {
     const loadAtivos = async () => {
-      const { data } = await supabase.from('ativos').select('id, nome').order('nome');
+      const { data: profile } = await supabase.from('profiles').select('empresa_id').eq('user_id', (await supabase.auth.getUser()).data.user?.id).single();
+      if (!profile?.empresa_id) return;
+      const { data } = await supabase.from('ativos').select('id, nome').eq('empresa_id', profile.empresa_id).order('nome');
       if (data) setAtivos(data);
     };
 
     const loadRiscos = async () => {
-      const { data } = await supabase.from('riscos').select('id, nome').order('nome');
+      const { data: profile } = await supabase.from('profiles').select('empresa_id').eq('user_id', (await supabase.auth.getUser()).data.user?.id).single();
+      if (!profile?.empresa_id) return;
+      const { data } = await supabase.from('riscos').select('id, nome').eq('empresa_id', profile.empresa_id).order('nome');
       if (data) setRiscos(data);
     };
 
