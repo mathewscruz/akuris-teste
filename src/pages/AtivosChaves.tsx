@@ -56,17 +56,19 @@ export default function AtivosChaves() {
     nome: string;
   }>({ open: false, id: '', nome: '' });
   const { toast } = useToast();
+  const { empresaId } = useEmpresaId();
 
   // Buscar estatísticas
   const { data: stats, isLoading: statsLoading } = useChavesStats();
 
   // Buscar chaves
   const { data: chaves = [], refetch, isLoading } = useQuery({
-    queryKey: ['ativos-chaves'],
+    queryKey: ['ativos-chaves', empresaId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ativos_chaves_criptograficas')
         .select('*')
+        .eq('empresa_id', empresaId!)
         .order('data_proxima_rotacao');
 
       if (error) throw error;
