@@ -1,88 +1,80 @@
 
 
-# Validacao Completa — Modulo Seguranca (Contas Privilegiadas + Revisao de Acessos + Sistemas)
+# Varredura Geral — Oportunidades de Melhoria de UX
 
-Analisei todos os componentes: ContasPrivilegiadas.tsx, ContaDialog.tsx, ContasDashboard.tsx, SistemasContent.tsx, SistemaDialog.tsx, RevisaoAcessos.tsx, ReviewDialog.tsx, ReviewItemsDialog.tsx, ReviewItemDecisionDialog.tsx, ReviewExternalForm.tsx, SistemaUsuariosList.tsx, SistemaUsuarioDialog.tsx, useReviewStats.tsx, useReviewData.tsx.
-
----
-
-## OK — Sem problemas
-
-- **ContasPrivilegiadas.tsx** — query principal filtra por `empresa_id`, queryKey inclui `empresaId`. Filtros, StatCards, ConfirmDialog, empty states. OK.
-- **ContaDialog** — valida que o sistema pertence a empresa antes de gravar. Grava `empresa_id`. OK.
-- **RevisaoAcessos.tsx** — queries filtram por `empresa_id`, queryKeys incluem `empresaId`. Tabs (Ativas, Historico, Usuarios). OK.
-- **ReviewDialog** — busca sistemas e usuarios filtrados por `empresa_id`. OK.
-- **useReviewStats** — todas as queries filtram por `empresa_id`, cacheKey inclui `empresaId`. OK.
-- **useReviewData** — grava `empresa_id` no createReview. OK.
-- **SistemaUsuariosList** — query filtra por `empresa_id`. OK.
-- **SistemaUsuarioDialog** — busca sistemas por `empresa_id`. OK.
+Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
 
 ---
 
-## Problemas Identificados
+## 1. ErrorBoundary ausente na maioria das paginas
 
-### 1. SEGURANCA — `SistemasContent` busca sistemas SEM filtro `empresa_id`
+**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
 
-Linha 54: `supabase.from('sistemas_privilegiados').select('*').order('nome_sistema')` — sem `.eq('empresa_id', empresaId)`. Sistemas de outras empresas podem aparecer. A queryKey tambem e estatica `['sistemas-privilegiados-governanca']`, sem `empresaId`.
+**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
 
-**Correcao**: Importar `useEmpresaId`, adicionar `.eq('empresa_id', empresaId)`, incluir `empresaId` na queryKey, e `enabled: !!empresaId`.
-
-### 2. SEGURANCA — `SistemasContent.handleDeleteSistema` verifica contas sem filtro `empresa_id`
-
-Linha 81-84: `supabase.from('contas_privilegiadas').select('id').eq('sistema_id', sistemaId)` — depende exclusivamente de RLS. Deve incluir filtro redundante.
-
-**Correcao**: Adicionar `.eq('empresa_id', empresaId)`.
-
-### 3. UX — Contas Privilegiadas usa botoes inline em vez de DropdownMenu
-
-Linhas 294-324: a coluna de acoes usa botoes ghost com Tooltip (Edit, Trash2) em vez do padrao DropdownMenu com MoreHorizontal adotado nos demais modulos.
-
-**Correcao**: Migrar para DropdownMenu.
-
-### 4. UX — Revisao de Acessos usa botoes inline em vez de DropdownMenu
-
-Linhas 219-261: mesma inconsistencia — botoes ghost inline (Eye, Edit, Trash2) em vez de DropdownMenu.
-
-**Correcao**: Migrar para DropdownMenu.
-
-### 5. UX — Sistemas usa botoes inline em vez de DropdownMenu
-
-Linhas 234-264: mesma inconsistencia — botoes ghost inline (Edit, Trash2).
-
-**Correcao**: Migrar para DropdownMenu.
-
-### 6. UX — SistemaUsuariosList usa botoes inline em vez de DropdownMenu
-
-Linhas 198-229: botoes ghost inline (Pencil, Trash2).
-
-**Correcao**: Migrar para DropdownMenu.
-
-### 7. CODIGO MORTO — `ContasDashboard` nao e utilizado
-
-O componente ContasDashboard.tsx nao e importado em nenhum lugar do projeto. E codigo morto.
-
-**Correcao**: Remover o arquivo.
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
 
 ---
 
-## Resumo de Acoes
+## 2. Feedback de "carregando" inconsistente entre modulos
 
-| # | Problema | Tipo | Impacto |
-|---|----------|------|---------|
-| 1 | SistemasContent sem empresa_id | Seguranca/Cache | **Alto** |
-| 2 | handleDeleteSistema sem empresa_id | Seguranca | **Medio** |
-| 3 | Contas Privilegiadas acoes inline | UX | **Medio** |
-| 4 | Revisao Acessos acoes inline | UX | **Medio** |
-| 5 | Sistemas acoes inline | UX | **Medio** |
-| 6 | SistemaUsuariosList acoes inline | UX | **Medio** |
-| 7 | ContasDashboard codigo morto | Manutencao | **Baixo** |
+**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
 
-Todos os 7 itens serao implementados.
+**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
 
-### Arquivos a editar:
-- `src/components/governanca/SistemasContent.tsx` — empresa_id filter + queryKey + DropdownMenu
-- `src/pages/ContasPrivilegiadas.tsx` — DropdownMenu nas acoes
-- `src/pages/RevisaoAcessos.tsx` — DropdownMenu nas acoes
-- `src/components/revisao-acessos/SistemaUsuariosList.tsx` — DropdownMenu nas acoes
-- `src/components/contas-privilegiadas/ContasDashboard.tsx` — remover arquivo
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
+
+---
+
+## 3. Paginas sem EmptyState padronizado
+
+**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+
+**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+
+---
+
+## 4. Ausencia de atalhos de teclado documentados para o usuario
+
+**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+
+**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+
+---
+
+## 5. Botao de "Voltar" no header nao tem tooltip
+
+**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+
+**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
+
+---
+
+## Resumo de Prioridade
+
+| # | Melhoria | Impacto | Esforco |
+|---|----------|---------|---------|
+| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
+| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
+| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
+| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
+| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
+
+Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
 
