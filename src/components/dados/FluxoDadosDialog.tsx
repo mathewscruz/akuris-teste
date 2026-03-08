@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
+import { logger } from "@/lib/logger";
 
 interface FluxoDadosDialogProps {
   isOpen: boolean;
