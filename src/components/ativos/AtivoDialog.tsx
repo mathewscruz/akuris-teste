@@ -85,6 +85,7 @@ const criticidades = [
 const statusOptions = [
   { value: 'ativo', label: 'Ativo' },
   { value: 'inativo', label: 'Inativo' },
+  { value: 'em_manutencao', label: 'Em Manutenção' },
   { value: 'descontinuado', label: 'Descontinuado' },
 ];
 

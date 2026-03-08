@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Plus, FileCheck, AlertTriangle, CheckCircle, Clock, Edit, Trash2, User } from 'lucide-react';
+import { Plus, FileCheck, AlertTriangle, CheckCircle, Clock, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -14,6 +15,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { Card, CardContent } from '@/components/ui/card';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useLicencasStats } from '@/hooks/useLicencasStats';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { formatDateOnly } from '@/lib/date-utils';
 import { getCriticidadeColor, getItemStatusColor, formatStatus } from '@/lib/text-utils';
 
@@ -50,17 +52,19 @@ export default function AtivosLicencas() {
     nome: string;
   }>({ open: false, id: '', nome: '' });
   const { toast } = useToast();
+  const { empresaId } = useEmpresaId();
 
   // Buscar estatísticas
   const { data: stats, isLoading: statsLoading } = useLicencasStats();
 
   // Buscar licenças
   const { data: licencas = [], refetch, isLoading } = useQuery({
-    queryKey: ['ativos-licencas'],
+    queryKey: ['ativos-licencas', empresaId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ativos_licencas')
         .select('*')
+        .eq('empresa_id', empresaId!)
         .order('data_vencimento');
 
       if (error) throw error;
@@ -97,6 +101,7 @@ export default function AtivosLicencas() {
       
       return (data || []) as Licenca[];
     },
+    enabled: !!empresaId,
   });
 
   const handleNew = () => {
@@ -290,41 +295,27 @@ export default function AtivosLicencas() {
       key: 'acoes',
       label: 'Ações',
       render: (_: any, licenca: Licenca) => (
-        <div className="flex items-center gap-1">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleEdit(licenca)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Editar licença</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(licenca.id, licenca.nome)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Excluir licença</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleEdit(licenca)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => handleDelete(licenca.id, licenca.nome)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )
     }
   ];

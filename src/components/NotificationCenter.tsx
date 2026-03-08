@@ -243,11 +243,20 @@ const NotificationCenter: React.FC = () => {
         });
       });
 
+      // Buscar empresa_id do usuário
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('empresa_id')
+        .eq('user_id', user!.id)
+        .single();
+      const userEmpresaId = profileData?.empresa_id;
+
       // Buscar licenças vencendo/vencidas
       const { data: licencas } = await supabase
         .from('ativos_licencas')
         .select('id, nome, data_vencimento, tipo_licenca')
         .eq('status', 'ativa')
+        .eq('empresa_id', userEmpresaId || '')
         .not('data_vencimento', 'is', null);
 
       (licencas || []).forEach(licenca => {
@@ -283,6 +292,7 @@ const NotificationCenter: React.FC = () => {
         .from('ativos_chaves_criptograficas')
         .select('id, nome, data_proxima_rotacao, tipo_chave, ambiente')
         .eq('status', 'ativa')
+        .eq('empresa_id', userEmpresaId || '')
         .not('data_proxima_rotacao', 'is', null);
 
       (chaves || []).forEach(chave => {

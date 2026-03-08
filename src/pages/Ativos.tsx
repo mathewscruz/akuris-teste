@@ -94,6 +94,7 @@ const criticidades = [
 const statusOptions = [
   { value: 'ativo', label: 'Ativo', color: 'success' },
   { value: 'inativo', label: 'Inativo', color: 'secondary' },
+  { value: 'em_manutencao', label: 'Em Manutenção', color: 'warning' },
   { value: 'descontinuado', label: 'Descontinuado', color: 'destructive' },
 ];
 
