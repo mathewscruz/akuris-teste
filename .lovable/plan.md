@@ -1,80 +1,78 @@
 
 
-# Varredura Geral — Oportunidades de Melhoria de UX
+# Responsividade Completa do Sistema
 
-Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
+## Diagnóstico
 
----
+Após análise do codebase, identifiquei os seguintes problemas de responsividade:
 
-## 1. ErrorBoundary ausente na maioria das paginas
+### Problemas encontrados
 
-**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
+1. **Dialogs (modais)** — Usam `max-w-5xl` fixo sem adaptação mobile. Em telas pequenas ocupam a tela inteira sem padding adequado, sem scroll correto. Exemplos: `RiscoDialog`, `ContratoDialogWizard`, `DocGenDialog`, etc.
 
-**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
+2. **DataTable** — Tabelas com muitas colunas não têm scroll horizontal no mobile. Colunas como "Tags", "Resp.", "Tratam." ficam comprimidas e ilegíveis.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
+3. **Botões de ação em páginas** — Linhas de botões (Exportar, Categorias, Matriz, Novo Risco) não quebram em mobile, ficam cortados. Ex: `Riscos.tsx` linhas 676-718.
 
----
+4. **PageHeader** — Título `text-3xl` fixo é grande demais para mobile. Actions ficam na mesma linha sem wrap.
 
-## 2. Feedback de "carregando" inconsistente entre modulos
+5. **StatCards grid** — Grid `lg:grid-cols-4` comprime cards demais em tablets. Falta breakpoint intermediário.
 
-**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
+6. **Configurações tabs** — TabsList horizontal com muitas abas não tem scroll horizontal em mobile.
 
-**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
+7. **DataTable pagination** — Info "Mostrando X a Y de Z" + seletor + paginação ficam na mesma linha, quebra no mobile.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
+8. **KPI Pills** — Scrollbar horizontal funciona, mas não há indicador visual de que é scrollável.
 
----
+9. **Dashboard grids** — Seções com `xl:grid-cols-3` pulam direto para 1 coluna no mobile sem estágio intermediário em alguns pontos.
 
-## 3. Paginas sem EmptyState padronizado
+10. **Dialogs grandes como RiscoFormWizard** — Em mobile deveria virar fullscreen (drawer-style) ao invés de modal centralizado.
 
-**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+## Implementação
 
-**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
+### A. Componentes base (impacto global)
 
-| Arquivo | Mudanca |
-|---------|---------|
-| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+| Arquivo | Mudança |
+|---|---|
+| `src/components/ui/dialog.tsx` | Adicionar classes responsivas ao `DialogContent`: mobile fullscreen (`max-h-[100dvh] h-full sm:h-auto sm:max-h-[90vh]`, `rounded-none sm:rounded-lg`, `inset-0 sm:inset-auto sm:left-[50%] sm:top-[50%]`) |
+| `src/components/ui/data-table.tsx` | Wrap tabela em `overflow-x-auto`; pagination layout stack no mobile; search/filters stack vertical no mobile |
+| `src/components/ui/page-header.tsx` | Título `text-2xl sm:text-3xl`; actions wrap `flex-wrap` |
+| `src/components/ui/stat-card.tsx` | Valor `text-2xl sm:text-3xl`; padding mais compacto no mobile |
 
----
+### B. Páginas principais
 
-## 4. Ausencia de atalhos de teclado documentados para o usuario
+| Arquivo | Mudança |
+|---|---|
+| `src/pages/Riscos.tsx` | Botões de ação: `flex-wrap` no container; ocultar labels no mobile (só ícones); StatCards grid `grid-cols-2 lg:grid-cols-4` |
+| `src/pages/Dashboard.tsx` | KPI pills: indicador de scroll (gradient fade); grids intermediários para tablet |
+| `src/pages/Contratos.tsx` | Mesma lógica de botões e tabela |
+| `src/pages/Documentos.tsx` | Mesma lógica |
+| `src/pages/Configuracoes.tsx` | TabsList com `overflow-x-auto` e `scrollbar-hide` |
 
-**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+### C. Dialogs grandes
 
-**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+| Arquivo | Mudança |
+|---|---|
+| `src/components/riscos/RiscoDialog.tsx` | Mobile: `max-w-full sm:max-w-5xl`, fullscreen style |
+| Outros dialogs grandes (ContratoDialogWizard, DocGenDialog, etc.) | Mesmo padrão |
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+### D. CSS utilitário
 
----
+| Arquivo | Mudança |
+|---|---|
+| `src/index.css` | Adicionar `.safe-area-bottom { padding-bottom: env(safe-area-inset-bottom) }` e `.scrollbar-hide` para ocultar scrollbar em pills |
 
-## 5. Botao de "Voltar" no header nao tem tooltip
+## Resumo de arquivos a editar
 
-**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
-
-**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
-
----
-
-## Resumo de Prioridade
-
-| # | Melhoria | Impacto | Esforco |
-|---|----------|---------|---------|
-| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
-| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
-| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
-| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
-| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
-
-Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
+1. `src/components/ui/dialog.tsx` — Fullscreen mobile
+2. `src/components/ui/data-table.tsx` — Scroll horizontal + pagination stack
+3. `src/components/ui/page-header.tsx` — Texto e layout responsivos
+4. `src/components/ui/stat-card.tsx` — Tamanhos responsivos
+5. `src/pages/Riscos.tsx` — Botões e grid
+6. `src/pages/Dashboard.tsx` — Grids e pills
+7. `src/pages/Contratos.tsx` — Botões e layout
+8. `src/pages/Configuracoes.tsx` — Tabs scrolláveis
+9. `src/components/riscos/RiscoDialog.tsx` — Fullscreen mobile
+10. `src/index.css` — Utilitários CSS
+11. `src/components/dashboard/KPIPills.tsx` — Fade indicator scroll
 
