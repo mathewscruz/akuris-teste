@@ -1,80 +1,100 @@
 
 
-# Varredura Geral — Oportunidades de Melhoria de UX
+# Validacao Completa — Modulo Compliance (Due Diligence + Denuncia + Politicas)
 
-Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
-
----
-
-## 1. ErrorBoundary ausente na maioria das paginas
-
-**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
-
-**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
+Analisei todos os componentes: DueDiligence.tsx, DueDiligenceDashboard.tsx, FornecedoresManager.tsx, AssessmentsManagerEnhanced.tsx, TemplatesManager.tsx, AssessmentDialog.tsx, useDueDiligenceStats.tsx, Denuncia.tsx, DenunciasDashboard.tsx, DenunciaDialog.tsx, useDenunciasStats.tsx, Politicas.tsx, PoliticaDialog.tsx.
 
 ---
 
-## 2. Feedback de "carregando" inconsistente entre modulos
+## OK — Sem problemas
 
-**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
-
-**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
-
----
-
-## 3. Paginas sem EmptyState padronizado
-
-**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
-
-**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+- **DueDiligence.tsx** — page wrapper com tabs, custom events para navegacao. OK.
+- **DueDiligenceDashboard** — busca empresa_id via profile, filtra assessments e fornecedores. OK.
+- **useDueDiligenceStats** — busca empresa_id via profile, filtra assessments por empresa. OK.
+- **AssessmentsManagerEnhanced** — query filtra por empresa_id. DropdownMenu nas acoes. OK.
+- **AssessmentDialog** — grava empresa_id. OK.
+- **TemplatesManager** — templates sao globais/compartilhados, adequado. OK.
+- **Denuncia.tsx** — page wrapper com StatCards, deep link. OK.
+- **Politicas.tsx** — queries filtram por empresa_id, queryKey inclui empresaId. StatCards com variantes semanticas. DataTable com filtros. ConfirmDialog. OK.
+- **PoliticaDialog** — CRUD simples, handleSave em Politicas.tsx grava empresa_id. OK.
 
 ---
 
-## 4. Ausencia de atalhos de teclado documentados para o usuario
+## Problemas Identificados
 
-**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+### 1. SEGURANCA — `useIncidentesStats` sem filtro `empresa_id` e queryKey estatica
 
-**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+Linhas 21-23: `supabase.from('incidentes').select('status, criticidade, created_at')` — sem `.eq('empresa_id', empresaId)`. A queryKey e fixa `['incidentes-stats']`, sem empresaId. Stats de incidentes de todas as empresas aparecem misturadas.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+**Correcao**: Importar `useEmpresaId`, adicionar `.eq('empresa_id', empresaId)`, incluir `empresaId` na queryKey, `enabled: !!empresaId`.
+
+### 2. SEGURANCA — `useDenunciasStats` sem filtro `empresa_id` e queryKey estatica
+
+Linhas 16-18: `supabase.from('denuncias').select('id, status')` — sem filtro de empresa. QueryKey fixa `['denuncias-stats']`.
+
+**Correcao**: Importar `useEmpresaId`, adicionar `.eq('empresa_id', empresaId)`, incluir `empresaId` na queryKey, `enabled: !!empresaId`.
+
+### 3. SEGURANCA — `DenunciasDashboard.carregarDenuncias` sem filtro `empresa_id`
+
+Linhas 63-69: `supabase.from('denuncias').select(...).order(...)` — busca denuncias de TODAS as empresas. Depende exclusivamente de RLS.
+
+**Correcao**: Importar `useEmpresaId`, adicionar `.eq('empresa_id', empresaId)`.
+
+### 4. SEGURANCA — `DenunciaDialog.carregarDados` busca usuarios sem filtro `empresa_id`
+
+Linhas 115-119: `supabase.from('profiles').select('user_id, nome, role').in('role', ['admin', 'super_admin']).order('nome')` — retorna admins de TODAS as empresas no dropdown de atribuicao de responsavel.
+
+**Correcao**: Adicionar `.eq('empresa_id', empresaId)`.
+
+### 5. SEGURANCA — `FornecedoresManager` busca fornecedores SEM filtro `empresa_id`
+
+Linhas 84-87: `supabase.from('fornecedores').select('*').order('nome')` — sem filtro de empresa. QueryKey tambem e estatica `['fornecedores-with-stats']`. Fornecedores de outras empresas aparecem na listagem.
+
+Linhas 92-94: assessments tambem buscados sem filtro empresa: `supabase.from('due_diligence_assessments').select(...)`.
+
+**Correcao**: Importar `useEmpresaId`, filtrar ambas queries por `empresa_id`, incluir `empresaId` na queryKey.
+
+### 6. UX — Politicas usa botoes inline em vez de DropdownMenu
+
+Linhas 228-261: a coluna de acoes usa botoes ghost inline com Tooltip (Send, Pencil, Trash2) em vez do padrao DropdownMenu com MoreHorizontal.
+
+**Correcao**: Migrar para DropdownMenu.
+
+### 7. UX — Planos de Acao usa botoes inline em vez de DropdownMenu
+
+Linhas 399-436: a coluna de acoes usa botoes ghost inline (Pencil, Trash2, ExternalLink) em vez de DropdownMenu.
+
+**Correcao**: Migrar para DropdownMenu.
+
+### 8. UX — FornecedoresManager usa botoes inline em vez de DropdownMenu
+
+A tabela de fornecedores usa botoes ghost inline (Edit2, Trash2, Eye, ClipboardList) em vez de DropdownMenu.
+
+**Correcao**: Migrar para DropdownMenu.
 
 ---
 
-## 5. Botao de "Voltar" no header nao tem tooltip
+## Resumo de Acoes
 
-**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+| # | Problema | Tipo | Impacto |
+|---|----------|------|---------|
+| 1 | useIncidentesStats sem empresa_id | Seguranca/Cache | **Alto** |
+| 2 | useDenunciasStats sem empresa_id | Seguranca/Cache | **Alto** |
+| 3 | DenunciasDashboard sem empresa_id | Seguranca | **Alto** |
+| 4 | DenunciaDialog usuarios sem empresa_id | Seguranca | **Alto** |
+| 5 | FornecedoresManager sem empresa_id | Seguranca/Cache | **Alto** |
+| 6 | Politicas acoes inline → DropdownMenu | UX | **Medio** |
+| 7 | PlanosAcao acoes inline → DropdownMenu | UX | **Medio** |
+| 8 | FornecedoresManager acoes inline → DropdownMenu | UX | **Medio** |
 
-**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+Todos os 8 itens serao implementados.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
-
----
-
-## Resumo de Prioridade
-
-| # | Melhoria | Impacto | Esforco |
-|---|----------|---------|---------|
-| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
-| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
-| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
-| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
-| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
-
-Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
+### Arquivos a editar:
+- `src/hooks/useIncidentesStats.tsx` — empresa_id filter + queryKey
+- `src/hooks/useDenunciasStats.tsx` — empresa_id filter + queryKey
+- `src/components/denuncia/DenunciasDashboard.tsx` — empresa_id filter
+- `src/components/denuncia/DenunciaDialog.tsx` — empresa_id filter no fetchProfiles
+- `src/components/due-diligence/FornecedoresManager.tsx` — empresa_id filter + queryKey + DropdownMenu
+- `src/pages/Politicas.tsx` — DropdownMenu nas acoes
+- `src/pages/PlanosAcao.tsx` — DropdownMenu nas acoes
 
