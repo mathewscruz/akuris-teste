@@ -43,7 +43,22 @@ export default function RelatoriosContratos() {
   const [filtros, setFiltros] = useState<FiltrosRelatorio>({
     periodo: 'mes'
   });
+  const [empresaId, setEmpresaId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchEmpresa = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('empresa_id')
+        .eq('user_id', user.id)
+        .single();
+      setEmpresaId(data?.empresa_id || null);
+    };
+    fetchEmpresa();
+  }, []);
 
   useEffect(() => {
     if (open) {
