@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -9,9 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit2, Trash2, Building, Mail, Phone, Filter, Eye, X, Shield, ClipboardList } from 'lucide-react';
+import { Plus, Edit2, Trash2, Building, Mail, Phone, Filter, Eye, X, Shield, ClipboardList, MoreHorizontal } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
 
@@ -54,6 +55,7 @@ const CATEGORIAS = [
 ];
 
 export function FornecedoresManager() {
+  const { empresaId } = useEmpresaId();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFornecedor, setEditingFornecedor] = useState<Fornecedor | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -79,11 +81,13 @@ export function FornecedoresManager() {
 
   // Fetch fornecedores with assessment stats
   const { data: fornecedores = [], isLoading } = useQuery({
-    queryKey: ['fornecedores-with-stats'],
+    queryKey: ['fornecedores-with-stats', empresaId],
+    enabled: !!empresaId,
     queryFn: async () => {
       const { data: fornecedoresData, error } = await supabase
         .from('fornecedores')
         .select('*')
+        .eq('empresa_id', empresaId!)
         .order('nome');
 
       if (error) throw error;
@@ -91,7 +95,8 @@ export function FornecedoresManager() {
       // Fetch assessment stats for all fornecedores
       const { data: assessments } = await supabase
         .from('due_diligence_assessments')
-        .select('fornecedor_email, status, score_final, created_at');
+        .select('fornecedor_email, status, score_final, created_at')
+        .eq('empresa_id', empresaId!);
 
       const assessmentMap = new Map<string, { total: number; lastScore: number | null; pending: number }>();
       
@@ -260,7 +265,7 @@ export function FornecedoresManager() {
   });
 
   return (
-    <TooltipProvider>
+    <>
       <Card className="rounded-lg border overflow-hidden">
         <CardContent className="p-0">
           <div className="p-6 pb-4">
@@ -401,51 +406,37 @@ export function FornecedoresManager() {
                         </div>
                         
                         <div className="flex items-center gap-2 ml-4">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button size="sm" variant="outline" onClick={() => {
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
                                 const event = new CustomEvent('navigateToDueDiligence', {
                                   detail: { tab: 'assessments', filter: { fornecedorId: fornecedor.id, fornecedorNome: fornecedor.nome } }
                                 });
                                 window.dispatchEvent(event);
                               }}>
-                                <Eye className="w-4 h-4 mr-1" />Ver Avaliações
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Ver avaliações deste fornecedor</TooltipContent>
-                          </Tooltip>
-                          
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button size="sm" onClick={() => {
+                                <Eye className="h-4 w-4 mr-2" />Ver Avaliações
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
                                 const event = new CustomEvent('createAssessment', {
                                   detail: { fornecedorId: fornecedor.id, fornecedorNome: fornecedor.nome }
                                 });
                                 window.dispatchEvent(event);
                               }}>
-                                <Plus className="w-4 h-4 mr-1" />Nova Avaliação
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Criar nova avaliação</TooltipContent>
-                          </Tooltip>
-                          
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="sm" onClick={() => handleEdit(fornecedor)}>
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Editar</TooltipContent>
-                          </Tooltip>
-                          
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, fornecedor })}>
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Remover</TooltipContent>
-                          </Tooltip>
+                                <Plus className="h-4 w-4 mr-2" />Nova Avaliação
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEdit(fornecedor)}>
+                                <Edit2 className="h-4 w-4 mr-2" />Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive" onClick={() => setDeleteDialog({ open: true, fornecedor })}>
+                                <Trash2 className="h-4 w-4 mr-2" />Remover
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
                     </CardContent>
@@ -473,6 +464,6 @@ export function FornecedoresManager() {
         confirmText="Remover"
         variant="destructive"
       />
-    </TooltipProvider>
+    </>
   );
 }

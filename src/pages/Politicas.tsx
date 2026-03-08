@@ -10,14 +10,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable, Column } from '@/components/ui/data-table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
 import { PoliticaDialog } from '@/components/politicas/PoliticaDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { formatDateOnly } from '@/lib/date-utils';
-import { Plus, BookOpen, Users, CheckCircle2, Clock, Pencil, Trash2, Send, Eye, Award, BarChart3 } from 'lucide-react';
+import { Plus, BookOpen, Users, CheckCircle2, Clock, Pencil, Trash2, Send, Eye, Award, BarChart3, MoreHorizontal } from 'lucide-react';
 
 const categoriaLabels: Record<string, string> = {
   seguranca: 'Segurança', privacidade: 'Privacidade', compliance: 'Compliance',
@@ -224,38 +224,28 @@ export default function Politicas() {
       render: (val: string) => <span className="text-sm">{formatDateOnly(val)}</span>,
     },
     {
-      key: 'actions', label: 'Ações', className: 'w-32',
+      key: 'actions', label: 'Ações', className: 'w-16',
       render: (_: any, item: any) => (
-        <TooltipProvider>
-          <div className="flex gap-1">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
             {item.status === 'rascunho' && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-success" onClick={() => handlePublish(item)}>
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Publicar</TooltipContent>
-              </Tooltip>
+              <DropdownMenuItem onClick={() => handlePublish(item)}>
+                <Send className="h-4 w-4 mr-2" />Publicar
+              </DropdownMenuItem>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingPolitica(item); setDialogOpen(true); }}>
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Editar</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(item.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Excluir</TooltipContent>
-            </Tooltip>
-          </div>
-        </TooltipProvider>
+            <DropdownMenuItem onClick={() => { setEditingPolitica(item); setDialogOpen(true); }}>
+              <Pencil className="h-4 w-4 mr-2" />Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(item.id)}>
+              <Trash2 className="h-4 w-4 mr-2" />Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];

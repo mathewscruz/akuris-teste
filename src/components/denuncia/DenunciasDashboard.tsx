@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Shield, Clock, CheckCircle, Eye, UserCheck, Calendar } from 'lucide-react';
@@ -42,10 +43,11 @@ export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | n
   const [sortField, setSortField] = useState('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const { toast } = useToast();
+  const { empresaId } = useEmpresaId();
 
   useEffect(() => {
-    carregarDenuncias();
-  }, []);
+    if (empresaId) carregarDenuncias();
+  }, [empresaId]);
 
   // Detectar se veio com itemIdToOpen
   useEffect(() => {
@@ -59,6 +61,7 @@ export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | n
   }, [itemIdToOpen, denuncias]);
 
   const carregarDenuncias = async () => {
+    if (!empresaId) return;
     try {
       const { data, error } = await supabase
         .from('denuncias')
@@ -66,6 +69,7 @@ export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | n
           *,
           categoria:denuncias_categorias(nome, cor)
         `)
+        .eq('empresa_id', empresaId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

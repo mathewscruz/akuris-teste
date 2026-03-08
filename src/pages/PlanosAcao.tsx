@@ -11,13 +11,13 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { PlanoAcaoDialog } from '@/components/planos-acao/PlanoAcaoDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { formatDateOnly } from '@/lib/date-utils';
-import { Plus, ListTodo, Clock, CheckCircle2, AlertTriangle, XCircle, Pencil, Trash2, LayoutGrid, List, Target, ExternalLink } from 'lucide-react';
+import { Plus, ListTodo, Clock, CheckCircle2, AlertTriangle, XCircle, Pencil, Trash2, LayoutGrid, List, Target, ExternalLink, MoreHorizontal } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 
 const statusConfig: Record<string, { label: string; variant: any; icon: any }> = {
@@ -398,41 +398,31 @@ export default function PlanosAcao() {
     {
       key: 'actions',
       label: 'Ações',
-      className: 'w-28',
+      className: 'w-16',
       render: (_: any, item: any) => (
-        <TooltipProvider>
-          <div className="flex gap-1">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
             {item._isExternal ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(item._route)}>
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Abrir no módulo</TooltipContent>
-              </Tooltip>
+              <DropdownMenuItem onClick={() => navigate(item._route)}>
+                <ExternalLink className="h-4 w-4 mr-2" />Abrir no módulo
+              </DropdownMenuItem>
             ) : (
               <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingPlano(item); setDialogOpen(true); }}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Editar</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(item.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Excluir</TooltipContent>
-                </Tooltip>
+                <DropdownMenuItem onClick={() => { setEditingPlano(item); setDialogOpen(true); }}>
+                  <Pencil className="h-4 w-4 mr-2" />Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(item.id)}>
+                  <Trash2 className="h-4 w-4 mr-2" />Excluir
+                </DropdownMenuItem>
               </>
             )}
-          </div>
-        </TooltipProvider>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];

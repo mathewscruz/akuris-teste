@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -76,6 +77,7 @@ export function DenunciaDialog({
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
   const { notify } = useIntegrationNotify();
+  const { empresaId } = useEmpresaId();
 
   const [formData, setFormData] = useState({
     status: denuncia.status,
@@ -111,12 +113,14 @@ export function DenunciaDialog({
 
       setAnexos(anexosData || []);
 
-      // Carregar usuários para atribuição
-      const { data: usersData } = await supabase
+      // Carregar usuários para atribuição (filtrado por empresa)
+      let usersQuery = supabase
         .from('profiles')
         .select('user_id, nome, role')
         .in('role', ['admin', 'super_admin'])
         .order('nome');
+      if (empresaId) usersQuery = usersQuery.eq('empresa_id', empresaId);
+      const { data: usersData } = await usersQuery;
 
       setUsuarios(usersData || []);
     } catch (error) {
