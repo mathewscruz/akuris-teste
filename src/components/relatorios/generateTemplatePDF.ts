@@ -133,8 +133,8 @@ async function fetchIncidentesData(empresaId: string) {
         { label: 'Gravidade Alta', value: alta },
         { label: 'Resolvidos', value: resolvidos },
       ]},
-      { title: 'Lista de Incidentes', tableHeaders: ['Titulo', 'Tipo', 'Gravidade', 'Status'],
-        tableRows: i.map(x => [x.titulo, x.tipo || '-', x.gravidade || '-', x.status || '-']),
+      { title: 'Lista de Incidentes', tableHeaders: ['Titulo', 'Categoria', 'Criticidade', 'Status'],
+        tableRows: i.map(x => [x.titulo, x.categoria || '-', x.criticidade || '-', x.status || '-']),
         colWidths: [60, 35, 35, 40] },
     ] as Section[]
   };
