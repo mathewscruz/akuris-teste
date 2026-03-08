@@ -33,9 +33,9 @@ const normalizeNivel = (nivel: string | null | undefined): string => {
 // Função para calcular score de risco (quanto menor, melhor)
 const calcularScore = (nivel: string): number => {
   const nivelNorm = normalizeNivel(nivel);
-  if (nivelNorm === 'crítico' || nivelNorm === 'muito alto') return 100;
+  if (nivelNorm === 'critico' || nivelNorm === 'muito alto') return 100;
   if (nivelNorm === 'alto') return 75;
-  if (nivelNorm === 'médio') return 50;
+  if (nivelNorm === 'medio') return 50;
   if (nivelNorm === 'baixo') return 25;
   if (nivelNorm === 'muito baixo') return 10;
   return 0;
