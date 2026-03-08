@@ -327,7 +327,7 @@ serve(async (req) => {
 
           case 'teams': {
             const teamsPayload = buildTeamsPayload(titulo, descricao, evento, gravidade, link, dados, timestamp);
-            const teamsResponse = await fetch(integration.webhook_url, {
+            const teamsResponse = await fetchWithRetry(integration.webhook_url, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(teamsPayload)
