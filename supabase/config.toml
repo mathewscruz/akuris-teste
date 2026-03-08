@@ -192,3 +192,6 @@ verify_jwt = false
 
 [functions.populate-requirement-guidance]
 verify_jwt = true
+
+[functions.send-risco-aceite-notification]
+verify_jwt = false

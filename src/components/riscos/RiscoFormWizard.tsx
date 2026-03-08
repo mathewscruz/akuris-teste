@@ -1025,7 +1025,7 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
                   <div className="text-left">
                     <CardTitle>Aceite do Risco (Opcional)</CardTitle>
                     <CardDescription>
-                      Formalização da decisão de aceitar o risco
+                      Solicite aprovação formal para aceitar este risco
                     </CardDescription>
                   </div>
                   <ChevronDown className={cn(
@@ -1037,6 +1037,20 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent className="space-y-4 pt-4">
+                {/* Mostrar status atual se já em fluxo */}
+                {risco?.status_aceite && (
+                  <div className={cn(
+                    "p-3 rounded-lg text-sm flex items-center gap-2",
+                    risco.status_aceite === 'pendente' && "bg-yellow-50 text-yellow-800 border border-yellow-200",
+                    risco.status_aceite === 'aprovado' && "bg-green-50 text-green-800 border border-green-200",
+                    risco.status_aceite === 'rejeitado' && "bg-red-50 text-red-800 border border-red-200"
+                  )}>
+                    {risco.status_aceite === 'pendente' && '⏳ Aceite pendente de aprovação'}
+                    {risco.status_aceite === 'aprovado' && '✅ Aceite aprovado'}
+                    {risco.status_aceite === 'rejeitado' && '❌ Aceite rejeitado — você pode reenviar'}
+                  </div>
+                )}
+
                 <FormField
                   control={form.control}
                   name="aceito"
@@ -1046,12 +1060,13 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
                         <Checkbox
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          disabled={risco?.status_aceite === 'pendente' || risco?.status_aceite === 'aprovado'}
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>Aceitar este risco formalmente</FormLabel>
+                        <FormLabel>Solicitar aceite formal deste risco</FormLabel>
                         <FormDescription>
-                          Marque se a organização decidiu aceitar o risco
+                          Ao marcar, será necessário indicar um aprovador e aguardar a aprovação
                         </FormDescription>
                       </div>
                     </FormItem>
@@ -1062,10 +1077,31 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
                   <>
                     <FormField
                       control={form.control}
+                      name="aprovador_aceite"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Aprovador do Aceite *</FormLabel>
+                          <FormControl>
+                            <UserSelect
+                              value={field.value || ''}
+                              onValueChange={field.onChange}
+                              placeholder="Selecione quem aprovará o aceite"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Esta pessoa receberá uma notificação e e-mail para aprovar ou rejeitar
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
                       name="justificativa_aceite"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Justificativa do Aceite</FormLabel>
+                          <FormLabel>Justificativa do Aceite *</FormLabel>
                           <FormControl>
                             <Textarea 
                               placeholder="Justifique a decisão de aceitar o risco..." 
@@ -1073,6 +1109,23 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
                               {...field} 
                             />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="data_proxima_revisao"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data Próxima Revisão *</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Data obrigatória para reavaliar o aceite do risco
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
