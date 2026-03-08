@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/components/AuthProvider';
@@ -49,6 +50,7 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
+    <LanguageProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
@@ -251,6 +253,7 @@ function App() {
         <SonnerToaster />
       </AuthProvider>
     </QueryClientProvider>
+    </LanguageProvider>
   );
 }
 
