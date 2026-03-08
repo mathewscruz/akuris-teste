@@ -75,9 +75,9 @@ export default function Continuidade() {
   const columns: Column<any>[] = [
     {
       key: 'nome',
-      header: 'Nome',
+      label: 'Nome',
       sortable: true,
-      render: (row) => (
+      render: (_val, row) => (
         <button onClick={() => setDetalheDialog({ open: true, plano: row })} className="text-left hover:text-primary transition-colors font-medium">
           {row.nome}
         </button>
@@ -85,36 +85,36 @@ export default function Continuidade() {
     },
     {
       key: 'tipo',
-      header: 'Tipo',
-      render: (row) => <Badge variant="outline">{tipoMap[row.tipo] || row.tipo}</Badge>,
+      label: 'Tipo',
+      render: (_val, row) => <Badge variant="outline">{tipoMap[row.tipo] || row.tipo}</Badge>,
     },
     {
       key: 'status',
-      header: 'Status',
-      render: (row) => {
+      label: 'Status',
+      render: (_val, row) => {
         const st = statusMap[row.status] || statusMap.rascunho;
         return <Badge variant={st.variant}>{st.label}</Badge>;
       },
     },
     {
       key: 'rto_horas',
-      header: 'RTO',
-      render: (row) => row.rto_horas != null ? `${row.rto_horas}h` : '—',
+      label: 'RTO',
+      render: (_val, row) => row.rto_horas != null ? `${row.rto_horas}h` : '—',
     },
     {
       key: 'rpo_horas',
-      header: 'RPO',
-      render: (row) => row.rpo_horas != null ? `${row.rpo_horas}h` : '—',
+      label: 'RPO',
+      render: (_val, row) => row.rpo_horas != null ? `${row.rpo_horas}h` : '—',
     },
     {
       key: 'proxima_revisao',
-      header: 'Próx. Revisão',
-      render: (row) => row.proxima_revisao ? formatDateOnly(row.proxima_revisao) : '—',
+      label: 'Próx. Revisão',
+      render: (_val, row) => row.proxima_revisao ? formatDateOnly(row.proxima_revisao) : '—',
     },
     {
       key: 'actions',
-      header: 'Ações',
-      render: (row) => (
+      label: 'Ações',
+      render: (_val, row) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">
