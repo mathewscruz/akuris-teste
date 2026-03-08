@@ -50,6 +50,7 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
+    <LanguageProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
