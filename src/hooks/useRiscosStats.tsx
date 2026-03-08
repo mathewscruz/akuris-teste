@@ -80,7 +80,7 @@ export const useRiscosStats = () => {
       const antiguosTotal = riscosAntigos?.length || 0;
       const antiguosCriticos = riscosAntigos?.filter(r => {
         const nivel = normalizeNivel(r.nivel_risco_residual || r.nivel_risco_inicial);
-        return nivel === 'crítico' || nivel === 'muito alto';
+        return nivel === 'critico' || nivel === 'muito alto';
       }).length || 0;
 
       const newStats: RiscosStats = {
