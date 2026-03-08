@@ -58,7 +58,7 @@ export default function ContasPrivilegiadas() {
 
   // Buscar contas privilegiadas
   const { data: contas = [], isLoading } = useQuery({
-    queryKey: ['contas-privilegiadas'],
+    queryKey: ['contas-privilegiadas', empresaId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contas_privilegiadas' as any)
@@ -70,11 +70,13 @@ export default function ContasPrivilegiadas() {
             criticidade
           )
         `)
+        .eq('empresa_id', empresaId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return (data || []) as unknown as ContaPrivilegiada[];
     },
+    enabled: !!empresaId,
   });
 
   // Buscar sistemas para o dropdown no dialog
