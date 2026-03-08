@@ -151,7 +151,8 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           conversation_id: conversationId,
           user_id: userInfo.user_id,
           empresa_id: userInfo.empresa_id,
-          action: 'chat'
+          action: 'chat',
+          ...(frameworkName && { framework_context: { framework_name: frameworkName, framework_id: frameworkId } }),
         }
       });
 
