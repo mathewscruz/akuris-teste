@@ -1,80 +1,84 @@
 
 
-# Varredura Geral — Oportunidades de Melhoria de UX
+# Avaliacao dos Modulos de Seguranca e Privacidade
 
-Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
+Apos analise detalhada de todos os componentes, identifiquei **5 problemas concretos** — incluindo falhas criticas de funcionalidade e seguranca.
 
 ---
 
-## 1. ErrorBoundary ausente na maioria das paginas
+## 1. CRITICO — Editar Incidente nao funciona pelo dropdown
 
-**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
+**Problema**: Na pagina `Incidentes.tsx`, quando o usuario clica em "Editar" no dropdown de acoes, o estado `editDialogOpen` e `selectedIncidente` sao atualizados, mas o `IncidenteDialog` **nao aceita controle externo de abertura**. Ele usa apenas seu proprio `useState(false)` interno + `DialogTrigger`. Resultado: o dialog de edicao nunca abre a partir do menu de acoes.
 
-**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
+**Solucao**: Adicionar suporte a `externalOpen` e `onExternalOpenChange` no `IncidenteDialog` (mesmo padrao ja usado em `ComunicacaoDialog` e `EvidenciaDialog`), e ajustar o `Incidentes.tsx` para usar esse controle.
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
+| `src/components/incidentes/IncidenteDialog.tsx` | Adicionar props `externalOpen` + `onExternalOpenChange` |
+| `src/pages/Incidentes.tsx` | Usar IncidenteDialog com controle externo para edicao |
 
 ---
 
-## 2. Feedback de "carregando" inconsistente entre modulos
+## 2. CRITICO — Queries em sub-dialogs sem filtro empresa_id (vazamento de dados)
 
-**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
+**Problema**: Varios dialogs de seguranca e privacidade fazem queries **sem filtro de empresa_id**, podendo exibir dados de outras empresas:
 
-**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
+| Componente | Query sem filtro |
+|------------|-----------------|
+| `IncidenteDialog.tsx` | `supabase.from('ativos').select(...)` e `supabase.from('riscos').select(...)` |
+| `TratamentoDialog.tsx` | `supabase.from('profiles').select(...)` (mostra usuarios de todas as empresas) |
+| `RopaWizard.tsx` | `supabase.from('dados_pessoais').select(...)` e `supabase.from('ativos').select(...)` |
+| `FluxoDadosDialog.tsx` | `supabase.from('dados_pessoais').select(...)` e `supabase.from('profiles').select(...)` |
+
+**Solucao**: Injetar `empresaId` (via prop ou `useEmpresaId`) em cada dialog e adicionar `.eq('empresa_id', empresaId)` nas queries.
+
+---
+
+## 3. FUNCIONALIDADE — Incidentes sem acesso a Tratamentos
+
+**Problema**: O componente `TratamentoDialog` existe e esta funcional, mas **nao e renderizado nem acessivel** na pagina de Incidentes. O dropdown de acoes mostra apenas "Editar", "Comunicacao", "Evidencias" e "Excluir". O usuario nao tem como registrar acoes de tratamento (corretiva, preventiva, investigativa) para um incidente — uma funcionalidade essencial para gestao de seguranca.
+
+**Solucao**: Adicionar opcao "Tratamentos" no dropdown de acoes e renderizar o `TratamentoDialog` no `Incidentes.tsx`, seguindo o mesmo padrao de `ComunicacaoDialog`.
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
+| `src/pages/Incidentes.tsx` | Adicionar menu item + estado + renderizacao do TratamentoDialog |
 
 ---
 
-## 3. Paginas sem EmptyState padronizado
+## 4. UX — DadosPessoaisDialog nao atualiza ao trocar de registro
 
-**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+**Problema**: O `DadosPessoaisDialog` inicializa o `formData` com `useState(dados?.nome || "")` no momento da criacao do componente. Quando o usuario clica "Editar" em um dado diferente, o `dados` prop muda mas o estado **nao se reinicializa** (React nao re-executa useState). Resultado: o formulario mostra os dados do registro anterior.
 
-**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
+**Solucao**: Adicionar `useEffect` que observa a prop `dados` e chama o equivalente a um `reset` do formulario, como ja e feito corretamente em `IncidenteDialog`, `ComunicacaoDialog` e `EvidenciaDialog`.
 
 | Arquivo | Mudanca |
 |---------|---------|
-| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+| `src/components/dados/DadosPessoaisDialog.tsx` | Adicionar useEffect para resetar formData quando `dados` muda |
 
 ---
 
-## 4. Ausencia de atalhos de teclado documentados para o usuario
+## 5. UX — Privacidade: KPI de incidentes nao filtra por status aberto
 
-**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+**Problema**: O KPI "Incidentes Privacidade" na pagina de Privacidade mostra a **contagem total** de incidentes do tipo `privacidade`, nao apenas os abertos. A descricao diz "Em aberto" mas a query nao filtra por status. Isso pode dar falsa impressao de que ha incidentes ativos quando ja foram resolvidos.
 
-**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+**Solucao**: Adicionar filtro `.in('status', ['aberto', 'investigacao', 'contido'])` na query de incidentes de privacidade.
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+| `src/pages/Privacidade.tsx` | Adicionar filtro de status na query de incidentes de privacidade |
 
 ---
 
-## 5. Botao de "Voltar" no header nao tem tooltip
+## Resumo
 
-**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+| # | Problema | Tipo | Impacto |
+|---|----------|------|---------|
+| 1 | Edit dialog nao abre | Bug funcional | **Critico** — usuario nao edita incidentes |
+| 2 | Sub-dialogs sem empresa_id | Seguranca | **Critico** — vazamento de dados entre empresas |
+| 3 | Sem Tratamentos em Incidentes | Feature ausente | **Alto** — funcionalidade core inacessivel |
+| 4 | DadosPessoaisDialog stale | Bug UX | **Medio** — formulario mostra dados errados |
+| 5 | KPI incidentes sem filtro status | Bug dados | **Baixo** — metricas imprecisas |
 
-**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
-
----
-
-## Resumo de Prioridade
-
-| # | Melhoria | Impacto | Esforco |
-|---|----------|---------|---------|
-| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
-| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
-| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
-| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
-| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
-
-Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
+Recomendo implementar todos os 5 itens nesta rodada — sao correcoes essenciais para que os modulos de seguranca e privacidade funcionem conforme o esperado.
 
