@@ -29,7 +29,7 @@ import { HistoricoVersoesDialog } from '@/components/documentos/HistoricoVersoes
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEmpresaId } from '@/hooks/useEmpresaId';
+import { useAuth } from '@/components/AuthProvider';
 import { logger } from '@/lib/logger';
 import { useDocumentosStats } from '@/hooks/useDocumentosStats';
 import { PageSkeleton } from '@/components/ui/page-skeleton';
