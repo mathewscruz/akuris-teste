@@ -33,8 +33,7 @@ export const useDashboardStats = () => {
         supabase
           .from('riscos')
           .select('id, nome, descricao, nivel_risco_inicial')
-          .eq('empresa_id', empresaId!)
-          .in('nivel_risco_inicial', ['Alto', 'Crítico', 'Muito Alto']),
+          .eq('empresa_id', empresaId!),
 
         supabase
           .from('denuncias')
