@@ -55,6 +55,7 @@ const CATEGORIAS = [
 ];
 
 export function FornecedoresManager() {
+  const { empresaId } = useEmpresaId();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFornecedor, setEditingFornecedor] = useState<Fornecedor | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
