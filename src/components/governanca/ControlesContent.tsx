@@ -95,6 +95,7 @@ export default function ControlesContent() {
   const [itemsPerPage] = useState(10);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useEmpresaId();
   
   // Reset page when filters change
   useEffect(() => {
