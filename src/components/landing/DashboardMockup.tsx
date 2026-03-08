@@ -23,7 +23,7 @@ export function DashboardMockup() {
             <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
             <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
           </div>
-          <span className="text-[10px] text-gray-500 ml-2 font-mono">app.akuris.com.br</span>
+          <span className="text-[10px] text-gray-500 ml-2 font-mono">akuris.com.br</span>
         </div>
 
         <div className="flex">

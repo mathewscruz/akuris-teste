@@ -298,22 +298,21 @@ const LandingPage = () => {
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8 lp-fade-up lp-visible">
-                  <Link to="/registro">
-                    <Button
-                      size="lg"
-                      className="bg-blue-600 hover:bg-blue-500 text-white text-base px-8 h-12 w-full sm:w-auto"
-                    >
-                      Teste Grátis
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-                  </Link>
+                  <Button
+                    size="lg"
+                    onClick={() => scrollToSection("contato")}
+                    className="bg-blue-600 hover:bg-blue-500 text-white text-base px-8 h-12 w-full sm:w-auto"
+                  >
+                    Solicitar Demonstração
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
                   <Button
                     size="lg"
                     variant="outline"
                     onClick={() => scrollToSection("contato")}
                     className="border-[#2A3F5F] bg-transparent text-gray-200 hover:bg-[#111B2E] hover:text-white text-base px-8 h-12"
                   >
-                    Fale com Vendas
+                    Fale Conosco
                   </Button>
                 </div>
               </div>
@@ -409,7 +408,7 @@ const LandingPage = () => {
                     onClick={() => { setSelectedFeature(null); scrollToSection("contato"); }}
                     className="w-full bg-blue-600 hover:bg-blue-500"
                   >
-                    Fale com Vendas
+                    Fale Conosco
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
@@ -497,15 +496,14 @@ const LandingPage = () => {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link to="/registro">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-[#2A3F5F] bg-transparent text-gray-200 hover:bg-[#111B2E] hover:text-white text-base px-10 h-12 w-full sm:w-auto"
-                >
-                  Começar Grátis
-                </Button>
-              </Link>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => scrollToSection("contato")}
+                className="border-[#2A3F5F] bg-transparent text-gray-200 hover:bg-[#111B2E] hover:text-white text-base px-10 h-12 w-full sm:w-auto"
+              >
+                Fale Conosco
+              </Button>
             </div>
           </div>
         </section>
