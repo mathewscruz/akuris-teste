@@ -329,7 +329,7 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
           )
         : null;
 
-      const riscoData = {
+      const riscoData: any = {
         nome: data.nome,
         descricao: data.descricao,
         empresa_id: profile.empresa_id,
@@ -348,7 +348,8 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
         consequencias: data.consequencias || null,
         aceito: data.aceito,
         justificativa_aceite: data.justificativa_aceite || null,
-        data_proxima_revisao: data.data_proxima_revisao || null
+        data_proxima_revisao: data.data_proxima_revisao || null,
+        ...(risco?.id ? {} : { created_by: profile.user_id }),
       };
 
       let riscoId: string;
