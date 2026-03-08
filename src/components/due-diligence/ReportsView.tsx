@@ -5,6 +5,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart3, TrendingUp, Users, FileText, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useReportsData } from '@/hooks/useReportsData';
+import { useToast } from '@/hooks/use-toast';
+import { exportCSV } from '@/lib/csv-utils';
+import jsPDF from 'jspdf';
+import { loadAkurisLogo, addAkurisHeader, addAkurisFooter, addSectionTitle, drawTableHeader, formatLabel, AKURIS_COLORS } from '@/lib/pdf-utils';
 
 export function ReportsView() {
   const { data: reportsData, isLoading, error } = useReportsData();
