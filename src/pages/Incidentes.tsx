@@ -381,7 +381,6 @@ export default function Incidentes() {
         actions={
           <Button variant="outline" size="sm" onClick={() => {
             if (incidentes.length === 0) return;
-            const { exportCSV } = require('@/lib/csv-utils');
             exportCSV(
               ['Titulo', 'Tipo', 'Categoria', 'Criticidade', 'Status', 'Data Deteccao', 'Data Resolucao'],
               incidentes.map((inc: any) => [
