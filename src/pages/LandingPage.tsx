@@ -532,7 +532,7 @@ const LandingPage = () => {
                 </div>
                 <h3 className="text-white font-bold text-lg mb-2">Artefatos gerados na hora</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  SoA, planos de remediação, relatórios de auditoria — tudo gerado automaticamente. Pronto pra apresentar pro auditor, pro board ou pra quem cobrar.
+                  SoA, planos de remediação, relatórios de auditoria. Tudo gerado automaticamente. Pronto pra apresentar pro auditor, pro board ou pra quem cobrar.
                 </p>
               </div>
             </div>
