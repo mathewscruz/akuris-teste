@@ -16,7 +16,7 @@ import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 import { PlanoAcaoDialog } from "@/components/planos-acao/PlanoAcaoDialog";
 import { AuditTrailTimeline } from "@/components/gap-analysis/AuditTrailTimeline";
 
-interface NISTRequirement {
+interface RequirementDetail {
   id: string;
   codigo: string;
   titulo: string;
