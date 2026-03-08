@@ -166,12 +166,10 @@ async function fetchLGPDData(empresaId: string) {
 
 async function fetchISO27001Data(empresaId: string) {
   // Frameworks are global (empresa_id IS NULL), evaluations are per-company
-  const [{ data: frameworks }, { data: evaluations }, { data: controles }] = await Promise.all([
-    supabase.from('gap_analysis_frameworks').select('id, nome, versao, tipo_framework').ilike('nome', '%ISO%27001%'),
-    supabase.from('gap_analysis_evaluations').select('framework_id, conformity_status').eq('empresa_id', empresaId),
-    supabase.from('controles').select('*').eq('empresa_id', empresaId),
-  ]);
-  const f = frameworks || []; const e = evaluations || []; const c = controles || [];
+  const { data: frameworks } = await (supabase.from('gap_analysis_frameworks').select('id, nome, versao, tipo_framework').ilike('nome', '%ISO%27001%') as any);
+  const { data: evaluations } = await supabase.from('gap_analysis_evaluations').select('framework_id, conformity_status').eq('empresa_id', empresaId);
+  const { data: controles } = await supabase.from('controles').select('*').eq('empresa_id', empresaId);
+  const f = (frameworks || []) as any[]; const e = evaluations || []; const c = controles || [];
   const ativos = c.filter(x => x.status === 'ativo').length;
   
   // Calculate conformity stats from evaluations
