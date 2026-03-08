@@ -12,6 +12,7 @@ import { AssinaturaTab } from '@/components/configuracoes/AssinaturaTab';
 import { CreditosIAManager } from '@/components/configuracoes/CreditosIAManager';
 import { UsersAccessTab } from '@/components/configuracoes/UsersAccessTab';
 import { OrganizacaoTab } from '@/components/configuracoes/OrganizacaoTab';
+import { FinanceiroIATab } from '@/components/configuracoes/FinanceiroIATab';
 
 const Configuracoes = () => {
   const { profile, loading } = useAuth();
