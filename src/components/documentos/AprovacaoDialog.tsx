@@ -48,9 +48,10 @@ interface AprovacaoDialogProps {
   onOpenChange: (open: boolean) => void;
   documento: Documento;
   onSuccess: () => void;
+  empresaId?: string | null;
 }
 
-export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: AprovacaoDialogProps) {
+export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empresaId }: AprovacaoDialogProps) {
   const [aprovacoes, setAprovacoes] = useState<Aprovacao[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
