@@ -32,6 +32,8 @@ import {
   Settings,
   BarChart3,
   MapPin,
+  Sparkles,
+  BookOpen,
 } from "lucide-react";
 
 const LandingPage = () => {
