@@ -432,7 +432,7 @@ const LandingPage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12 sm:mb-16 lp-fade-up">
               <h2 id="como-funciona-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-                Como o <span className="text-blue-400">Akuris</span> funciona
+                Como o <span className="text-[#7552FF]">Akuris</span> funciona
               </h2>
               <p className="text-gray-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
                 Em três passos simples, transforme sua gestão de governança e compliance
