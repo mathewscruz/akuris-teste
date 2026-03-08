@@ -247,7 +247,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>
-        <Toaster />
+        
         <SonnerToaster />
       </AuthProvider>
     </QueryClientProvider>
