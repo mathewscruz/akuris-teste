@@ -61,7 +61,7 @@ export default function DenunciaMenu() {
           logger.debug('Logotipo encontrado na base de dados', { module: 'DenunciaMenu' });
           setLogoUrl(empresaData.logo_url);
         } else {
-          console.log('ℹ️ [INFO] Nenhum logotipo cadastrado para esta empresa');
+          logger.debug('Nenhum logotipo cadastrado para esta empresa', { module: 'DenunciaMenu' });
         }
       } catch (error) {
         console.error('❌ [ERROR] Erro geral ao carregar configuração:', error);
