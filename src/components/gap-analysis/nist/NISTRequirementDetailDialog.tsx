@@ -16,7 +16,7 @@ import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 import { PlanoAcaoDialog } from "@/components/planos-acao/PlanoAcaoDialog";
 import { AuditTrailTimeline } from "@/components/gap-analysis/AuditTrailTimeline";
 
-interface NISTRequirement {
+interface RequirementDetail {
   id: string;
   codigo: string;
   titulo: string;
@@ -31,10 +31,10 @@ interface NISTRequirement {
   obrigatorio?: boolean | null;
 }
 
-interface NISTRequirementDetailDialogProps {
+interface RequirementDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  requirement: NISTRequirement;
+  requirement: RequirementDetail;
   frameworkId: string;
   onClose: () => void;
 }
@@ -267,7 +267,7 @@ const GuidanceSkeleton = () => (
   </div>
 );
 
-export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogProps> = ({
+export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = ({
   open, onOpenChange, requirement, frameworkId, onClose
 }) => {
   const { empresaId } = useEmpresaId();
