@@ -522,7 +522,7 @@ const LandingPage = () => {
                 </div>
                 <h3 className="text-white font-bold text-lg mb-2">Orientação em cada requisito</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  O sistema te diz exatamente o que fazer, como fazer e o que entregar. É como ter um consultor sênior do lado — disponível 24h, sem cobrar hora extra.
+                  O sistema te diz exatamente o que fazer, como fazer e o que entregar. É como ter um consultor sênior do lado. Disponível 24h, sem cobrar hora extra.
                 </p>
               </div>
 
