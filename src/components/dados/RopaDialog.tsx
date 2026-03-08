@@ -57,10 +57,12 @@ export function RopaDialog({ isOpen, onClose, onSave, ropa }: RopaDialogProps) {
   }, [isOpen]);
 
   const loadUsuarios = async () => {
+    if (!empresaId) return;
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('user_id, nome, email')
+        .eq('empresa_id', empresaId)
         .order('nome');
       
       if (error) throw error;

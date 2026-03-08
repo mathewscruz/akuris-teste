@@ -73,13 +73,16 @@ export function MapeamentoDialog({ isOpen, onClose, onSave, mapeamento }: Mapeam
   };
 
   const handleSave = async () => {
+    if (!empresaId) return;
     try {
       setIsLoading(true);
+
+      const payload = { ...formData, empresa_id: empresaId };
 
       if (mapeamento?.id) {
         const { error } = await supabase
           .from('dados_mapeamento')
-          .update(formData)
+          .update(payload)
           .eq('id', mapeamento.id);
         
         if (error) throw error;
@@ -87,7 +90,7 @@ export function MapeamentoDialog({ isOpen, onClose, onSave, mapeamento }: Mapeam
       } else {
         const { error } = await supabase
           .from('dados_mapeamento')
-          .insert([formData]);
+          .insert([payload]);
         
         if (error) throw error;
         toast({ title: "Mapeamento criado com sucesso!" });
