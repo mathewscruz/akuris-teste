@@ -1,80 +1,96 @@
 
 
-# Varredura Geral — Oportunidades de Melhoria de UX
+# Validacao Completa — Modulo Documentos
 
-Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
-
----
-
-## 1. ErrorBoundary ausente na maioria das paginas
-
-**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
-
-**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
+Analisei todos os componentes: Documentos.tsx, DocumentoDialog.tsx, CategoriasDialog.tsx, VinculacoesDialog.tsx, AprovacaoDialog.tsx, ComentariosDialog.tsx, DocumentoPreview.tsx, UploadMultiplosDialog.tsx, DocumentosRelatorios.tsx, BuscaAvancadaDocumentos.tsx, TrilhaAuditoriaDocumentos.tsx, RenovarDocumentoDialog.tsx, HistoricoVersoesDialog.tsx, DocGenDialog.tsx, useDocumentosStats.tsx.
 
 ---
 
-## 2. Feedback de "carregando" inconsistente entre modulos
+## OK — Sem problemas
 
-**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
-
-**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
-
----
-
-## 3. Paginas sem EmptyState padronizado
-
-**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
-
-**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+- **Documentos.tsx** — query principal filtra por `empresa_id` via `useEmpresaId`, queryKey inclui `empresaId`. DropdownMenu padrao. Paginacao, filtros, CSV export, empty states, confirm dialog, deep link aprovacao — tudo presente e funcional.
+- **DocumentoDialog** — grava `empresa_id` corretamente via profile. CRUD completo com upload, tags, vencimento, aprovacao. OK.
+- **DocumentoPreview** — signed URL com 1h. Download funcional. OK.
+- **ComentariosDialog** — query por `documento_id` (RLS protege). CRUD com toast. OK.
+- **TrilhaAuditoriaDocumentos** — query por `record_id`. OK.
+- **RenovarDocumentoDialog** — upload + edge function. OK.
+- **HistoricoVersoesDialog** — query por `documento_id`. OK.
+- **BuscaAvancadaDocumentos** — filtros client-side sobre dados ja carregados. OK.
+- **DocumentosRelatorios** — recebe dados ja filtrados por empresa como prop. OK.
 
 ---
 
-## 4. Ausencia de atalhos de teclado documentados para o usuario
+## Problemas Identificados
 
-**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+### 1. SEGURANCA — `useDocumentosStats` sem filtro `empresa_id` e queryKey estatica
 
-**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+O hook busca `supabase.from('documentos').select('status, data_vencimento, classificacao, data_aprovacao')` sem `.eq('empresa_id', empresaId)`. A queryKey e fixa `['documentos-stats']`, causando cache compartilhado entre empresas.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+**Correcao**: Importar `useEmpresaId`, filtrar por `empresa_id`, incluir `empresaId` na queryKey.
+
+### 2. SEGURANCA — `CategoriasDialog.fetchCategorias` sem filtro `empresa_id`
+
+Linha 54-57: `supabase.from('documentos_categorias').select('*').order('nome')` — sem filtro de empresa. Categorias de outras empresas podem aparecer na listagem. O save ja grava com `empresa_id` correto.
+
+**Correcao**: Adicionar `.eq('empresa_id', empresaId)`. Precisa receber `empresaId` como prop ou buscar internamente.
+
+### 3. SEGURANCA — `AprovacaoDialog.fetchProfiles` sem filtro `empresa_id`
+
+Linha 256-260: `supabase.from('profiles').select('user_id, nome, email, role').in('role', ['admin', 'super_admin'])` — retorna admins de TODAS as empresas. Um usuario pode solicitar aprovacao a um admin de outra empresa.
+
+**Correcao**: Adicionar `.eq('empresa_id', empresaId)` para listar apenas admins da mesma empresa.
+
+### 4. SEGURANCA — `VinculacoesDialog.fetchItemsDisponiveis` sem filtro `empresa_id`
+
+Linhas 182-205: todas as queries de items disponiveis (contratos, auditorias, riscos, controles, ativos) nao filtram por `empresa_id`. Depende exclusivamente de RLS. Items de outras empresas poderiam aparecer nos dropdowns de vinculacao.
+
+**Correcao**: Adicionar `.eq('empresa_id', empresaId)` em cada query de modulo.
+
+### 5. UX — Loading state sem PageSkeleton
+
+Linhas 398-407 em Documentos.tsx: o loading usa spinner + texto "Carregando documentos..." em vez do componente `PageSkeleton` padrao.
+
+**Correcao**: Substituir por `PageSkeleton`.
+
+### 6. UX — Filtro "Categoria" na verdade filtra por classificacao
+
+Linhas 534-546: o dropdown "Categoria" popula com `documentos_categorias` (Politicas, Procedimentos etc.) mas o filtro real (linha 199-201) compara `doc.classificacao === selectedCategoria`. Classificacao e outro campo (publica, interna, restrita, confidencial). Ou seja, o filtro nunca encontra correspondencia porque os valores de `categorias.nome` nao batem com os valores de `classificacao`.
+
+**Correcao**: Corrigir a logica. Existem duas opcoes: (a) o filtro deveria comparar com o campo correto (categoria_id, se existir), ou (b) renomear o dropdown para "Classificacao" e popular com os valores corretos. Como a tabela `documentos` nao tem campo `categoria_id`, a opcao mais simples e renomear para "Classificacao" e popular com publica/interna/restrita/confidencial.
+
+### 7. UX — Filtro de status inclui "vencido" mas documentos nao tem esse status no banco
+
+Linha 557: `<SelectItem value="vencido">Vencido</SelectItem>` — no DocumentoDialog, os status possiveis sao `ativo`, `inativo`, `arquivado`, `pendente`. Nenhum documento tera status `vencido` no banco, tornando esse filtro inutilizado.
+
+**Correcao**: Remover "vencido" dos filtros de status (ou implementar logica especial para filtrar por data_vencimento < hoje quando selecionado "vencido"). Recomendo implementar logica especial pois e util para o usuario.
+
+### 8. UX — Tipo "documento" existe no dialog mas nao nos filtros da tabela
+
+Linha 301 no DocumentoDialog: `<SelectItem value="documento">Documento</SelectItem>` — mas nos filtros da tabela (linhas 565-574), "documento" nao aparece como opcao. Um documento criado com tipo "documento" nao sera encontravel pelo filtro de tipo.
+
+**Correcao**: Adicionar `<SelectItem value="documento">Documento</SelectItem>` nos filtros de tipo, e tambem o tipo "manual" (presente nos dados demo).
 
 ---
 
-## 5. Botao de "Voltar" no header nao tem tooltip
+## Resumo de Acoes
 
-**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+| # | Problema | Tipo | Impacto |
+|---|----------|------|---------|
+| 1 | `useDocumentosStats` sem empresa_id | Seguranca/Cache | **Alto** |
+| 2 | CategoriasDialog sem empresa_id | Seguranca | **Alto** |
+| 3 | AprovacaoDialog fetchProfiles sem empresa_id | Seguranca | **Alto** |
+| 4 | VinculacoesDialog fetchItems sem empresa_id | Seguranca | **Alto** |
+| 5 | Loading sem PageSkeleton | UX | **Baixo** |
+| 6 | Filtro "Categoria" filtra campo errado | Funcional/UX | **Alto** |
+| 7 | Status "vencido" nunca encontra dados | Funcional | **Medio** |
+| 8 | Tipo "documento"/"manual" ausente nos filtros | Funcional | **Medio** |
 
-**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+Todos os 8 itens serao implementados.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
-
----
-
-## Resumo de Prioridade
-
-| # | Melhoria | Impacto | Esforco |
-|---|----------|---------|---------|
-| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
-| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
-| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
-| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
-| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
-
-Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
+### Arquivos a editar:
+- `src/hooks/useDocumentosStats.tsx` — empresa_id filter + queryKey
+- `src/components/documentos/CategoriasDialog.tsx` — empresa_id filter (receber como prop ou buscar)
+- `src/components/documentos/AprovacaoDialog.tsx` — empresa_id filter no fetchProfiles
+- `src/components/documentos/VinculacoesDialog.tsx` — empresa_id filter em fetchItemsDisponiveis
+- `src/pages/Documentos.tsx` — PageSkeleton, corrigir filtro categoria→classificacao, logica status vencido, adicionar tipos faltantes nos filtros
 
