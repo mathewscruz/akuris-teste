@@ -23,6 +23,7 @@ interface CategoriasDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  empresaId?: string | null;
 }
 
 const cores = [
