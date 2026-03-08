@@ -119,7 +119,7 @@ export default function DenunciaFormulario() {
           return;
         }
 
-        console.log('✅ [SUCCESS] Empresa encontrada:', empresaData);
+        logger.debug('Empresa encontrada', { module: 'DenunciaFormulario' });
         setEmpresa(empresaData);
 
         // Buscar configurações da empresa
