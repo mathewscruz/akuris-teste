@@ -25,7 +25,8 @@ import {
   KeyRound,
   ListTodo,
   FileBarChart,
-  GraduationCap
+  GraduationCap,
+  ShieldAlert
 } from 'lucide-react';
 import logoMini from '@/assets/akuris-logo.png';
 import ConfirmDialog from '@/components/ConfirmDialog';
