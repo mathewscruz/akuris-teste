@@ -31,6 +31,7 @@ import { formatStatus } from "@/lib/text-utils";
 export default function AuditoriasContent() {
   const { toast } = useToast();
   const location = useLocation();
+  const { empresaId } = useEmpresaId();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
@@ -45,11 +46,12 @@ export default function AuditoriasContent() {
   const { data: usuarios } = useUsuariosEmpresa();
 
   const { data: auditorias, isLoading, refetch } = useQuery({
-    queryKey: ['auditorias', searchTerm, statusFilter, tipoFilter],
+    queryKey: ['auditorias', empresaId, searchTerm, statusFilter, tipoFilter],
     queryFn: async () => {
       let query = supabase
         .from('auditorias')
         .select('*')
+        .eq('empresa_id', empresaId!)
         .order('created_at', { ascending: false });
 
       if (searchTerm) {
@@ -77,6 +79,7 @@ export default function AuditoriasContent() {
 
       return data || [];
     },
+    enabled: !!empresaId,
   });
 
   // Buscar contagens de itens para todas as auditorias (inclui auditoria_itens + controles_auditorias)
