@@ -53,7 +53,6 @@ export default function Dashboard() {
     queryClient.invalidateQueries({ queryKey: ['contratos-stats'] });
     queryClient.invalidateQueries({ queryKey: ['documentos-stats'] });
     queryClient.invalidateQueries({ queryKey: ['gap-analysis-stats'] });
-    queryClient.invalidateQueries({ queryKey: ['radar-chart-data'] });
     queryClient.invalidateQueries({ queryKey: ['trend-data'] });
   };
 
