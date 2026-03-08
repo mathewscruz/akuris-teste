@@ -201,13 +201,10 @@ async function fetchISO27001Data(empresaId: string) {
 
 async function fetchExecutivoData(empresaId: string) {
   const ninetyDaysAgo = new Date(); ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-  const [{ data: riscos }, { data: incidentes }, { data: controles }, { data: frameworks }] = await Promise.all([
-    supabase.from('riscos').select('*').eq('empresa_id', empresaId),
-    supabase.from('incidentes').select('*').eq('empresa_id', empresaId).gte('data_deteccao', ninetyDaysAgo.toISOString()),
-    supabase.from('controles').select('*').eq('empresa_id', empresaId),
-    // Frameworks are global - fetch all active ones
-    supabase.from('gap_analysis_frameworks').select('id, nome').eq('ativo', true).limit(100),
-  ]);
+  const { data: riscos } = await supabase.from('riscos').select('*').eq('empresa_id', empresaId);
+  const { data: incidentes } = await supabase.from('incidentes').select('*').eq('empresa_id', empresaId).gte('data_deteccao', ninetyDaysAgo.toISOString());
+  const { data: controles } = await supabase.from('controles').select('*').eq('empresa_id', empresaId);
+  const { data: frameworks } = await supabase.from('gap_analysis_frameworks').select('id, nome').eq('ativo', true);
   const r = riscos || []; const i = incidentes || []; const c = controles || []; const f = frameworks || [];
   return {
     sections: [
