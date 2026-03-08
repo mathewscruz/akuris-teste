@@ -10,7 +10,7 @@ import { WelcomeHero } from '@/components/gap-analysis/WelcomeHero';
 import { FrameworkCatalog } from '@/components/gap-analysis/FrameworkCatalog';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
-import { useEmpresaId } from '@/hooks/useEmpresaId';
+import { useAuth } from '@/components/AuthProvider';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Activity, TrendingUp, AlertTriangle, Shield, Target, Search } from 'lucide-react';
 import { logger } from '@/lib/logger';
