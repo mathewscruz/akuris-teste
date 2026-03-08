@@ -23,7 +23,7 @@ import { exportBoardPDF } from '@/components/gap-analysis/ExportBoardPDF';
 import { supabase } from '@/integrations/supabase/client';
 import { getFrameworkConfig } from '@/lib/framework-configs';
 import { useFrameworkScore } from '@/hooks/useFrameworkScore';
-import { useEmpresaId } from '@/hooks/useEmpresaId';
+import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
