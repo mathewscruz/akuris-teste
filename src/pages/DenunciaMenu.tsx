@@ -48,7 +48,7 @@ export default function DenunciaMenu() {
         }
 
         if (!empresaData) {
-          console.error('❌ [ERROR] Empresa não encontrada para slug:', normalizedSlug);
+          logger.error('Empresa não encontrada para slug', { module: 'DenunciaMenu', action: normalizedSlug });
           setLoading(false);
           return;
         }
