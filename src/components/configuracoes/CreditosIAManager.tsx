@@ -257,6 +257,7 @@ export function CreditosIAManager() {
             columns={columns}
             loading={loading}
             searchPlaceholder="Buscar empresa..."
+            paginated
             emptyState={{
               icon: <Sparkles className="h-8 w-8" />,
               title: "Nenhuma empresa encontrada",
