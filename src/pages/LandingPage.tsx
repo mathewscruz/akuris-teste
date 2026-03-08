@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { DashboardMockup } from "@/components/landing/DashboardMockup";
 import akurisLogo from "@/assets/akuris-logo.png";
 import flagBrazil from "@/assets/flag-brazil.png";
 import flagPortugal from "@/assets/flag-portugal.png";
