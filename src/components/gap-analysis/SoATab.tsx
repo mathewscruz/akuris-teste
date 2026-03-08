@@ -172,8 +172,8 @@ export function SoATab({ frameworkId, frameworkName, frameworkVersion }: SoATabP
 
       // Use upsert - try table, if doesn't exist show message
       const { error } = await supabase
-        .from('gap_analysis_soa' as any)
-        .upsert(records as any, { onConflict: 'framework_id,empresa_id,requirement_id' });
+        .from('gap_analysis_soa')
+        .upsert(records, { onConflict: 'framework_id,empresa_id,requirement_id' });
 
       if (error) throw error;
       toast.success('Declaração de Aplicabilidade salva com sucesso');

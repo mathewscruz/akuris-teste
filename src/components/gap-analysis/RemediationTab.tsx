@@ -21,6 +21,7 @@ interface PlanoAcao {
   prioridade: string;
   prazo: string | null;
   responsavel_id: string | null;
+  responsavel_nome: string | null;
   requirement_codigo: string;
   requirement_titulo: string;
 }
@@ -39,7 +40,6 @@ export const RemediationTab: React.FC<RemediationTabProps> = ({ frameworkId, fra
   const loadPlanos = async () => {
     setLoading(true);
     try {
-      // Get evaluations with plano_acao_id for this framework
       const { data: evals, error: evalError } = await supabase
         .from('gap_analysis_evaluations')
         .select('plano_acao_id, requirement_id')
@@ -57,11 +57,24 @@ export const RemediationTab: React.FC<RemediationTabProps> = ({ frameworkId, fra
       const planoIds = evals.map(e => e.plano_acao_id).filter(Boolean) as string[];
       const reqIds = evals.map(e => e.requirement_id);
 
-      // Load planos and requirements in parallel
       const [planosRes, reqsRes] = await Promise.all([
         supabase.from('planos_acao').select('id, titulo, descricao, status, prioridade, prazo, responsavel_id').in('id', planoIds),
         supabase.from('gap_analysis_requirements').select('id, codigo, titulo').in('id', reqIds),
       ]);
+
+      // Resolve responsavel names
+      const responsavelIds = (planosRes.data || [])
+        .map(p => p.responsavel_id)
+        .filter(Boolean) as string[];
+
+      let profileMap = new Map<string, string>();
+      if (responsavelIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, nome')
+          .in('user_id', responsavelIds);
+        (profiles || []).forEach(p => profileMap.set(p.user_id, p.nome));
+      }
 
       const reqMap = new Map((reqsRes.data || []).map(r => [r.id, r]));
       const evalMap = new Map(evals.map(e => [e.plano_acao_id, e.requirement_id]));
@@ -71,6 +84,7 @@ export const RemediationTab: React.FC<RemediationTabProps> = ({ frameworkId, fra
         const req = reqId ? reqMap.get(reqId) : null;
         return {
           ...p,
+          responsavel_nome: p.responsavel_id ? (profileMap.get(p.responsavel_id) || null) : null,
           requirement_codigo: req?.codigo || '',
           requirement_titulo: req?.titulo || '',
         };
@@ -122,7 +136,6 @@ export const RemediationTab: React.FC<RemediationTabProps> = ({ frameworkId, fra
 
   return (
     <div className="space-y-6">
-      {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard title="Pendentes" value={pendentes} icon={<Clock className="h-4 w-4" />} />
         <StatCard title="Em Andamento" value={emAndamento} icon={<ClipboardList className="h-4 w-4" />} />
@@ -156,7 +169,9 @@ export const RemediationTab: React.FC<RemediationTabProps> = ({ frameworkId, fra
                   </div>
                   <p className="text-sm font-medium truncate">{plano.titulo}</p>
                   <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                    {plano.responsavel_id && <span>Resp: {plano.responsavel_id}</span>}
+                    {plano.responsavel_id && (
+                      <span>Resp: {plano.responsavel_nome || 'Não identificado'}</span>
+                    )}
                     {plano.prazo && (
                       <span className={new Date(plano.prazo) < new Date() && plano.status !== 'concluido' ? 'text-destructive font-medium' : ''}>
                         Prazo: {new Date(plano.prazo).toLocaleDateString('pt-BR')}
