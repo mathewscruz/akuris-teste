@@ -1,45 +1,80 @@
 
 
-# Correções de SEO para indexação no Google
+# Varredura Geral — Oportunidades de Melhoria de UX
 
-## Problemas identificados nos prints
+Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
 
-1. **"Indexada, mas bloqueada pelo robots.txt"** — O robots.txt atual não tem nenhuma diretiva `Disallow`, o que é tecnicamente incompleto segundo o padrão. Alguns crawlers interpretam a ausência de `Disallow` como ambígua. Além disso, rotas internas da app (dashboard, configuracoes, etc.) estão acessíveis ao crawler, o que polui o crawl budget.
+---
 
-2. **HTTP vs HTTPS** — A página indexada aparece como `http://akuris.com.br/` (sem HTTPS). Isso é um problema de infraestrutura/DNS que precisa ser resolvido no provedor de domínio (configurar redirect 301 de HTTP para HTTPS). Não é corrigível via código.
+## 1. ErrorBoundary ausente na maioria das paginas
 
-3. **SPA sem conteúdo para crawler** — Como é uma Single Page Application React, o Google precisa renderizar JavaScript para ver o conteúdo. Isso atrasa e dificulta a indexação. Não há SSR (Server-Side Rendering) disponível no Lovable, mas podemos melhorar o que o crawler vê inicialmente.
+**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
 
-4. **Sitemap com páginas internas** — O sitemap inclui `/auth` e `/registro` que são páginas de login/cadastro, não conteúdo indexável relevante.
+**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
 
-## Correções implementáveis
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
 
-### 1. robots.txt — Adicionar Disallow explícito + bloquear rotas internas
+---
 
-Adicionar `Disallow:` (vazio, padrão) e bloquear todas as rotas internas do app que não são conteúdo público (dashboard, riscos, controles, etc.). Isso foca o crawl budget nas páginas públicas.
+## 2. Feedback de "carregando" inconsistente entre modulos
 
-### 2. sitemap.xml — Remover páginas de app, manter só públicas
+**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
 
-Remover `/auth` e `/registro` do sitemap. Manter apenas: `/`, `/politica-privacidade`, `/denuncia-menu`.
+**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
 
-### 3. index.html — Adicionar noscript fallback com conteúdo
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
 
-Adicionar um bloco `<noscript>` dentro do `<body>` com o conteúdo principal da landing page em HTML estático. Isso permite que crawlers que não executam JS (ou que falham no render) ainda vejam conteúdo relevante.
+---
 
-### 4. Meta tags adicionais para crawlers
+## 3. Paginas sem EmptyState padronizado
 
-Adicionar `<meta name="fragment" content="!">` (legacy AJAX crawling hint) e garantir que o canonical está correto com trailing slash.
+**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
 
-## Ação manual necessária (infraestrutura)
+**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
 
-- **HTTPS**: Verificar no provedor de domínio (onde o DNS do akuris.com.br está configurado) se há redirect 301 de `http://` para `https://`. Se o domínio está apontando para o Lovable via custom domain, verificar nas configurações do Lovable se o SSL está ativo.
-- **Google Search Console**: Após as correções, resubmeter o sitemap e solicitar reindexação da URL principal.
+| Arquivo | Mudanca |
+|---------|---------|
+| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
 
-## Arquivos a editar
+---
 
-| Arquivo | Mudança |
-|---|---|
-| `public/robots.txt` | Adicionar `Disallow:` explícito + bloquear rotas internas do app |
-| `public/sitemap.xml` | Remover `/auth` e `/registro` |
-| `index.html` | Adicionar `<noscript>` com conteúdo estático da landing page |
+## 4. Ausencia de atalhos de teclado documentados para o usuario
+
+**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+
+**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+
+---
+
+## 5. Botao de "Voltar" no header nao tem tooltip
+
+**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+
+**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
+
+---
+
+## Resumo de Prioridade
+
+| # | Melhoria | Impacto | Esforco |
+|---|----------|---------|---------|
+| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
+| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
+| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
+| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
+| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
+
+Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
 
