@@ -6,7 +6,7 @@ import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/components/AuthProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
-import { PageSkeleton } from '@/components/ui/page-skeleton';
+
 
 // Lazy-loaded pages
 const Auth = React.lazy(() => import('@/pages/Auth'));
