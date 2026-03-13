@@ -62,7 +62,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
-          <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-background"><PageSkeleton /></div>}>
+          <Suspense fallback={null}>
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/definir-senha" element={<DefinirSenha />} />
