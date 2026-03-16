@@ -360,6 +360,7 @@ export function AppSidebar() {
                       <NavLink 
                         to={item.url} 
                         onClick={handleNavClick}
+                        onMouseEnter={() => prefetchRoute(item.url)}
                         className={({ isActive }) => `flex items-center w-full min-w-0 ${getNavCls({ isActive })}`}
                       >
                         <div className="flex items-center min-w-0">

@@ -64,6 +64,7 @@ export function StatCard({
   badge,
   actions,
   loading = false,
+  emptyHint,
   onClick,
   ...props
 }: StatCardProps) {
