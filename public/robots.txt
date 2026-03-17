@@ -102,5 +102,8 @@ Disallow: /politicas
 Disallow: /denuncia
 Disallow: /auth
 Disallow: /registro
+Disallow: /denuncia-menu
+Disallow: /checkout-success
+Disallow: /definir-senha
 
 Sitemap: https://akuris.com.br/sitemap.xml
