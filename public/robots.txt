@@ -27,6 +27,7 @@ Disallow: /checkout-success
 Disallow: /definir-senha
 Disallow: /planos
 Disallow: /assessment
+Disallow: /denuncia-menu
 
 User-agent: Bingbot
 Allow: /
@@ -53,6 +54,7 @@ Disallow: /politicas
 Disallow: /denuncia
 Disallow: /auth
 Disallow: /registro
+Disallow: /denuncia-menu
 
 User-agent: Twitterbot
 Allow: /
@@ -100,5 +102,8 @@ Disallow: /politicas
 Disallow: /denuncia
 Disallow: /auth
 Disallow: /registro
+Disallow: /denuncia-menu
+Disallow: /checkout-success
+Disallow: /definir-senha
 
 Sitemap: https://akuris.com.br/sitemap.xml
