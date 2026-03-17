@@ -27,6 +27,7 @@ Disallow: /checkout-success
 Disallow: /definir-senha
 Disallow: /planos
 Disallow: /assessment
+Disallow: /denuncia-menu
 
 User-agent: Bingbot
 Allow: /
