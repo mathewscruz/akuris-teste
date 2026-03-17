@@ -54,6 +54,7 @@ Disallow: /politicas
 Disallow: /denuncia
 Disallow: /auth
 Disallow: /registro
+Disallow: /denuncia-menu
 
 User-agent: Twitterbot
 Allow: /
