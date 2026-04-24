@@ -118,7 +118,7 @@ serve(async (req) => {
 
     if (insertError) {
       console.error('Insert error:', insertError);
-      return new Response(JSON.stringify({ error: 'Failed to process event', details: insertError.message }), {
+      return new Response(JSON.stringify({ error: 'Failed to process event' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
