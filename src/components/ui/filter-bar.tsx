@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Filter, X, RotateCcw } from "lucide-react"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 interface FilterOption {
   value: string
@@ -39,7 +40,7 @@ export function FilterBar({
   className,
   searchValue = "",
   onSearchChange,
-  searchPlaceholder = "Buscar...",
+  searchPlaceholder,
   filters = [],
   activeFiltersCount = 0,
   onClearFilters,
@@ -49,13 +50,16 @@ export function FilterBar({
   actions,
   ...props
 }: FilterBarProps) {
+  const { t } = useLanguage()
+  const placeholder = searchPlaceholder ?? t('common.searchPlaceholder')
+
   const getActiveFiltersCount = () => {
     if (activeFiltersCount > 0) return activeFiltersCount
-    
-    const activeCount = filters.filter(filter => 
+
+    const activeCount = filters.filter(filter =>
       filter.value && filter.value !== 'all' && filter.value !== ''
     ).length
-    
+
     if (searchValue) return activeCount + 1
     return activeCount
   }
@@ -70,7 +74,7 @@ export function FilterBar({
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder={searchPlaceholder}
+            placeholder={placeholder}
             value={searchValue}
             onChange={(e) => onSearchChange?.(e.target.value)}
             className="pl-10"
@@ -90,7 +94,7 @@ export function FilterBar({
               )}
             >
               <Filter className="h-4 w-4 mr-2" />
-              Filtros
+              {t('filterBar.filters')}
               {hasActiveFilters && (
                 <Badge
                   variant="destructive"
@@ -110,7 +114,7 @@ export function FilterBar({
               className="text-muted-foreground hover:text-foreground"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
-              Limpar
+              {t('filterBar.clear')}
             </Button>
           )}
 
@@ -132,7 +136,7 @@ export function FilterBar({
                     <SelectValue placeholder={filter.placeholder || filter.label} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="all">{t('filterBar.all')}</SelectItem>
                     {filter.options.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         <div className="flex items-center justify-between w-full">
@@ -163,10 +167,10 @@ export function FilterBar({
       {/* Active filters chips */}
       {hasActiveFilters && (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-muted-foreground">Filtros ativos:</span>
+          <span className="text-xs text-muted-foreground">{t('filterBar.activeFilters')}</span>
           {searchValue && (
             <Badge variant="secondary" className="gap-1">
-              Busca: "{searchValue}"
+              {t('filterBar.search')}: "{searchValue}"
               <Button
                 variant="ghost"
                 size="sm"
