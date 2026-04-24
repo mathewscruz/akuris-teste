@@ -943,11 +943,11 @@ export default function Assessment() {
                             <div className={cn(
                               'h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0 transition-colors',
                               isComplete
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : hasContent
-                                  ? 'bg-amber-100 text-amber-700'
-                                  : isCurrent
-                                    ? 'bg-[hsl(250,80%,60%)]/20 text-[hsl(250,80%,40%)]'
+                                ? 'bg-slate-900 text-white'
+                                : isCurrent
+                                  ? 'bg-[hsl(250,80%,60%)]/20 text-[hsl(250,80%,40%)]'
+                                  : hasContent
+                                    ? 'bg-slate-200 text-slate-700'
                                     : 'bg-slate-100 text-slate-500'
                             )}>
                               {isComplete ? <Check className="h-3.5 w-3.5" /> : idx + 1}
@@ -963,7 +963,7 @@ export default function Assessment() {
                               <p className="text-[11px] text-slate-500">
                                 {status?.answered || 0}/{status?.total || 0} respondidas
                                 {status && status.missingRequired > 0 && (
-                                  <span className="text-amber-600"> · {status.missingRequired} obrig.</span>
+                                  <span className="text-slate-600"> · {status.missingRequired} obrig.</span>
                                 )}
                               </p>
                             </div>
