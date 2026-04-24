@@ -26,6 +26,7 @@ import { AlertTriangle, Lock, ArrowLeft } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import akurisLogo from '@/assets/akuris-logo.png';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -37,7 +38,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const breadcrumbs = useBreadcrumb();
   const isMobile = useIsMobile();
-  const { t } = require('@/contexts/LanguageContext').useLanguage();
+  const { t } = useLanguage();
   
   // Timeout de sessão por inatividade
   useInactivityTimeout();
