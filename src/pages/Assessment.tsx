@@ -1115,13 +1115,13 @@ export default function Assessment() {
                                   className={cn(
                                     'flex items-center space-x-3 p-3 rounded-lg border transition-all duration-200 cursor-pointer',
                                     selected
-                                      ? 'bg-[hsl(250,80%,60%)]/10 border-[hsl(250,80%,60%)]/30'
-                                      : 'bg-white/[0.02] border-white/10 hover:bg-white/5 hover:border-white/20'
+                                      ? 'bg-[hsl(250,80%,60%)]/10 border-[hsl(250,80%,60%)]/40'
+                                      : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'
                                   )}
                                   onClick={() => handleResponseChange(question.id, opcao)}
                                 >
-                                  <RadioGroupItem value={opcao} id={`${question.id}-${idx}`} className="border-white/30 text-[hsl(250,80%,60%)]" />
-                                  <Label htmlFor={`${question.id}-${idx}`} className="text-sm font-medium cursor-pointer flex-1 text-white/85">{opcao}</Label>
+                                  <RadioGroupItem value={opcao} id={`${question.id}-${idx}`} className="border-slate-300 text-[hsl(250,80%,55%)]" />
+                                  <Label htmlFor={`${question.id}-${idx}`} className="text-sm font-medium cursor-pointer flex-1 text-slate-800">{opcao}</Label>
                                 </div>
                               );
                             })}
@@ -1134,7 +1134,7 @@ export default function Assessment() {
                             value={responses[question.id] || ''}
                             onChange={(e) => handleResponseChange(question.id, e.target.value)}
                             placeholder="Digite um número..."
-                            className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(250,80%,60%)]/50 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
+                            className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-[hsl(250,80%,60%)]/60 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
                           />
                         )}
 
@@ -1155,13 +1155,13 @@ export default function Assessment() {
                                   className={cn(
                                     'flex items-center justify-center space-x-3 p-4 rounded-lg border transition-all duration-200 cursor-pointer',
                                     selected
-                                      ? 'bg-[hsl(250,80%,60%)]/10 border-[hsl(250,80%,60%)]/30'
-                                      : 'bg-white/[0.02] border-white/10 hover:bg-white/5 hover:border-white/20'
+                                      ? 'bg-[hsl(250,80%,60%)]/10 border-[hsl(250,80%,60%)]/40'
+                                      : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'
                                   )}
                                   onClick={() => handleResponseChange(question.id, opt.value)}
                                 >
-                                  <RadioGroupItem value={opt.value} id={`${question.id}-${opt.value}`} className="border-white/30 text-[hsl(250,80%,60%)]" />
-                                  <Label htmlFor={`${question.id}-${opt.value}`} className="text-sm font-semibold cursor-pointer text-white/85">{opt.label}</Label>
+                                  <RadioGroupItem value={opt.value} id={`${question.id}-${opt.value}`} className="border-slate-300 text-[hsl(250,80%,55%)]" />
+                                  <Label htmlFor={`${question.id}-${opt.value}`} className="text-sm font-semibold cursor-pointer text-slate-800">{opt.label}</Label>
                                 </div>
                               );
                             })}
@@ -1173,7 +1173,7 @@ export default function Assessment() {
                             value={responses[question.id] || ''}
                             onValueChange={(value) => handleResponseChange(question.id, value)}
                           >
-                            <SelectTrigger className="bg-white/5 border-white/10 text-white focus:border-[hsl(250,80%,60%)]/50 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200">
+                            <SelectTrigger className="bg-white border-slate-200 text-slate-900 focus:border-[hsl(250,80%,60%)]/60 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200">
                               <SelectValue placeholder="Selecione uma opção..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -1188,14 +1188,14 @@ export default function Assessment() {
 
                         {question.tipo === 'arquivo' && (
                           <div className="space-y-3">
-                            <div className="border-2 border-dashed border-white/10 hover:border-[hsl(250,80%,60%)]/30 rounded-xl p-6 text-center transition-colors duration-200 bg-white/[0.02]">
-                              <Upload className="h-8 w-8 text-white/30 mx-auto mb-2" />
-                              <p className="text-sm text-white/40 mb-3">
+                            <div className="border-2 border-dashed border-slate-200 hover:border-[hsl(250,80%,60%)]/40 rounded-xl p-6 text-center transition-colors duration-200 bg-slate-50/50">
+                              <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+                              <p className="text-sm text-slate-500 mb-3">
                                 Arraste um arquivo ou clique para selecionar
                               </p>
                               <Input
                                 type="file"
-                                className="bg-white/5 border-white/10 text-white/70"
+                                className="bg-white border-slate-200 text-slate-700"
                                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];
