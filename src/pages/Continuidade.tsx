@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, Shield, FileCheck, Clock, TestTube, ListTodo, Edit, Trash2, Eye, MoreHorizontal, Download } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, Shield, FileCheck, Clock, TestTube, ListTodo, Edit, Trash2, Eye, MoreHorizontal, Download, AlertTriangle, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/ui/page-header';
@@ -7,6 +7,7 @@ import { StatCard } from '@/components/ui/stat-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
