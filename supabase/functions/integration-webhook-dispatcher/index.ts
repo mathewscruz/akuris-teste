@@ -354,7 +354,7 @@ serve(async (req) => {
           }
 
           case 'jira': {
-            const jiraConfig = integration.configuracoes || {};
+            const jiraConfig: any = integration.configuracoes || {};
             const jiraInstanceUrl = (integration.webhook_url || '').replace(/\/+$/, '');
             const jiraEmail = jiraConfig.email as string;
             const jiraProjectKey = (jiraConfig.project_key as string) || 'GRC';

@@ -54,7 +54,7 @@ async function getIntuneDevices(accessToken: string): Promise<ManagedDevice[]> {
   let nextLink: string | null = 'https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?$top=100';
 
   while (nextLink) {
-    const response = await fetch(nextLink, {
+    const response: Response = await fetch(nextLink, {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
 
@@ -63,7 +63,7 @@ async function getIntuneDevices(accessToken: string): Promise<ManagedDevice[]> {
       throw new Error(error.error?.message || 'Falha ao buscar dispositivos');
     }
 
-    const data = await response.json();
+    const data: any = await response.json();
     devices.push(...(data.value || []));
     nextLink = data['@odata.nextLink'] || null;
   }
