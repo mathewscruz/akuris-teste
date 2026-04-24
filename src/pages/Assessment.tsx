@@ -1379,52 +1379,52 @@ export default function Assessment() {
 
       {/* === Confirmation dialog (G - enriched) === */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent className="bg-[hsl(230,25%,12%)] backdrop-blur-sm border-white/10 shadow-2xl max-w-lg">
+        <AlertDialogContent className="bg-white border-slate-200 shadow-2xl max-w-lg">
           <AlertDialogHeader className="space-y-3">
             <div className={cn(
               'flex items-center justify-center w-12 h-12 rounded-full mx-auto',
               missingRequiredList.length > 0
-                ? 'bg-amber-500/15'
+                ? 'bg-amber-100'
                 : 'bg-[hsl(250,80%,60%)]/15'
             )}>
               {missingRequiredList.length > 0 ? (
-                <AlertTriangle className="w-6 h-6 text-amber-400" />
+                <AlertTriangle className="w-6 h-6 text-amber-600" />
               ) : (
-                <CheckCircle className="w-6 h-6 text-[hsl(250,80%,60%)]" />
+                <CheckCircle className="w-6 h-6 text-[hsl(250,80%,55%)]" />
               )}
             </div>
-            <AlertDialogTitle className="text-center text-xl text-white">
+            <AlertDialogTitle className="text-center text-xl text-slate-900">
               {missingRequiredList.length > 0
                 ? 'Existem perguntas obrigatórias pendentes'
                 : 'Finalizar Questionário'}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="text-center text-white/60 leading-relaxed space-y-4">
+              <div className="text-center text-slate-600 leading-relaxed space-y-4">
                 {/* Summary */}
                 <div className="grid grid-cols-3 gap-2 pt-2">
-                  <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
-                    <p className="text-2xl font-bold text-white">{questions.length}</p>
-                    <p className="text-[11px] text-white/50 uppercase tracking-wider mt-0.5">Total</p>
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                    <p className="text-2xl font-bold text-slate-900">{questions.length}</p>
+                    <p className="text-[11px] text-slate-500 uppercase tracking-wider mt-0.5">Total</p>
                   </div>
-                  <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
-                    <p className="text-2xl font-bold text-emerald-400">{answeredCount}</p>
-                    <p className="text-[11px] text-emerald-400/70 uppercase tracking-wider mt-0.5">Respondidas</p>
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <p className="text-2xl font-bold text-emerald-700">{answeredCount}</p>
+                    <p className="text-[11px] text-emerald-700/80 uppercase tracking-wider mt-0.5">Respondidas</p>
                   </div>
                   <div className={cn(
                     'p-3 border rounded-lg',
                     missingRequiredList.length > 0
-                      ? 'bg-amber-500/5 border-amber-500/20'
-                      : 'bg-white/5 border-white/10'
+                      ? 'bg-amber-50 border-amber-200'
+                      : 'bg-slate-50 border-slate-200'
                   )}>
                     <p className={cn(
                       'text-2xl font-bold',
-                      missingRequiredList.length > 0 ? 'text-amber-400' : 'text-white/60'
+                      missingRequiredList.length > 0 ? 'text-amber-700' : 'text-slate-600'
                     )}>
                       {missingRequiredList.length}
                     </p>
                     <p className={cn(
                       'text-[11px] uppercase tracking-wider mt-0.5',
-                      missingRequiredList.length > 0 ? 'text-amber-400/70' : 'text-white/50'
+                      missingRequiredList.length > 0 ? 'text-amber-700/80' : 'text-slate-500'
                     )}>
                       Pendentes
                     </p>
@@ -1434,7 +1434,7 @@ export default function Assessment() {
                 {/* Missing list */}
                 {missingRequiredList.length > 0 ? (
                   <div className="text-left space-y-2 mt-2">
-                    <p className="text-sm text-amber-400 font-medium flex items-center gap-2">
+                    <p className="text-sm text-amber-700 font-medium flex items-center gap-2">
                       <FileQuestion className="h-4 w-4" />
                       Perguntas obrigatórias sem resposta:
                     </p>
@@ -1450,17 +1450,17 @@ export default function Assessment() {
                                   setShowConfirmDialog(false);
                                   setCurrentPage(pageOfQ);
                                 }}
-                                className="w-full text-left flex items-center gap-2 text-sm text-white/70 hover:text-white p-2 rounded hover:bg-white/5 transition-colors"
+                                className="w-full text-left flex items-center gap-2 text-sm text-slate-700 hover:text-slate-900 p-2 rounded hover:bg-slate-50 transition-colors"
                               >
-                                <ChevronRight className="h-3 w-3 text-amber-400 shrink-0" />
+                                <ChevronRight className="h-3 w-3 text-amber-600 shrink-0" />
                                 <span className="flex-1 truncate">{q.titulo || q.pergunta}</span>
-                                <span className="text-[10px] text-white/40 shrink-0">Pág. {pageOfQ + 1}</span>
+                                <span className="text-[10px] text-slate-500 shrink-0">Pág. {pageOfQ + 1}</span>
                               </button>
                             </li>
                           );
                         })}
                         {missingRequiredList.length > 10 && (
-                          <li className="text-xs text-white/40 px-2">
+                          <li className="text-xs text-slate-500 px-2">
                             ...e mais {missingRequiredList.length - 10} pergunta(s)
                           </li>
                         )}
@@ -1471,7 +1471,7 @@ export default function Assessment() {
                   <p className="text-sm leading-relaxed">
                     Tem certeza que deseja finalizar e enviar o questionário?
                     <br />
-                    <span className="text-white/40 text-xs">Após o envio, não será possível fazer alterações.</span>
+                    <span className="text-slate-500 text-xs">Após o envio, não será possível fazer alterações.</span>
                   </p>
                 )}
               </div>
@@ -1482,7 +1482,7 @@ export default function Assessment() {
               variant="outline" 
               onClick={() => setShowConfirmDialog(false)}
               disabled={submitting}
-              className="flex-1 bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white"
+              className="flex-1 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
             >
               {missingRequiredList.length > 0 ? 'Voltar e responder' : 'Cancelar'}
             </Button>
