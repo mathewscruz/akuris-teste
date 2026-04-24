@@ -162,7 +162,7 @@ export function ReviewDialog({ open, onClose, review, onSuccess }: ReviewDialogP
         title={`${review?.id ? "Editar" : "Nova"} Revisão de Acessos`}
         icon={Eye}
         size="lg"
-        onSubmit={handleSave}
+        onSubmit={form.handleSubmit(onSubmit)}
       >
 <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
