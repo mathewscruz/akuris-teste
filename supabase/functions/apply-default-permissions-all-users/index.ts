@@ -93,7 +93,7 @@ serve(async (req) => {
           user_id: userProfile.user_id,
           email: userProfile.email,
           success: false,
-          error: (error instanceof Error ? error.message : String(error))
+          error: 'Erro ao aplicar permissões para este usuário'
         })
       }
     }
@@ -121,8 +121,7 @@ serve(async (req) => {
     console.error('Error in apply-default-permissions-all-users:', error)
     return new Response(
       JSON.stringify({ 
-        error: 'Internal server error',
-        details: (error instanceof Error ? error.message : String(error)) 
+        error: 'Erro interno. Por favor, tente novamente.'
       }),
       { 
         status: 500,

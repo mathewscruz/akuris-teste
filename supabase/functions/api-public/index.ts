@@ -209,7 +209,7 @@ serve(async (req) => {
   } catch (error: any) {
     console.error('API Public error:', error);
     return new Response(
-      JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) || 'Erro interno' }),
+      JSON.stringify({ error: 'Erro interno. Por favor, tente novamente.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
