@@ -34,8 +34,10 @@ export function DocumentoPreview({ open, onOpenChange, documento }: DocumentoPre
   React.useEffect(() => {
     if (open && documento.arquivo_url) {
       loadPreview();
+    } else if (open && documento.arquivo_url_externa) {
+      setPreviewUrl(documento.arquivo_url_externa);
     }
-  }, [open, documento.arquivo_url]);
+  }, [open, documento.arquivo_url, documento.arquivo_url_externa]);
 
   const loadPreview = async () => {
     if (!documento.arquivo_url) return;
