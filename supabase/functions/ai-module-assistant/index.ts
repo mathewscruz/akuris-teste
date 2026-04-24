@@ -30,9 +30,9 @@ serve(async (req) => {
       const userClient = createClient(supabaseUrl, supabaseAnon, {
         global: { headers: { Authorization: authHeader } }
       });
-      const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(authHeader.replace('Bearer ', ''));
-      if (!claimsError && claimsData?.claims?.sub) {
-        userId = claimsData.claims.sub as string;
+      const { data: userData, error: userError } = await userClient.auth.getUser(authHeader.replace('Bearer ', ''));
+      if (!userError && userData?.user?.id) {
+        userId = userData.user.id;
         const { data: profile } = await supabaseAdmin
           .from('profiles')
           .select('empresa_id')
@@ -256,7 +256,7 @@ Retorne JSON: {
 
   } catch (error: any) {
     console.error('ai-module-assistant error:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Erro interno' }), {
+    return new Response(JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) || 'Erro interno' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -54,7 +54,7 @@ async function getIntuneDevices(accessToken: string): Promise<ManagedDevice[]> {
   let nextLink: string | null = 'https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?$top=100';
 
   while (nextLink) {
-    const response = await fetch(nextLink, {
+    const response: Response = await fetch(nextLink, {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
 
@@ -63,7 +63,7 @@ async function getIntuneDevices(accessToken: string): Promise<ManagedDevice[]> {
       throw new Error(error.error?.message || 'Falha ao buscar dispositivos');
     }
 
-    const data = await response.json();
+    const data: any = await response.json();
     devices.push(...(data.value || []));
     nextLink = data['@odata.nextLink'] || null;
   }
@@ -145,7 +145,7 @@ serve(async (req) => {
         } catch (error) {
           console.error('Azure test error:', error);
           return new Response(
-            JSON.stringify({ success: false, error: error.message }),
+            JSON.stringify({ success: false, error: (error instanceof Error ? error.message : String(error)) }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
@@ -252,14 +252,14 @@ serve(async (req) => {
           await supabase.from('integracoes_webhook_logs').insert({
             integracao_id: config.id,
             evento: 'sync_devices',
-            payload: { error: syncError.message },
+            payload: { error: (syncError instanceof Error ? syncError.message : String(syncError)) },
             status_code: 500,
             sucesso: false,
             empresa_id
           });
 
           return new Response(
-            JSON.stringify({ success: false, error: syncError.message }),
+            JSON.stringify({ success: false, error: (syncError instanceof Error ? syncError.message : String(syncError)) }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
@@ -276,7 +276,7 @@ serve(async (req) => {
     console.error('Azure integration error:', error);
     
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: (error instanceof Error ? error.message : String(error)) }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }

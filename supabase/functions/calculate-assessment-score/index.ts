@@ -42,9 +42,9 @@ serve(async (req) => {
       const userClient = createClient(supabaseUrl, supabaseAnon, {
         global: { headers: { Authorization: authHeader } }
       });
-      const { data: claimsData } = await userClient.auth.getClaims(authHeader.replace('Bearer ', ''));
-      if (claimsData?.claims?.sub) {
-        userId = claimsData.claims.sub as string;
+      const { data: userData } = await userClient.auth.getUser(authHeader.replace('Bearer ', ''));
+      if (userData?.user?.id) {
+        userId = userData.user.id;
       }
     }
 
@@ -163,7 +163,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error calculating assessment score:', error);
     return new Response(JSON.stringify({ 
-      error: error.message 
+      error: (error instanceof Error ? error.message : String(error)) 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
