@@ -114,6 +114,8 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
 
     setFormData(base);
     setSelectedFile(initialFile || null);
+    setArquivoUrlExterna(documento?.arquivo_url_externa || '');
+    setArquivoModo(documento?.arquivo_url_externa ? 'url' : 'upload');
     setNewTag('');
   }, [documento, open, initialFile, initialData]);
 
