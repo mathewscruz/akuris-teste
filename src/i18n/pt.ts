@@ -634,13 +634,6 @@ export const pt = {
     newAudit: 'Nova auditoria iniciada',
     newComplaint: 'Nova denúncia recebida',
   },
-  commandPalette: {
-    placeholder: 'Buscar comandos, módulos, ações...',
-    noResults: 'Nenhum resultado encontrado',
-    navigation: 'Navegação',
-    actions: 'Ações',
-    recent: 'Recentes',
-  },
   statusLabels: {
     // Tipos de Ativos/Sistemas
     aplicacao: 'Aplicação',
