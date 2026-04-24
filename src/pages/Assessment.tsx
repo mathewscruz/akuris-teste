@@ -104,23 +104,23 @@ const createSupabaseRequest = (assessmentToken: string | undefined) => {
   };
 };
 
-// Wrapper component for consistent navy background
+// Wrapper component: light background with bottom purple glow preserved
 const AssessmentShell = ({ children }: { children: React.ReactNode }) => (
-  <div className="min-h-screen bg-[hsl(230,25%,7%)] relative overflow-hidden">
-    {/* Radial neon glow */}
+  <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 relative overflow-hidden">
+    {/* Bottom purple glow */}
     <div className="pointer-events-none absolute inset-0">
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[radial-gradient(ellipse_at_center,hsl(250,80%,55%,0.15),transparent_70%)]" />
-      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[radial-gradient(ellipse_at_center,hsl(220,80%,40%,0.08),transparent_70%)]" />
+      <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[radial-gradient(ellipse_at_center,hsl(250,80%,60%,0.18),transparent_70%)]" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[radial-gradient(ellipse_at_center,hsl(250,80%,50%,0.12),transparent_70%)]" />
     </div>
     <div className="relative z-10">
       {children}
     </div>
     {/* Footer */}
     <div className="relative z-10 text-center pb-6 pt-8">
-      <div className="flex items-center justify-center gap-2 text-xs text-white/30">
+      <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
         <ShieldCheck className="h-3 w-3" />
         <span>Plataforma segura — Powered by</span>
-        <span className="font-semibold text-white/50">Akuris</span>
+        <span className="font-semibold text-slate-700">Akuris</span>
       </div>
     </div>
   </div>
@@ -227,76 +227,76 @@ const WelcomeScreen = ({
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <div className="space-y-6 animate-fade-in">
         {/* Hero */}
-        <Card className="bg-white/5 backdrop-blur-sm border-white/10 shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-br from-[hsl(250,80%,60%)]/20 via-transparent to-[hsl(250,80%,60%)]/5 p-8 sm:p-10">
+        <Card className="bg-white border-slate-200 shadow-xl overflow-hidden">
+          <div className="bg-gradient-to-br from-[hsl(250,80%,60%)]/10 via-transparent to-[hsl(250,80%,60%)]/5 p-8 sm:p-10">
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="h-4 w-4 text-[hsl(250,80%,70%)]" />
-              <span className="text-xs font-medium uppercase tracking-wider text-[hsl(250,80%,70%)]">
+              <Sparkles className="h-4 w-4 text-[hsl(250,80%,55%)]" />
+              <span className="text-xs font-medium uppercase tracking-wider text-[hsl(250,80%,55%)]">
                 Questionário de Due Diligence
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 leading-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 leading-tight">
               Olá, {assessment.fornecedor_nome.split(' ')[0]} 👋
             </h1>
-            <p className="text-base text-white/70 leading-relaxed max-w-xl">
-              <span className="text-white font-medium">{assessment.empresa.nome}</span> precisa
+            <p className="text-base text-slate-600 leading-relaxed max-w-xl">
+              <span className="text-slate-900 font-medium">{assessment.empresa.nome}</span> precisa
               de algumas informações sobre sua empresa para concluir o processo de avaliação.
               Suas respostas são confidenciais e serão analisadas pela equipe responsável.
             </p>
           </div>
 
-          <CardContent className="p-6 sm:p-8 border-t border-white/10">
+          <CardContent className="p-6 sm:p-8 border-t border-slate-200">
             {/* Stats grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-              <div className="flex items-center gap-3 p-4 bg-white/[0.03] border border-white/10 rounded-xl">
+              <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <div className="h-10 w-10 rounded-lg bg-[hsl(250,80%,60%)]/15 flex items-center justify-center shrink-0">
-                  <ListChecks className="h-5 w-5 text-[hsl(250,80%,70%)]" />
+                  <ListChecks className="h-5 w-5 text-[hsl(250,80%,55%)]" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-white/50">Perguntas</p>
-                  <p className="text-base font-semibold text-white">{totalQuestions} no total</p>
+                  <p className="text-xs text-slate-500">Perguntas</p>
+                  <p className="text-base font-semibold text-slate-900">{totalQuestions} no total</p>
                   {totalRequired > 0 && (
-                    <p className="text-[11px] text-white/40">{totalRequired} obrigatórias</p>
+                    <p className="text-[11px] text-slate-500">{totalRequired} obrigatórias</p>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-4 bg-white/[0.03] border border-white/10 rounded-xl">
+              <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <div className="h-10 w-10 rounded-lg bg-[hsl(250,80%,60%)]/15 flex items-center justify-center shrink-0">
-                  <Clock className="h-5 w-5 text-[hsl(250,80%,70%)]" />
+                  <Clock className="h-5 w-5 text-[hsl(250,80%,55%)]" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-white/50">Tempo estimado</p>
-                  <p className="text-base font-semibold text-white">~{estimatedMinutes} min</p>
-                  <p className="text-[11px] text-white/40">Pode pausar e voltar</p>
+                  <p className="text-xs text-slate-500">Tempo estimado</p>
+                  <p className="text-base font-semibold text-slate-900">~{estimatedMinutes} min</p>
+                  <p className="text-[11px] text-slate-500">Pode pausar e voltar</p>
                 </div>
               </div>
 
               <div className={cn(
                 "flex items-center gap-3 p-4 border rounded-xl",
                 overdue
-                  ? "bg-red-500/5 border-red-500/30"
+                  ? "bg-red-50 border-red-200"
                   : daysLeft <= 3
-                    ? "bg-amber-500/5 border-amber-500/30"
-                    : "bg-white/[0.03] border-white/10"
+                    ? "bg-amber-50 border-amber-200"
+                    : "bg-slate-50 border-slate-200"
               )}>
                 <div className={cn(
                   "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
-                  overdue ? "bg-red-500/15" : daysLeft <= 3 ? "bg-amber-500/15" : "bg-[hsl(250,80%,60%)]/15"
+                  overdue ? "bg-red-100" : daysLeft <= 3 ? "bg-amber-100" : "bg-[hsl(250,80%,60%)]/15"
                 )}>
                   <Calendar className={cn(
                     "h-5 w-5",
-                    overdue ? "text-red-400" : daysLeft <= 3 ? "text-amber-400" : "text-[hsl(250,80%,70%)]"
+                    overdue ? "text-red-600" : daysLeft <= 3 ? "text-amber-600" : "text-[hsl(250,80%,55%)]"
                   )} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-white/50">Prazo</p>
-                  <p className="text-base font-semibold text-white">
+                  <p className="text-xs text-slate-500">Prazo</p>
+                  <p className="text-base font-semibold text-slate-900">
                     {deadline.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                   </p>
                   <p className={cn(
                     "text-[11px]",
-                    overdue ? "text-red-400" : daysLeft <= 3 ? "text-amber-400" : "text-white/40"
+                    overdue ? "text-red-600" : daysLeft <= 3 ? "text-amber-600" : "text-slate-500"
                   )}>
                     {overdue ? 'Em atraso' : daysLeft === 0 ? 'Vence hoje' : `Faltam ${daysLeft} dias`}
                   </p>
@@ -306,23 +306,23 @@ const WelcomeScreen = ({
 
             {/* Instructions */}
             <div className="space-y-2 mb-6">
-              <h3 className="text-sm font-semibold text-white/80">Antes de começar:</h3>
-              <ul className="space-y-1.5 text-sm text-white/60">
+              <h3 className="text-sm font-semibold text-slate-800">Antes de começar:</h3>
+              <ul className="space-y-1.5 text-sm text-slate-600">
                 <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Suas respostas são <strong className="text-white/80">salvas automaticamente</strong> a cada alteração.</span>
+                  <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>Suas respostas são <strong className="text-slate-900">salvas automaticamente</strong> a cada alteração.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Você pode <strong className="text-white/80">fechar e voltar</strong> a qualquer momento usando o mesmo link.</span>
+                  <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>Você pode <strong className="text-slate-900">fechar e voltar</strong> a qualquer momento usando o mesmo link.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Algumas perguntas podem solicitar <strong className="text-white/80">evidências</strong> ou anexo de documentos.</span>
+                  <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>Algumas perguntas podem solicitar <strong className="text-slate-900">evidências</strong> ou anexo de documentos.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Após finalizar, <strong className="text-white/80">não será possível editar</strong> as respostas.</span>
+                  <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>Após finalizar, <strong className="text-slate-900">não será possível editar</strong> as respostas.</span>
                 </li>
               </ul>
             </div>
@@ -330,7 +330,7 @@ const WelcomeScreen = ({
             <Button
               onClick={onStart}
               size="lg"
-              className="w-full bg-gradient-to-r from-[hsl(250,80%,60%)] to-[hsl(250,80%,50%)] hover:from-[hsl(250,80%,55%)] hover:to-[hsl(250,80%,45%)] text-white shadow-lg shadow-[hsl(250,80%,60%)]/20"
+              className="w-full bg-gradient-to-r from-[hsl(250,80%,60%)] to-[hsl(250,80%,50%)] hover:from-[hsl(250,80%,55%)] hover:to-[hsl(250,80%,45%)] text-white shadow-lg shadow-[hsl(250,80%,60%)]/30"
             >
               Começar questionário
               <ArrowRight className="h-4 w-4 ml-2" />
@@ -709,8 +709,8 @@ export default function Assessment() {
       <AssessmentShell>
         <div className="flex items-center justify-center min-h-[80vh]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(250,80%,60%)] mx-auto mb-4"></div>
-            <p className="text-white/60 text-sm">Carregando questionário...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(250,80%,55%)] mx-auto mb-4"></div>
+            <p className="text-slate-600 text-sm">Carregando questionário...</p>
           </div>
         </div>
       </AssessmentShell>
@@ -722,11 +722,11 @@ export default function Assessment() {
     return (
       <AssessmentShell>
         <div className="flex items-center justify-center min-h-[80vh] p-4">
-          <Card className="w-full max-w-md bg-white/5 backdrop-blur-sm border-white/10 shadow-2xl">
+          <Card className="w-full max-w-md bg-white border-slate-200 shadow-xl">
             <CardContent className="pt-6 text-center">
-              <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2 text-white">Questionário não encontrado</h2>
-              <p className="text-white/50">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2 text-slate-900">Questionário não encontrado</h2>
+              <p className="text-slate-500">
                 O link pode ter expirado ou ser inválido.
               </p>
             </CardContent>
@@ -750,20 +750,20 @@ export default function Assessment() {
             </div>
             
             <div className="space-y-6 animate-fade-in">
-              <h2 className="text-3xl font-bold text-white">Questionário Enviado!</h2>
-              <p className="text-lg text-white/60 max-w-md mx-auto leading-relaxed">
+              <h2 className="text-3xl font-bold text-slate-900">Questionário Enviado!</h2>
+              <p className="text-lg text-slate-600 max-w-md mx-auto leading-relaxed">
                 Obrigado por responder ao questionário de due diligence. 
                 Suas respostas foram enviadas com sucesso e estão sendo analisadas pela equipe da {assessment.empresa.nome}.
               </p>
               
-              <div className="mt-8 p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
-                <div className="flex items-center justify-center space-x-3 text-emerald-400 mb-3">
+              <div className="mt-8 p-6 bg-white border border-slate-200 rounded-xl shadow-sm">
+                <div className="flex items-center justify-center space-x-3 text-emerald-600 mb-3">
                   <CheckCircle className="w-5 h-5" />
                   <span className="font-medium">Concluído com sucesso</span>
                 </div>
                 {assessment.data_conclusao && (
-                  <p className="text-sm text-white/40">
-                    <strong className="text-white/60">Concluído em:</strong>{' '}
+                  <p className="text-sm text-slate-500">
+                    <strong className="text-slate-700">Concluído em:</strong>{' '}
                     {new Date(assessment.data_conclusao).toLocaleString('pt-BR')}
                   </p>
                 )}
@@ -816,25 +816,25 @@ export default function Assessment() {
       />
 
       <div className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-          {/* === Sidebar (C) === */}
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+          {/* === Sidebar === */}
           <aside className="hidden lg:block">
             <div className="sticky top-6 space-y-4">
               {/* Progress card */}
-              <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+              <Card className="bg-white border-slate-200 shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-medium text-white/50 uppercase tracking-wider">Progresso</span>
-                    <span className="text-xs font-semibold text-white">{Math.round(progress)}%</span>
+                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Progresso</span>
+                    <span className="text-xs font-semibold text-slate-900">{Math.round(progress)}%</span>
                   </div>
                   <Progress
                     value={progress}
-                    className="h-2 bg-white/10 [&>div]:bg-gradient-to-r [&>div]:from-[hsl(250,80%,60%)] [&>div]:to-[hsl(250,80%,50%)] mb-3"
+                    className="h-2 bg-slate-100 [&>div]:bg-gradient-to-r [&>div]:from-[hsl(250,80%,60%)] [&>div]:to-[hsl(250,80%,50%)] mb-3"
                   />
-                  <div className="flex items-center justify-between text-xs text-white/50">
+                  <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>{answeredCount} de {questions.length}</span>
                     {missingRequiredList.length > 0 && (
-                      <span className="flex items-center gap-1 text-amber-400">
+                      <span className="flex items-center gap-1 text-amber-600 font-medium">
                         <AlertTriangle className="h-3 w-3" />
                         {missingRequiredList.length} obrig.
                       </span>
@@ -843,21 +843,79 @@ export default function Assessment() {
                 </CardContent>
               </Card>
 
-              {/* Pages index */}
-              <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+              {/* Summary card — replaces "Páginas" header */}
+              <Card className="bg-white border-slate-200 shadow-sm">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-medium text-white/50 uppercase tracking-wider">
-                    Páginas
+                  <CardTitle className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Resumo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0 space-y-2.5">
+                  {(() => {
+                    const deadline = new Date(assessment.data_limite);
+                    const now = new Date();
+                    const daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                    const overdue = daysLeft < 0;
+                    const remainingQuestions = questions.length - answeredCount;
+                    const estimatedMinutes = Math.max(1, Math.round(remainingQuestions * 0.75));
+
+                    return (
+                      <>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="flex items-center gap-1.5 text-slate-500">
+                            <Calendar className="h-3.5 w-3.5" />
+                            Prazo
+                          </span>
+                          <span className={cn(
+                            'font-semibold',
+                            overdue ? 'text-red-600' : daysLeft <= 3 ? 'text-amber-600' : 'text-slate-700'
+                          )}>
+                            {overdue ? 'Em atraso' : daysLeft === 0 ? 'Vence hoje' : `${daysLeft}d restantes`}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="flex items-center gap-1.5 text-slate-500">
+                            <Clock className="h-3.5 w-3.5" />
+                            Tempo estimado
+                          </span>
+                          <span className="font-semibold text-slate-700">~{estimatedMinutes} min</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="flex items-center gap-1.5 text-slate-500">
+                            <Save className="h-3.5 w-3.5" />
+                            Último salvamento
+                          </span>
+                          <span className="font-semibold text-slate-700">
+                            {savedAt
+                              ? savedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                              : '—'}
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+
+              {/* Sections (was "Páginas") */}
+              <Card className="bg-white border-slate-200 shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Seções
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-2">
-                  <ScrollArea className="h-[calc(100vh-380px)] min-h-[200px]">
+                  <ScrollArea className="max-h-[40vh] min-h-[180px]">
                     <div className="space-y-1 pr-2">
                       {Array.from({ length: totalPages }).map((_, idx) => {
                         const status = pageStatuses[idx];
                         const isCurrent = currentPage === idx;
                         const isComplete = status && status.answered === status.total && status.missingRequired === 0;
                         const hasContent = status && status.answered > 0;
+
+                        // Use first question title as section label
+                        const firstQuestion = questions[idx * questionsPerPage];
+                        const sectionLabel = firstQuestion?.titulo || firstQuestion?.pergunta || `Seção ${idx + 1}`;
 
                         return (
                           <button
@@ -867,20 +925,20 @@ export default function Assessment() {
                               'w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group',
                               'flex items-center gap-3',
                               isCurrent
-                                ? 'bg-[hsl(250,80%,60%)]/15 border border-[hsl(250,80%,60%)]/30'
-                                : 'hover:bg-white/5 border border-transparent'
+                                ? 'bg-[hsl(250,80%,60%)]/10 border border-[hsl(250,80%,60%)]/30'
+                                : 'hover:bg-slate-50 border border-transparent'
                             )}
                           >
                             {/* Status icon */}
                             <div className={cn(
                               'h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0 transition-colors',
                               isComplete
-                                ? 'bg-emerald-500/20 text-emerald-400'
+                                ? 'bg-emerald-100 text-emerald-700'
                                 : hasContent
-                                  ? 'bg-amber-500/15 text-amber-400'
+                                  ? 'bg-amber-100 text-amber-700'
                                   : isCurrent
-                                    ? 'bg-[hsl(250,80%,60%)]/30 text-white'
-                                    : 'bg-white/5 text-white/40'
+                                    ? 'bg-[hsl(250,80%,60%)]/20 text-[hsl(250,80%,40%)]'
+                                    : 'bg-slate-100 text-slate-500'
                             )}>
                               {isComplete ? <Check className="h-3.5 w-3.5" /> : idx + 1}
                             </div>
@@ -888,19 +946,19 @@ export default function Assessment() {
                             <div className="min-w-0 flex-1">
                               <p className={cn(
                                 'text-sm font-medium truncate',
-                                isCurrent ? 'text-white' : 'text-white/70'
-                              )}>
-                                Página {idx + 1}
+                                isCurrent ? 'text-slate-900' : 'text-slate-700'
+                              )} title={sectionLabel}>
+                                {sectionLabel}
                               </p>
-                              <p className="text-[11px] text-white/40">
+                              <p className="text-[11px] text-slate-500">
                                 {status?.answered || 0}/{status?.total || 0} respondidas
                                 {status && status.missingRequired > 0 && (
-                                  <span className="text-amber-400/80"> · {status.missingRequired} obrig.</span>
+                                  <span className="text-amber-600"> · {status.missingRequired} obrig.</span>
                                 )}
                               </p>
                             </div>
 
-                            {isCurrent && <ChevronRight className="h-4 w-4 text-white/60 shrink-0" />}
+                            {isCurrent && <ChevronRight className="h-4 w-4 text-[hsl(250,80%,55%)] shrink-0" />}
                           </button>
                         );
                       })}
@@ -908,23 +966,64 @@ export default function Assessment() {
                   </ScrollArea>
                 </CardContent>
               </Card>
+
+              {/* Pendencies — only show when there are missing required */}
+              {missingRequiredList.length > 0 && (
+                <Card className="bg-amber-50 border-amber-200 shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xs font-medium text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      Pendências obrigatórias
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-2">
+                    <ScrollArea className="max-h-[160px]">
+                      <ul className="space-y-1 pr-2">
+                        {missingRequiredList.slice(0, 6).map((q) => {
+                          const qIdx = questions.findIndex(x => x.id === q.id);
+                          const pageOfQ = Math.floor(qIdx / questionsPerPage);
+                          return (
+                            <li key={q.id}>
+                              <button
+                                onClick={() => setCurrentPage(pageOfQ)}
+                                className="w-full text-left flex items-center gap-2 text-xs text-amber-900 hover:text-amber-950 p-2 rounded hover:bg-amber-100/70 transition-colors"
+                              >
+                                <ChevronRight className="h-3 w-3 text-amber-600 shrink-0" />
+                                <span className="flex-1 truncate" title={q.titulo || q.pergunta}>
+                                  {q.titulo || q.pergunta}
+                                </span>
+                                <span className="text-[10px] text-amber-700 shrink-0">Pág. {pageOfQ + 1}</span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                        {missingRequiredList.length > 6 && (
+                          <li className="text-[11px] text-amber-700 px-2 pt-1">
+                            +{missingRequiredList.length - 6} pendência(s)
+                          </li>
+                        )}
+                      </ul>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </aside>
 
           {/* === Main content === */}
           <main className="min-w-0">
-            {/* Mobile progress (C fallback) */}
-            <Card className="lg:hidden mb-4 bg-white/5 backdrop-blur-sm border-white/10">
+            {/* Mobile progress */}
+            <Card className="lg:hidden mb-4 bg-white border-slate-200 shadow-sm">
               <CardContent className="p-4">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-medium text-white/50">
+                  <span className="text-xs font-medium text-slate-500">
                     Página {currentPage + 1} de {totalPages}
                   </span>
-                  <span className="text-xs font-semibold text-white">{Math.round(progress)}%</span>
+                  <span className="text-xs font-semibold text-slate-900">{Math.round(progress)}%</span>
                 </div>
                 <Progress
                   value={progress}
-                  className="h-2 bg-white/10 [&>div]:bg-gradient-to-r [&>div]:from-[hsl(250,80%,60%)] [&>div]:to-[hsl(250,80%,50%)]"
+                  className="h-2 bg-slate-100 [&>div]:bg-gradient-to-r [&>div]:from-[hsl(250,80%,60%)] [&>div]:to-[hsl(250,80%,50%)]"
                 />
               </CardContent>
             </Card>
@@ -932,12 +1031,12 @@ export default function Assessment() {
             {/* Page header */}
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-wider text-white/40 font-medium mb-1">
+                <p className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-1">
                   {assessment.template.nome}
                 </p>
-                <h2 className="text-xl sm:text-2xl font-bold text-white">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
                   Página {currentPage + 1}
-                  <span className="text-white/40 font-normal text-base ml-2">de {totalPages}</span>
+                  <span className="text-slate-400 font-normal text-base ml-2">de {totalPages}</span>
                 </h2>
               </div>
             </div>
@@ -952,39 +1051,39 @@ export default function Assessment() {
                   <Card
                     key={question.id}
                     className={cn(
-                      'border bg-white/5 backdrop-blur-sm transition-all duration-300 overflow-hidden animate-fade-in',
+                      'border bg-white transition-all duration-300 overflow-hidden animate-fade-in shadow-sm',
                       answered
-                        ? 'border-emerald-500/30 shadow-[0_0_0_1px_hsl(160,84%,39%,0.1),0_8px_24px_-12px_hsl(160,84%,39%,0.2)]'
-                        : 'border-white/10 hover:border-white/20'
+                        ? 'border-emerald-300 shadow-[0_0_0_1px_hsl(160,84%,39%,0.1),0_8px_24px_-12px_hsl(160,84%,39%,0.25)]'
+                        : 'border-slate-200 hover:border-slate-300'
                     )}
                     style={{ animationDelay: `${index * 60}ms` }}
                   >
                     <CardContent className="p-6 sm:p-7 space-y-5">
-                      {/* Question header (D - hierarchy fixed) */}
+                      {/* Question header */}
                       <div className="flex items-start gap-4">
                         {/* Number badge */}
                         <div className={cn(
                           'h-9 w-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 transition-colors',
                           answered
-                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                            : 'bg-white/5 text-white/60 border border-white/10'
+                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                            : 'bg-slate-100 text-slate-600 border border-slate-200'
                         )}>
                           {answered ? <Check className="h-4 w-4" /> : questionNumber}
                         </div>
 
                         <div className="flex-1 min-w-0 space-y-1.5">
                           <div className="flex items-start gap-2 flex-wrap">
-                            <h3 className="text-base sm:text-lg font-semibold text-white leading-snug">
+                            <h3 className="text-base sm:text-lg font-semibold text-slate-900 leading-snug">
                               {question.titulo || question.pergunta}
                             </h3>
                             {question.obrigatoria && (
-                              <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/20 mt-1">
+                              <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-200 mt-1">
                                 Obrigatória
                               </span>
                             )}
                           </div>
                           {question.descricao && (
-                            <p className="text-sm text-white/60 leading-relaxed">
+                            <p className="text-sm text-slate-600 leading-relaxed">
                               {question.descricao}
                             </p>
                           )}
@@ -998,7 +1097,7 @@ export default function Assessment() {
                             value={responses[question.id] || ''}
                             onChange={(e) => handleResponseChange(question.id, e.target.value)}
                             placeholder="Digite sua resposta..."
-                            className="min-h-[120px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(250,80%,60%)]/50 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
+                            className="min-h-[120px] bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-[hsl(250,80%,60%)]/60 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
                           />
                         )}
 
@@ -1016,13 +1115,13 @@ export default function Assessment() {
                                   className={cn(
                                     'flex items-center space-x-3 p-3 rounded-lg border transition-all duration-200 cursor-pointer',
                                     selected
-                                      ? 'bg-[hsl(250,80%,60%)]/10 border-[hsl(250,80%,60%)]/30'
-                                      : 'bg-white/[0.02] border-white/10 hover:bg-white/5 hover:border-white/20'
+                                      ? 'bg-[hsl(250,80%,60%)]/10 border-[hsl(250,80%,60%)]/40'
+                                      : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'
                                   )}
                                   onClick={() => handleResponseChange(question.id, opcao)}
                                 >
-                                  <RadioGroupItem value={opcao} id={`${question.id}-${idx}`} className="border-white/30 text-[hsl(250,80%,60%)]" />
-                                  <Label htmlFor={`${question.id}-${idx}`} className="text-sm font-medium cursor-pointer flex-1 text-white/85">{opcao}</Label>
+                                  <RadioGroupItem value={opcao} id={`${question.id}-${idx}`} className="border-slate-300 text-[hsl(250,80%,55%)]" />
+                                  <Label htmlFor={`${question.id}-${idx}`} className="text-sm font-medium cursor-pointer flex-1 text-slate-800">{opcao}</Label>
                                 </div>
                               );
                             })}
@@ -1035,7 +1134,7 @@ export default function Assessment() {
                             value={responses[question.id] || ''}
                             onChange={(e) => handleResponseChange(question.id, e.target.value)}
                             placeholder="Digite um número..."
-                            className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(250,80%,60%)]/50 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
+                            className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-[hsl(250,80%,60%)]/60 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
                           />
                         )}
 
@@ -1056,13 +1155,13 @@ export default function Assessment() {
                                   className={cn(
                                     'flex items-center justify-center space-x-3 p-4 rounded-lg border transition-all duration-200 cursor-pointer',
                                     selected
-                                      ? 'bg-[hsl(250,80%,60%)]/10 border-[hsl(250,80%,60%)]/30'
-                                      : 'bg-white/[0.02] border-white/10 hover:bg-white/5 hover:border-white/20'
+                                      ? 'bg-[hsl(250,80%,60%)]/10 border-[hsl(250,80%,60%)]/40'
+                                      : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'
                                   )}
                                   onClick={() => handleResponseChange(question.id, opt.value)}
                                 >
-                                  <RadioGroupItem value={opt.value} id={`${question.id}-${opt.value}`} className="border-white/30 text-[hsl(250,80%,60%)]" />
-                                  <Label htmlFor={`${question.id}-${opt.value}`} className="text-sm font-semibold cursor-pointer text-white/85">{opt.label}</Label>
+                                  <RadioGroupItem value={opt.value} id={`${question.id}-${opt.value}`} className="border-slate-300 text-[hsl(250,80%,55%)]" />
+                                  <Label htmlFor={`${question.id}-${opt.value}`} className="text-sm font-semibold cursor-pointer text-slate-800">{opt.label}</Label>
                                 </div>
                               );
                             })}
@@ -1074,7 +1173,7 @@ export default function Assessment() {
                             value={responses[question.id] || ''}
                             onValueChange={(value) => handleResponseChange(question.id, value)}
                           >
-                            <SelectTrigger className="bg-white/5 border-white/10 text-white focus:border-[hsl(250,80%,60%)]/50 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200">
+                            <SelectTrigger className="bg-white border-slate-200 text-slate-900 focus:border-[hsl(250,80%,60%)]/60 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200">
                               <SelectValue placeholder="Selecione uma opção..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -1089,14 +1188,14 @@ export default function Assessment() {
 
                         {question.tipo === 'arquivo' && (
                           <div className="space-y-3">
-                            <div className="border-2 border-dashed border-white/10 hover:border-[hsl(250,80%,60%)]/30 rounded-xl p-6 text-center transition-colors duration-200 bg-white/[0.02]">
-                              <Upload className="h-8 w-8 text-white/30 mx-auto mb-2" />
-                              <p className="text-sm text-white/40 mb-3">
+                            <div className="border-2 border-dashed border-slate-200 hover:border-[hsl(250,80%,60%)]/40 rounded-xl p-6 text-center transition-colors duration-200 bg-slate-50/50">
+                              <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+                              <p className="text-sm text-slate-500 mb-3">
                                 Arraste um arquivo ou clique para selecionar
                               </p>
                               <Input
                                 type="file"
-                                className="bg-white/5 border-white/10 text-white/70"
+                                className="bg-white border-slate-200 text-slate-700"
                                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];
@@ -1127,11 +1226,11 @@ export default function Assessment() {
                               />
                             </div>
                             {responses[question.id] && (
-                              <div className="flex items-center space-x-3 text-sm text-white/60 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                                <FileText className="h-4 w-4 text-emerald-400" />
+                              <div className="flex items-center space-x-3 text-sm text-slate-700 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                                <FileText className="h-4 w-4 text-emerald-600" />
                                 <span className="font-medium">{responses[question.id]}</span>
                                 {responses[`${question.id}_arquivo`] && (
-                                  <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-[hsl(250,80%,60%)] underline text-xs ml-auto">
+                                  <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-[hsl(250,80%,55%)] underline text-xs ml-auto">
                                     Ver arquivo
                                   </a>
                                 )}
@@ -1145,28 +1244,28 @@ export default function Assessment() {
                           <>
                             {question.configuracoes.mostrar_evidencia_quando &&
                              question.configuracoes.mostrar_evidencia_quando.split(',').includes(responses[question.id]) && (
-                              <div className="mt-4 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-lg animate-fade-in">
-                                <Label className="text-sm font-medium text-emerald-400 mb-3 block">
+                              <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg animate-fade-in">
+                                <Label className="text-sm font-medium text-emerald-700 mb-3 block">
                                   {question.configuracoes.label_evidencia || 'Evidência:'}
                                 </Label>
                                 <Textarea
                                   value={responses[`${question.id}_evidencia`] || ''}
                                   onChange={(e) => handleResponseChange(`${question.id}_evidencia`, e.target.value)}
                                   placeholder="Descreva as evidências que comprovam sua resposta..."
-                                  className="min-h-[100px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 mb-4"
+                                  className="min-h-[100px] bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 mb-4"
                                 />
                                 <div className="space-y-3">
-                                  <Label className="text-sm font-medium text-emerald-400 block">
+                                  <Label className="text-sm font-medium text-emerald-700 block">
                                     Anexar documento (opcional):
                                   </Label>
-                                  <div className="border-2 border-dashed border-emerald-500/20 hover:border-emerald-500/40 rounded-lg p-4 text-center transition-colors duration-200 bg-white/[0.02]">
-                                    <Upload className="h-6 w-6 text-emerald-400/40 mx-auto mb-2" />
-                                    <p className="text-xs text-emerald-400/40 mb-2">
+                                  <div className="border-2 border-dashed border-emerald-200 hover:border-emerald-400 rounded-lg p-4 text-center transition-colors duration-200 bg-white">
+                                    <Upload className="h-6 w-6 text-emerald-500 mx-auto mb-2" />
+                                    <p className="text-xs text-emerald-700 mb-2">
                                       Clique para selecionar um arquivo
                                     </p>
                                     <Input
                                       type="file"
-                                      className="text-xs bg-white/5 border-white/10 text-white/70 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-emerald-500/10 file:text-emerald-400"
+                                      className="text-xs bg-white border-slate-200 text-slate-700 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-emerald-100 file:text-emerald-700"
                                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                       onChange={async (e) => {
                                         const file = e.target.files?.[0];
@@ -1196,10 +1295,10 @@ export default function Assessment() {
                                     />
                                   </div>
                                   {responses[`${question.id}_arquivo`] && (
-                                    <div className="flex items-center space-x-2 text-xs text-emerald-400 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                                    <div className="flex items-center space-x-2 text-xs text-emerald-700 bg-emerald-50 p-2 rounded border border-emerald-200">
                                       <FileText className="h-3 w-3" />
                                       <span>Evidência anexada</span>
-                                      <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-[hsl(250,80%,60%)] underline ml-auto">
+                                      <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-[hsl(250,80%,55%)] underline ml-auto">
                                         Ver
                                       </a>
                                     </div>
@@ -1210,15 +1309,15 @@ export default function Assessment() {
 
                             {question.configuracoes.mostrar_justificativa_quando &&
                              question.configuracoes.mostrar_justificativa_quando.split(',').includes(responses[question.id]) && (
-                              <div className="mt-4 p-4 bg-amber-500/5 border border-amber-500/20 rounded-lg animate-fade-in">
-                                <Label className="text-sm font-medium text-amber-400 mb-2 block">
+                              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg animate-fade-in">
+                                <Label className="text-sm font-medium text-amber-700 mb-2 block">
                                   {question.configuracoes.label_justificativa || 'Justificativa:'}
                                 </Label>
                                 <Textarea
                                   value={responses[`${question.id}_justificativa`] || ''}
                                   onChange={(e) => handleResponseChange(`${question.id}_justificativa`, e.target.value)}
                                   placeholder="Explique o motivo e planos futuros..."
-                                  className="min-h-[100px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 transition-all duration-200"
+                                  className="min-h-[100px] bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20 transition-all duration-200"
                                 />
                               </div>
                             )}
@@ -1238,7 +1337,7 @@ export default function Assessment() {
                 onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
                 disabled={currentPage === 0}
                 size="lg"
-                className="shadow-sm border-white/10 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 hover:text-white"
+                className="shadow-sm border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Anterior
@@ -1280,52 +1379,52 @@ export default function Assessment() {
 
       {/* === Confirmation dialog (G - enriched) === */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent className="bg-[hsl(230,25%,12%)] backdrop-blur-sm border-white/10 shadow-2xl max-w-lg">
+        <AlertDialogContent className="bg-white border-slate-200 shadow-2xl max-w-lg">
           <AlertDialogHeader className="space-y-3">
             <div className={cn(
               'flex items-center justify-center w-12 h-12 rounded-full mx-auto',
               missingRequiredList.length > 0
-                ? 'bg-amber-500/15'
+                ? 'bg-amber-100'
                 : 'bg-[hsl(250,80%,60%)]/15'
             )}>
               {missingRequiredList.length > 0 ? (
-                <AlertTriangle className="w-6 h-6 text-amber-400" />
+                <AlertTriangle className="w-6 h-6 text-amber-600" />
               ) : (
-                <CheckCircle className="w-6 h-6 text-[hsl(250,80%,60%)]" />
+                <CheckCircle className="w-6 h-6 text-[hsl(250,80%,55%)]" />
               )}
             </div>
-            <AlertDialogTitle className="text-center text-xl text-white">
+            <AlertDialogTitle className="text-center text-xl text-slate-900">
               {missingRequiredList.length > 0
                 ? 'Existem perguntas obrigatórias pendentes'
                 : 'Finalizar Questionário'}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="text-center text-white/60 leading-relaxed space-y-4">
+              <div className="text-center text-slate-600 leading-relaxed space-y-4">
                 {/* Summary */}
                 <div className="grid grid-cols-3 gap-2 pt-2">
-                  <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
-                    <p className="text-2xl font-bold text-white">{questions.length}</p>
-                    <p className="text-[11px] text-white/50 uppercase tracking-wider mt-0.5">Total</p>
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                    <p className="text-2xl font-bold text-slate-900">{questions.length}</p>
+                    <p className="text-[11px] text-slate-500 uppercase tracking-wider mt-0.5">Total</p>
                   </div>
-                  <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
-                    <p className="text-2xl font-bold text-emerald-400">{answeredCount}</p>
-                    <p className="text-[11px] text-emerald-400/70 uppercase tracking-wider mt-0.5">Respondidas</p>
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <p className="text-2xl font-bold text-emerald-700">{answeredCount}</p>
+                    <p className="text-[11px] text-emerald-700/80 uppercase tracking-wider mt-0.5">Respondidas</p>
                   </div>
                   <div className={cn(
                     'p-3 border rounded-lg',
                     missingRequiredList.length > 0
-                      ? 'bg-amber-500/5 border-amber-500/20'
-                      : 'bg-white/5 border-white/10'
+                      ? 'bg-amber-50 border-amber-200'
+                      : 'bg-slate-50 border-slate-200'
                   )}>
                     <p className={cn(
                       'text-2xl font-bold',
-                      missingRequiredList.length > 0 ? 'text-amber-400' : 'text-white/60'
+                      missingRequiredList.length > 0 ? 'text-amber-700' : 'text-slate-600'
                     )}>
                       {missingRequiredList.length}
                     </p>
                     <p className={cn(
                       'text-[11px] uppercase tracking-wider mt-0.5',
-                      missingRequiredList.length > 0 ? 'text-amber-400/70' : 'text-white/50'
+                      missingRequiredList.length > 0 ? 'text-amber-700/80' : 'text-slate-500'
                     )}>
                       Pendentes
                     </p>
@@ -1335,7 +1434,7 @@ export default function Assessment() {
                 {/* Missing list */}
                 {missingRequiredList.length > 0 ? (
                   <div className="text-left space-y-2 mt-2">
-                    <p className="text-sm text-amber-400 font-medium flex items-center gap-2">
+                    <p className="text-sm text-amber-700 font-medium flex items-center gap-2">
                       <FileQuestion className="h-4 w-4" />
                       Perguntas obrigatórias sem resposta:
                     </p>
@@ -1351,17 +1450,17 @@ export default function Assessment() {
                                   setShowConfirmDialog(false);
                                   setCurrentPage(pageOfQ);
                                 }}
-                                className="w-full text-left flex items-center gap-2 text-sm text-white/70 hover:text-white p-2 rounded hover:bg-white/5 transition-colors"
+                                className="w-full text-left flex items-center gap-2 text-sm text-slate-700 hover:text-slate-900 p-2 rounded hover:bg-slate-50 transition-colors"
                               >
-                                <ChevronRight className="h-3 w-3 text-amber-400 shrink-0" />
+                                <ChevronRight className="h-3 w-3 text-amber-600 shrink-0" />
                                 <span className="flex-1 truncate">{q.titulo || q.pergunta}</span>
-                                <span className="text-[10px] text-white/40 shrink-0">Pág. {pageOfQ + 1}</span>
+                                <span className="text-[10px] text-slate-500 shrink-0">Pág. {pageOfQ + 1}</span>
                               </button>
                             </li>
                           );
                         })}
                         {missingRequiredList.length > 10 && (
-                          <li className="text-xs text-white/40 px-2">
+                          <li className="text-xs text-slate-500 px-2">
                             ...e mais {missingRequiredList.length - 10} pergunta(s)
                           </li>
                         )}
@@ -1372,7 +1471,7 @@ export default function Assessment() {
                   <p className="text-sm leading-relaxed">
                     Tem certeza que deseja finalizar e enviar o questionário?
                     <br />
-                    <span className="text-white/40 text-xs">Após o envio, não será possível fazer alterações.</span>
+                    <span className="text-slate-500 text-xs">Após o envio, não será possível fazer alterações.</span>
                   </p>
                 )}
               </div>
@@ -1383,7 +1482,7 @@ export default function Assessment() {
               variant="outline" 
               onClick={() => setShowConfirmDialog(false)}
               disabled={submitting}
-              className="flex-1 bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white"
+              className="flex-1 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
             >
               {missingRequiredList.length > 0 ? 'Voltar e responder' : 'Cancelar'}
             </Button>
