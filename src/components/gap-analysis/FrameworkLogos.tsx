@@ -167,6 +167,24 @@ export const FrameworkLogo: React.FC<FrameworkLogoProps> = ({ nome, className = 
       icon: Globe,
       colors: "text-blue-700 dark:text-blue-400"
     },
+
+    // NIST SP 800-82 - OT/ICS Security
+    "NIST SP 800-82": {
+      icon: Factory,
+      colors: "text-slate-700 dark:text-slate-300"
+    },
+
+    // DORA - Digital Operational Resilience Act
+    "DORA": {
+      icon: Landmark,
+      colors: "text-indigo-700 dark:text-indigo-400"
+    },
+
+    // ISO/IEC 62443 - IACS Security
+    "ISO/IEC 62443": {
+      icon: Cog,
+      colors: "text-cyan-700 dark:text-cyan-400"
+    },
   };
 
   // Try to find exact match first, then partial match
