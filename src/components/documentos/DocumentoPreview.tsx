@@ -11,6 +11,7 @@ interface Documento {
   id: string;
   nome: string;
   arquivo_url?: string;
+  arquivo_url_externa?: string;
   arquivo_nome?: string;
   arquivo_tipo?: string;
   arquivo_tamanho?: number;
