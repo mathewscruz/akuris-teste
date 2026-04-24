@@ -816,25 +816,25 @@ export default function Assessment() {
       />
 
       <div className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-          {/* === Sidebar (C) === */}
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+          {/* === Sidebar === */}
           <aside className="hidden lg:block">
             <div className="sticky top-6 space-y-4">
               {/* Progress card */}
-              <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+              <Card className="bg-white border-slate-200 shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-medium text-white/50 uppercase tracking-wider">Progresso</span>
-                    <span className="text-xs font-semibold text-white">{Math.round(progress)}%</span>
+                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Progresso</span>
+                    <span className="text-xs font-semibold text-slate-900">{Math.round(progress)}%</span>
                   </div>
                   <Progress
                     value={progress}
-                    className="h-2 bg-white/10 [&>div]:bg-gradient-to-r [&>div]:from-[hsl(250,80%,60%)] [&>div]:to-[hsl(250,80%,50%)] mb-3"
+                    className="h-2 bg-slate-100 [&>div]:bg-gradient-to-r [&>div]:from-[hsl(250,80%,60%)] [&>div]:to-[hsl(250,80%,50%)] mb-3"
                   />
-                  <div className="flex items-center justify-between text-xs text-white/50">
+                  <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>{answeredCount} de {questions.length}</span>
                     {missingRequiredList.length > 0 && (
-                      <span className="flex items-center gap-1 text-amber-400">
+                      <span className="flex items-center gap-1 text-amber-600 font-medium">
                         <AlertTriangle className="h-3 w-3" />
                         {missingRequiredList.length} obrig.
                       </span>
@@ -843,21 +843,79 @@ export default function Assessment() {
                 </CardContent>
               </Card>
 
-              {/* Pages index */}
-              <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+              {/* Summary card — replaces "Páginas" header */}
+              <Card className="bg-white border-slate-200 shadow-sm">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-medium text-white/50 uppercase tracking-wider">
-                    Páginas
+                  <CardTitle className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Resumo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0 space-y-2.5">
+                  {(() => {
+                    const deadline = new Date(assessment.data_limite);
+                    const now = new Date();
+                    const daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                    const overdue = daysLeft < 0;
+                    const remainingQuestions = questions.length - answeredCount;
+                    const estimatedMinutes = Math.max(1, Math.round(remainingQuestions * 0.75));
+
+                    return (
+                      <>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="flex items-center gap-1.5 text-slate-500">
+                            <Calendar className="h-3.5 w-3.5" />
+                            Prazo
+                          </span>
+                          <span className={cn(
+                            'font-semibold',
+                            overdue ? 'text-red-600' : daysLeft <= 3 ? 'text-amber-600' : 'text-slate-700'
+                          )}>
+                            {overdue ? 'Em atraso' : daysLeft === 0 ? 'Vence hoje' : `${daysLeft}d restantes`}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="flex items-center gap-1.5 text-slate-500">
+                            <Clock className="h-3.5 w-3.5" />
+                            Tempo estimado
+                          </span>
+                          <span className="font-semibold text-slate-700">~{estimatedMinutes} min</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="flex items-center gap-1.5 text-slate-500">
+                            <Save className="h-3.5 w-3.5" />
+                            Último salvamento
+                          </span>
+                          <span className="font-semibold text-slate-700">
+                            {savedAt
+                              ? savedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                              : '—'}
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+
+              {/* Sections (was "Páginas") */}
+              <Card className="bg-white border-slate-200 shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Seções
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-2">
-                  <ScrollArea className="h-[calc(100vh-380px)] min-h-[200px]">
+                  <ScrollArea className="max-h-[40vh] min-h-[180px]">
                     <div className="space-y-1 pr-2">
                       {Array.from({ length: totalPages }).map((_, idx) => {
                         const status = pageStatuses[idx];
                         const isCurrent = currentPage === idx;
                         const isComplete = status && status.answered === status.total && status.missingRequired === 0;
                         const hasContent = status && status.answered > 0;
+
+                        // Use first question title as section label
+                        const firstQuestion = questions[idx * questionsPerPage];
+                        const sectionLabel = firstQuestion?.titulo || firstQuestion?.pergunta || `Seção ${idx + 1}`;
 
                         return (
                           <button
@@ -867,20 +925,20 @@ export default function Assessment() {
                               'w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group',
                               'flex items-center gap-3',
                               isCurrent
-                                ? 'bg-[hsl(250,80%,60%)]/15 border border-[hsl(250,80%,60%)]/30'
-                                : 'hover:bg-white/5 border border-transparent'
+                                ? 'bg-[hsl(250,80%,60%)]/10 border border-[hsl(250,80%,60%)]/30'
+                                : 'hover:bg-slate-50 border border-transparent'
                             )}
                           >
                             {/* Status icon */}
                             <div className={cn(
                               'h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0 transition-colors',
                               isComplete
-                                ? 'bg-emerald-500/20 text-emerald-400'
+                                ? 'bg-emerald-100 text-emerald-700'
                                 : hasContent
-                                  ? 'bg-amber-500/15 text-amber-400'
+                                  ? 'bg-amber-100 text-amber-700'
                                   : isCurrent
-                                    ? 'bg-[hsl(250,80%,60%)]/30 text-white'
-                                    : 'bg-white/5 text-white/40'
+                                    ? 'bg-[hsl(250,80%,60%)]/20 text-[hsl(250,80%,40%)]'
+                                    : 'bg-slate-100 text-slate-500'
                             )}>
                               {isComplete ? <Check className="h-3.5 w-3.5" /> : idx + 1}
                             </div>
@@ -888,19 +946,19 @@ export default function Assessment() {
                             <div className="min-w-0 flex-1">
                               <p className={cn(
                                 'text-sm font-medium truncate',
-                                isCurrent ? 'text-white' : 'text-white/70'
-                              )}>
-                                Página {idx + 1}
+                                isCurrent ? 'text-slate-900' : 'text-slate-700'
+                              )} title={sectionLabel}>
+                                {sectionLabel}
                               </p>
-                              <p className="text-[11px] text-white/40">
+                              <p className="text-[11px] text-slate-500">
                                 {status?.answered || 0}/{status?.total || 0} respondidas
                                 {status && status.missingRequired > 0 && (
-                                  <span className="text-amber-400/80"> · {status.missingRequired} obrig.</span>
+                                  <span className="text-amber-600"> · {status.missingRequired} obrig.</span>
                                 )}
                               </p>
                             </div>
 
-                            {isCurrent && <ChevronRight className="h-4 w-4 text-white/60 shrink-0" />}
+                            {isCurrent && <ChevronRight className="h-4 w-4 text-[hsl(250,80%,55%)] shrink-0" />}
                           </button>
                         );
                       })}
@@ -908,6 +966,47 @@ export default function Assessment() {
                   </ScrollArea>
                 </CardContent>
               </Card>
+
+              {/* Pendencies — only show when there are missing required */}
+              {missingRequiredList.length > 0 && (
+                <Card className="bg-amber-50 border-amber-200 shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xs font-medium text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      Pendências obrigatórias
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-2">
+                    <ScrollArea className="max-h-[160px]">
+                      <ul className="space-y-1 pr-2">
+                        {missingRequiredList.slice(0, 6).map((q) => {
+                          const qIdx = questions.findIndex(x => x.id === q.id);
+                          const pageOfQ = Math.floor(qIdx / questionsPerPage);
+                          return (
+                            <li key={q.id}>
+                              <button
+                                onClick={() => setCurrentPage(pageOfQ)}
+                                className="w-full text-left flex items-center gap-2 text-xs text-amber-900 hover:text-amber-950 p-2 rounded hover:bg-amber-100/70 transition-colors"
+                              >
+                                <ChevronRight className="h-3 w-3 text-amber-600 shrink-0" />
+                                <span className="flex-1 truncate" title={q.titulo || q.pergunta}>
+                                  {q.titulo || q.pergunta}
+                                </span>
+                                <span className="text-[10px] text-amber-700 shrink-0">Pág. {pageOfQ + 1}</span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                        {missingRequiredList.length > 6 && (
+                          <li className="text-[11px] text-amber-700 px-2 pt-1">
+                            +{missingRequiredList.length - 6} pendência(s)
+                          </li>
+                        )}
+                      </ul>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </aside>
 
