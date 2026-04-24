@@ -62,26 +62,27 @@ serve(async (req) => {
       });
     }
 
-    // Gather ALL company context in parallel
+    // Gather ALL company context in parallel (com colunas validadas no schema real)
     const [
       riscosRes, controlesRes, incidentesRes, denunciasRes,
-      auditoriaRes, documentosRes, frameworksRes, contratosRes,
+      auditoriaRes, documentosRes, frameworksRes, evaluationsRes, contratosRes,
       ativosRes, contasRes, dadosRes, politicasRes,
       planosRes, fornecedoresRes
     ] = await Promise.all([
-      supabase.from('riscos').select('id, nome, nivel_risco_inicial, status_tratamento, status').eq('empresa_id', empresaId),
-      supabase.from('controles').select('id, nome, status, proxima_avaliacao, efetividade, criticidade').eq('empresa_id', empresaId),
+      supabase.from('riscos').select('id, nome, nivel_risco_inicial, nivel_risco_residual, status, aceito, status_aprovacao, responsavel').eq('empresa_id', empresaId),
+      supabase.from('controles').select('id, nome, status, proxima_avaliacao, criticidade, frequencia').eq('empresa_id', empresaId),
       supabase.from('incidentes').select('id, titulo, criticidade, status, tipo').eq('empresa_id', empresaId),
-      supabase.from('denuncias').select('id, titulo, status, categoria').eq('empresa_id', empresaId),
+      supabase.from('denuncias').select('id, titulo, status, gravidade, anonima').eq('empresa_id', empresaId),
       supabase.from('auditorias').select('id, nome, status, prioridade, tipo').eq('empresa_id', empresaId),
-      supabase.from('documentos').select('id, nome, status, data_validade, tipo').eq('empresa_id', empresaId),
-      supabase.from('gap_analysis_frameworks').select('id, nome, score_atual').eq('empresa_id', empresaId),
-      supabase.from('contratos').select('id, nome_contrato, status, data_fim, valor_total').eq('empresa_id', empresaId),
+      supabase.from('documentos').select('id, nome, status, data_vencimento, tipo, arquivo_url, arquivo_url_externa').eq('empresa_id', empresaId),
+      supabase.from('gap_analysis_frameworks').select('id, nome, versao, tipo_framework'),
+      supabase.from('gap_analysis_evaluations').select('id, framework_id, conformity_status').eq('empresa_id', empresaId),
+      supabase.from('contratos').select('id, nome, numero_contrato, status, data_fim, valor').eq('empresa_id', empresaId),
       supabase.from('ativos').select('id, nome, tipo, criticidade, status').eq('empresa_id', empresaId),
-      supabase.from('contas_privilegiadas').select('id, usuario_beneficiario, tipo_acesso, nivel_privilegio, status').eq('empresa_id', empresaId),
+      supabase.from('contas_privilegiadas').select('id, usuario_beneficiario, tipo_acesso, nivel_privilegio, status, data_expiracao').eq('empresa_id', empresaId),
       supabase.from('dados_pessoais').select('id, nome, categoria_dados, sensibilidade, base_legal').eq('empresa_id', empresaId),
-      supabase.from('politicas').select('id, titulo, status, versao').eq('empresa_id', empresaId),
-      supabase.from('planos_acao').select('id, titulo, status, prioridade').eq('empresa_id', empresaId),
+      supabase.from('politicas').select('id, titulo, status, versao, data_validade').eq('empresa_id', empresaId),
+      supabase.from('planos_acao').select('id, titulo, status, prioridade, prazo').eq('empresa_id', empresaId),
       supabase.from('fornecedores').select('id, nome, status, categoria').eq('empresa_id', empresaId),
     ]);
 
