@@ -1234,8 +1234,8 @@ export default function Assessment() {
                               />
                             </div>
                             {responses[question.id] && (
-                              <div className="flex items-center space-x-3 text-sm text-slate-700 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                                <FileText className="h-4 w-4 text-emerald-600" />
+                              <div className="flex items-center space-x-3 text-sm text-slate-700 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                <FileText className="h-4 w-4 text-slate-500" />
                                 <span className="font-medium">{responses[question.id]}</span>
                                 {responses[`${question.id}_arquivo`] && (
                                   <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-[hsl(250,80%,55%)] underline text-xs ml-auto">
@@ -1252,28 +1252,28 @@ export default function Assessment() {
                           <>
                             {question.configuracoes.mostrar_evidencia_quando &&
                              question.configuracoes.mostrar_evidencia_quando.split(',').includes(responses[question.id]) && (
-                              <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg animate-fade-in">
-                                <Label className="text-sm font-medium text-emerald-700 mb-3 block">
+                              <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg animate-fade-in">
+                                <Label className="text-sm font-medium text-slate-700 mb-3 block">
                                   {question.configuracoes.label_evidencia || 'Evidência:'}
                                 </Label>
                                 <Textarea
                                   value={responses[`${question.id}_evidencia`] || ''}
                                   onChange={(e) => handleResponseChange(`${question.id}_evidencia`, e.target.value)}
                                   placeholder="Descreva as evidências que comprovam sua resposta..."
-                                  className="min-h-[100px] bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 mb-4"
+                                  className="min-h-[100px] bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-[hsl(250,80%,60%)]/60 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200 mb-4"
                                 />
                                 <div className="space-y-3">
-                                  <Label className="text-sm font-medium text-emerald-700 block">
+                                  <Label className="text-sm font-medium text-slate-700 block">
                                     Anexar documento (opcional):
                                   </Label>
-                                  <div className="border-2 border-dashed border-emerald-200 hover:border-emerald-400 rounded-lg p-4 text-center transition-colors duration-200 bg-white">
-                                    <Upload className="h-6 w-6 text-emerald-500 mx-auto mb-2" />
-                                    <p className="text-xs text-emerald-700 mb-2">
+                                  <div className="border-2 border-dashed border-slate-200 hover:border-[hsl(250,80%,60%)]/40 rounded-lg p-4 text-center transition-colors duration-200 bg-white">
+                                    <Upload className="h-6 w-6 text-slate-400 mx-auto mb-2" />
+                                    <p className="text-xs text-slate-600 mb-2">
                                       Clique para selecionar um arquivo
                                     </p>
                                     <Input
                                       type="file"
-                                      className="text-xs bg-white border-slate-200 text-slate-700 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-emerald-100 file:text-emerald-700"
+                                      className="text-xs bg-white border-slate-200 text-slate-700 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-slate-100 file:text-slate-700"
                                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                       onChange={async (e) => {
                                         const file = e.target.files?.[0];
@@ -1303,8 +1303,8 @@ export default function Assessment() {
                                     />
                                   </div>
                                   {responses[`${question.id}_arquivo`] && (
-                                    <div className="flex items-center space-x-2 text-xs text-emerald-700 bg-emerald-50 p-2 rounded border border-emerald-200">
-                                      <FileText className="h-3 w-3" />
+                                    <div className="flex items-center space-x-2 text-xs text-slate-700 bg-white p-2 rounded border border-slate-200">
+                                      <FileText className="h-3 w-3 text-slate-500" />
                                       <span>Evidência anexada</span>
                                       <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-[hsl(250,80%,55%)] underline ml-auto">
                                         Ver
@@ -1317,15 +1317,15 @@ export default function Assessment() {
 
                             {question.configuracoes.mostrar_justificativa_quando &&
                              question.configuracoes.mostrar_justificativa_quando.split(',').includes(responses[question.id]) && (
-                              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg animate-fade-in">
-                                <Label className="text-sm font-medium text-amber-700 mb-2 block">
+                              <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg animate-fade-in">
+                                <Label className="text-sm font-medium text-slate-700 mb-2 block">
                                   {question.configuracoes.label_justificativa || 'Justificativa:'}
                                 </Label>
                                 <Textarea
                                   value={responses[`${question.id}_justificativa`] || ''}
                                   onChange={(e) => handleResponseChange(`${question.id}_justificativa`, e.target.value)}
                                   placeholder="Explique o motivo e planos futuros..."
-                                  className="min-h-[100px] bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20 transition-all duration-200"
+                                  className="min-h-[100px] bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-[hsl(250,80%,60%)]/60 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
                                 />
                               </div>
                             )}
