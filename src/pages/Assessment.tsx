@@ -104,23 +104,23 @@ const createSupabaseRequest = (assessmentToken: string | undefined) => {
   };
 };
 
-// Wrapper component for consistent navy background
+// Wrapper component: light background with bottom purple glow preserved
 const AssessmentShell = ({ children }: { children: React.ReactNode }) => (
-  <div className="min-h-screen bg-[hsl(230,25%,7%)] relative overflow-hidden">
-    {/* Radial neon glow */}
+  <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 relative overflow-hidden">
+    {/* Bottom purple glow */}
     <div className="pointer-events-none absolute inset-0">
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[radial-gradient(ellipse_at_center,hsl(250,80%,55%,0.15),transparent_70%)]" />
-      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[radial-gradient(ellipse_at_center,hsl(220,80%,40%,0.08),transparent_70%)]" />
+      <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[radial-gradient(ellipse_at_center,hsl(250,80%,60%,0.18),transparent_70%)]" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[radial-gradient(ellipse_at_center,hsl(250,80%,50%,0.12),transparent_70%)]" />
     </div>
     <div className="relative z-10">
       {children}
     </div>
     {/* Footer */}
     <div className="relative z-10 text-center pb-6 pt-8">
-      <div className="flex items-center justify-center gap-2 text-xs text-white/30">
+      <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
         <ShieldCheck className="h-3 w-3" />
         <span>Plataforma segura — Powered by</span>
-        <span className="font-semibold text-white/50">Akuris</span>
+        <span className="font-semibold text-slate-700">Akuris</span>
       </div>
     </div>
   </div>
