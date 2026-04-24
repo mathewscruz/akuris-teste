@@ -128,7 +128,7 @@ const AtivoDialog: React.FC<AtivoDialogProps> = ({ open, onOpenChange, formData,
   // 'complete' só com dados preenchidos pelo usuário (tipo/criticidade/status têm defaults).
   const identState: WizardTabState = formData.nome?.trim() && formData.descricao?.trim() ? 'complete' : (formData.nome?.trim() ? 'partial' : 'pending');
   const localState: WizardTabState = formData.proprietario || formData.localizacao ? 'complete' : 'pending';
-  const classifState: WizardTabState = formData.tags && formData.tags.length > 0 ? 'complete' : 'pending';
+  const classifState: WizardTabState = (typeof formData.tags === 'string' ? formData.tags.trim().length > 0 : false) ? 'complete' : 'pending';
   const aquisState: WizardTabState = formData.data_aquisicao || formData.fornecedor || formData.versao ? 'complete' : 'pending';
 
   const tipoLabel = tiposAtivo.find((t) => t.value === formData.tipo)?.label;
