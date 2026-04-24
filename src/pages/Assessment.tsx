@@ -146,7 +146,7 @@ const TopBar = ({
 }) => {
   const formatTime = (d: Date) => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   return (
-    <header className="relative z-10 border-b border-white/10 bg-white/[0.02] backdrop-blur-sm">
+    <header className="relative z-20 border-b border-white/10 bg-[hsl(230,25%,7%)]">
       <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
         {/* Left: Akuris brand */}
         <div className="flex items-center gap-2 shrink-0">
@@ -218,10 +218,11 @@ const WelcomeScreen = ({
   onStart: () => void;
 }) => {
   const estimatedMinutes = Math.max(5, Math.round(totalQuestions * 0.75));
-  const deadline = new Date(assessment.data_limite);
+  const deadlineRaw = assessment.data_limite ? new Date(assessment.data_limite) : null;
+  const deadline = deadlineRaw && !isNaN(deadlineRaw.getTime()) ? deadlineRaw : null;
   const now = new Date();
-  const daysLeft = Math.max(0, Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-  const overdue = deadline.getTime() < now.getTime();
+  const daysLeft = deadline ? Math.max(0, Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : 0;
+  const overdue = deadline ? deadline.getTime() < now.getTime() : false;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
@@ -272,33 +273,26 @@ const WelcomeScreen = ({
                 </div>
               </div>
 
-              <div className={cn(
-                "flex items-center gap-3 p-4 border rounded-xl",
-                overdue
-                  ? "bg-red-50 border-red-200"
-                  : daysLeft <= 3
-                    ? "bg-amber-50 border-amber-200"
-                    : "bg-slate-50 border-slate-200"
-              )}>
+              <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <div className={cn(
                   "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
-                  overdue ? "bg-red-100" : daysLeft <= 3 ? "bg-amber-100" : "bg-[hsl(250,80%,60%)]/15"
+                  "bg-[hsl(250,80%,60%)]/15"
                 )}>
                   <Calendar className={cn(
                     "h-5 w-5",
-                    overdue ? "text-red-600" : daysLeft <= 3 ? "text-amber-600" : "text-[hsl(250,80%,55%)]"
+                    "text-[hsl(250,80%,55%)]"
                   )} />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-slate-500">Prazo</p>
                   <p className="text-base font-semibold text-slate-900">
-                    {deadline.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                    {deadline ? deadline.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : 'Sem prazo'}
                   </p>
                   <p className={cn(
                     "text-[11px]",
-                    overdue ? "text-red-600" : daysLeft <= 3 ? "text-amber-600" : "text-slate-500"
+                    overdue ? "text-[hsl(250,80%,45%)] font-medium" : "text-slate-500"
                   )}>
-                    {overdue ? 'Em atraso' : daysLeft === 0 ? 'Vence hoje' : `Faltam ${daysLeft} dias`}
+                    {!deadline ? 'Sem prazo definido' : overdue ? 'Em atraso' : daysLeft === 0 ? 'Vence hoje' : `Faltam ${daysLeft} dias`}
                   </p>
                 </div>
               </div>
@@ -834,8 +828,8 @@ export default function Assessment() {
                   <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>{answeredCount} de {questions.length}</span>
                     {missingRequiredList.length > 0 && (
-                      <span className="flex items-center gap-1 text-amber-600 font-medium">
-                        <AlertTriangle className="h-3 w-3" />
+                      <span className="flex items-center gap-1 text-slate-700 font-medium">
+                        <AlertTriangle className="h-3 w-3 text-[hsl(250,80%,55%)]" />
                         {missingRequiredList.length} obrig.
                       </span>
                     )}
@@ -852,10 +846,14 @@ export default function Assessment() {
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-2.5">
                   {(() => {
-                    const deadline = new Date(assessment.data_limite);
+                    const deadlineRaw = assessment.data_limite ? new Date(assessment.data_limite) : null;
+                    const validDeadline = deadlineRaw && !isNaN(deadlineRaw.getTime()) ? deadlineRaw : null;
                     const now = new Date();
-                    const daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                    const overdue = daysLeft < 0;
+                    const daysLeft = validDeadline
+                      ? Math.ceil((validDeadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+                      : null;
+                    const overdue = daysLeft !== null && daysLeft < 0;
+                    const urgent = daysLeft !== null && daysLeft >= 0 && daysLeft <= 3;
                     const remainingQuestions = questions.length - answeredCount;
                     const estimatedMinutes = Math.max(1, Math.round(remainingQuestions * 0.75));
 
@@ -868,9 +866,15 @@ export default function Assessment() {
                           </span>
                           <span className={cn(
                             'font-semibold',
-                            overdue ? 'text-red-600' : daysLeft <= 3 ? 'text-amber-600' : 'text-slate-700'
+                            overdue ? 'text-[hsl(250,80%,45%)]' : urgent ? 'text-slate-900' : 'text-slate-700'
                           )}>
-                            {overdue ? 'Em atraso' : daysLeft === 0 ? 'Vence hoje' : `${daysLeft}d restantes`}
+                            {daysLeft === null
+                              ? 'Sem prazo'
+                              : overdue
+                                ? 'Em atraso'
+                                : daysLeft === 0
+                                  ? 'Vence hoje'
+                                  : `${daysLeft}d restantes`}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
@@ -933,11 +937,11 @@ export default function Assessment() {
                             <div className={cn(
                               'h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0 transition-colors',
                               isComplete
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : hasContent
-                                  ? 'bg-amber-100 text-amber-700'
-                                  : isCurrent
-                                    ? 'bg-[hsl(250,80%,60%)]/20 text-[hsl(250,80%,40%)]'
+                                ? 'bg-slate-900 text-white'
+                                : isCurrent
+                                  ? 'bg-[hsl(250,80%,60%)]/20 text-[hsl(250,80%,40%)]'
+                                  : hasContent
+                                    ? 'bg-slate-200 text-slate-700'
                                     : 'bg-slate-100 text-slate-500'
                             )}>
                               {isComplete ? <Check className="h-3.5 w-3.5" /> : idx + 1}
@@ -953,7 +957,7 @@ export default function Assessment() {
                               <p className="text-[11px] text-slate-500">
                                 {status?.answered || 0}/{status?.total || 0} respondidas
                                 {status && status.missingRequired > 0 && (
-                                  <span className="text-amber-600"> · {status.missingRequired} obrig.</span>
+                                  <span className="text-slate-600"> · {status.missingRequired} obrig.</span>
                                 )}
                               </p>
                             </div>
@@ -969,39 +973,37 @@ export default function Assessment() {
 
               {/* Pendencies — only show when there are missing required */}
               {missingRequiredList.length > 0 && (
-                <Card className="bg-amber-50 border-amber-200 shadow-sm">
+                <Card className="bg-white border-slate-200 shadow-sm">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xs font-medium text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <AlertTriangle className="h-3.5 w-3.5" />
+                    <CardTitle className="text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <AlertTriangle className="h-3.5 w-3.5 text-[hsl(250,80%,55%)]" />
                       Pendências obrigatórias
+                      <span className="ml-auto text-[10px] font-semibold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
+                        {missingRequiredList.length}
+                      </span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-2">
-                    <ScrollArea className="max-h-[160px]">
+                    <ScrollArea className="h-[260px]">
                       <ul className="space-y-1 pr-2">
-                        {missingRequiredList.slice(0, 6).map((q) => {
+                        {missingRequiredList.map((q) => {
                           const qIdx = questions.findIndex(x => x.id === q.id);
                           const pageOfQ = Math.floor(qIdx / questionsPerPage);
                           return (
                             <li key={q.id}>
                               <button
                                 onClick={() => setCurrentPage(pageOfQ)}
-                                className="w-full text-left flex items-center gap-2 text-xs text-amber-900 hover:text-amber-950 p-2 rounded hover:bg-amber-100/70 transition-colors"
+                                className="w-full text-left flex items-center gap-2 text-xs text-slate-700 hover:text-slate-900 p-2 rounded hover:bg-slate-50 transition-colors"
                               >
-                                <ChevronRight className="h-3 w-3 text-amber-600 shrink-0" />
+                                <ChevronRight className="h-3 w-3 text-slate-400 shrink-0" />
                                 <span className="flex-1 truncate" title={q.titulo || q.pergunta}>
                                   {q.titulo || q.pergunta}
                                 </span>
-                                <span className="text-[10px] text-amber-700 shrink-0">Pág. {pageOfQ + 1}</span>
+                                <span className="text-[10px] text-slate-500 shrink-0">Pág. {pageOfQ + 1}</span>
                               </button>
                             </li>
                           );
                         })}
-                        {missingRequiredList.length > 6 && (
-                          <li className="text-[11px] text-amber-700 px-2 pt-1">
-                            +{missingRequiredList.length - 6} pendência(s)
-                          </li>
-                        )}
                       </ul>
                     </ScrollArea>
                   </CardContent>
@@ -1053,7 +1055,7 @@ export default function Assessment() {
                     className={cn(
                       'border bg-white transition-all duration-300 overflow-hidden animate-fade-in shadow-sm',
                       answered
-                        ? 'border-emerald-300 shadow-[0_0_0_1px_hsl(160,84%,39%,0.1),0_8px_24px_-12px_hsl(160,84%,39%,0.25)]'
+                        ? 'border-slate-300 shadow-[0_0_0_1px_hsl(250,80%,60%,0.08),0_8px_24px_-12px_hsl(250,80%,60%,0.18)]'
                         : 'border-slate-200 hover:border-slate-300'
                     )}
                     style={{ animationDelay: `${index * 60}ms` }}
@@ -1065,7 +1067,7 @@ export default function Assessment() {
                         <div className={cn(
                           'h-9 w-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 transition-colors',
                           answered
-                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                            ? 'bg-slate-900 text-white border border-slate-900'
                             : 'bg-slate-100 text-slate-600 border border-slate-200'
                         )}>
                           {answered ? <Check className="h-4 w-4" /> : questionNumber}
@@ -1077,7 +1079,7 @@ export default function Assessment() {
                               {question.titulo || question.pergunta}
                             </h3>
                             {question.obrigatoria && (
-                              <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-200 mt-1">
+                              <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 mt-1">
                                 Obrigatória
                               </span>
                             )}
@@ -1226,8 +1228,8 @@ export default function Assessment() {
                               />
                             </div>
                             {responses[question.id] && (
-                              <div className="flex items-center space-x-3 text-sm text-slate-700 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                                <FileText className="h-4 w-4 text-emerald-600" />
+                              <div className="flex items-center space-x-3 text-sm text-slate-700 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                <FileText className="h-4 w-4 text-slate-500" />
                                 <span className="font-medium">{responses[question.id]}</span>
                                 {responses[`${question.id}_arquivo`] && (
                                   <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-[hsl(250,80%,55%)] underline text-xs ml-auto">
@@ -1244,28 +1246,28 @@ export default function Assessment() {
                           <>
                             {question.configuracoes.mostrar_evidencia_quando &&
                              question.configuracoes.mostrar_evidencia_quando.split(',').includes(responses[question.id]) && (
-                              <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg animate-fade-in">
-                                <Label className="text-sm font-medium text-emerald-700 mb-3 block">
+                              <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg animate-fade-in">
+                                <Label className="text-sm font-medium text-slate-700 mb-3 block">
                                   {question.configuracoes.label_evidencia || 'Evidência:'}
                                 </Label>
                                 <Textarea
                                   value={responses[`${question.id}_evidencia`] || ''}
                                   onChange={(e) => handleResponseChange(`${question.id}_evidencia`, e.target.value)}
                                   placeholder="Descreva as evidências que comprovam sua resposta..."
-                                  className="min-h-[100px] bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 mb-4"
+                                  className="min-h-[100px] bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-[hsl(250,80%,60%)]/60 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200 mb-4"
                                 />
                                 <div className="space-y-3">
-                                  <Label className="text-sm font-medium text-emerald-700 block">
+                                  <Label className="text-sm font-medium text-slate-700 block">
                                     Anexar documento (opcional):
                                   </Label>
-                                  <div className="border-2 border-dashed border-emerald-200 hover:border-emerald-400 rounded-lg p-4 text-center transition-colors duration-200 bg-white">
-                                    <Upload className="h-6 w-6 text-emerald-500 mx-auto mb-2" />
-                                    <p className="text-xs text-emerald-700 mb-2">
+                                  <div className="border-2 border-dashed border-slate-200 hover:border-[hsl(250,80%,60%)]/40 rounded-lg p-4 text-center transition-colors duration-200 bg-white">
+                                    <Upload className="h-6 w-6 text-slate-400 mx-auto mb-2" />
+                                    <p className="text-xs text-slate-600 mb-2">
                                       Clique para selecionar um arquivo
                                     </p>
                                     <Input
                                       type="file"
-                                      className="text-xs bg-white border-slate-200 text-slate-700 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-emerald-100 file:text-emerald-700"
+                                      className="text-xs bg-white border-slate-200 text-slate-700 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-slate-100 file:text-slate-700"
                                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                       onChange={async (e) => {
                                         const file = e.target.files?.[0];
@@ -1295,8 +1297,8 @@ export default function Assessment() {
                                     />
                                   </div>
                                   {responses[`${question.id}_arquivo`] && (
-                                    <div className="flex items-center space-x-2 text-xs text-emerald-700 bg-emerald-50 p-2 rounded border border-emerald-200">
-                                      <FileText className="h-3 w-3" />
+                                    <div className="flex items-center space-x-2 text-xs text-slate-700 bg-white p-2 rounded border border-slate-200">
+                                      <FileText className="h-3 w-3 text-slate-500" />
                                       <span>Evidência anexada</span>
                                       <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-[hsl(250,80%,55%)] underline ml-auto">
                                         Ver
@@ -1309,15 +1311,15 @@ export default function Assessment() {
 
                             {question.configuracoes.mostrar_justificativa_quando &&
                              question.configuracoes.mostrar_justificativa_quando.split(',').includes(responses[question.id]) && (
-                              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg animate-fade-in">
-                                <Label className="text-sm font-medium text-amber-700 mb-2 block">
+                              <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg animate-fade-in">
+                                <Label className="text-sm font-medium text-slate-700 mb-2 block">
                                   {question.configuracoes.label_justificativa || 'Justificativa:'}
                                 </Label>
                                 <Textarea
                                   value={responses[`${question.id}_justificativa`] || ''}
                                   onChange={(e) => handleResponseChange(`${question.id}_justificativa`, e.target.value)}
                                   placeholder="Explique o motivo e planos futuros..."
-                                  className="min-h-[100px] bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20 transition-all duration-200"
+                                  className="min-h-[100px] bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-[hsl(250,80%,60%)]/60 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
                                 />
                               </div>
                             )}
