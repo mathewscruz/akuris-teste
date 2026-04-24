@@ -15,8 +15,8 @@ const handler = async (req: Request): Promise<Response> => {
     const { assessment_id, days_before_expiration = 3 } = await req.json();
 
     // Buscar assessments que expiram em X dias e ainda não estão concluídos
-    const { data: supabaseClient } = await import("https://esm.sh/@supabase/supabase-js@2.39.3");
-    const supabase = supabaseClient(
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.39.3");
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
@@ -56,7 +56,7 @@ const handler = async (req: Request): Promise<Response> => {
             assessment_id: assessment.id,
             fornecedor_nome: assessment.fornecedor_nome,
             fornecedor_email: assessment.fornecedor_email,
-            template_nome: assessment.due_diligence_templates.nome,
+            template_nome: (assessment.due_diligence_templates as any)?.nome ?? (Array.isArray(assessment.due_diligence_templates) ? assessment.due_diligence_templates[0]?.nome : ''),
             assessment_link: assessmentLink,
             data_expiracao: assessment.data_expiracao,
             empresa_nome: 'Akuris'
