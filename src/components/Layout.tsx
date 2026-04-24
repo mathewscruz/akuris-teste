@@ -41,6 +41,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Timeout de sessão por inatividade
   useInactivityTimeout();
 
+  // Prefetch all module chunks during idle time after login,
+  // so navigating into any module is instant on first click.
+  React.useEffect(() => {
+    if (user) prefetchAllRoutes();
+  }, [user]);
+
   // Verificar se a empresa está inativa
   const isCompanyInactive = company && company.ativo === false;
 
