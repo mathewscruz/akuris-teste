@@ -33,9 +33,9 @@ Deno.serve(async (req) => {
       const userClient = createClient(supabaseUrl, supabaseAnon, {
         global: { headers: { Authorization: authHeader } }
       });
-      const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(authHeader.replace('Bearer ', ''));
-      if (!claimsError && claimsData?.claims?.sub) {
-        userId = claimsData.claims.sub as string;
+      const { data: userData, error: claimsError } = await userClient.auth.getUser(authHeader.replace('Bearer ', ''));
+      if (!claimsError && userData?.user?.id) {
+        userId = userData.user.id as string;
         const { data: profile } = await supabase
           .from('profiles')
           .select('empresa_id')
