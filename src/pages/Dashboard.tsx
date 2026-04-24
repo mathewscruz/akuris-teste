@@ -145,9 +145,6 @@ export default function Dashboard() {
           controlesVencendo={dashboardData?.controlesVencendo || 0}
           incidentesCriticos={dashboardData?.incidentesCriticos || 0}
         />
-
-        {/* AkurIA Chatbot */}
-        <AkurIAChatbot />
       </div>
     </TooltipProvider>
   );
