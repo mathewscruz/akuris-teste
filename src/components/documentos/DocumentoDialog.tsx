@@ -189,18 +189,38 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
       let arquivo_nome = documento?.arquivo_nome;
       let arquivo_tipo = documento?.arquivo_tipo;
       let arquivo_tamanho = documento?.arquivo_tamanho;
+      let arquivo_url_externa: string | null = arquivoUrlExterna.trim() || null;
       let versao = documento?.versao || 1;
 
-      // Upload do arquivo se um novo foi selecionado
-      if (selectedFile) {
-        setUploading(true);
-        arquivo_url = await uploadFile(selectedFile);
-        arquivo_nome = selectedFile.name;
-        arquivo_tipo = selectedFile.type;
-        arquivo_tamanho = selectedFile.size;
-        
-        // Se estiver editando, incrementar versão
-        if (documento) {
+      if (arquivoModo === 'upload') {
+        // limpar URL externa quando usar upload
+        arquivo_url_externa = null;
+
+        if (selectedFile) {
+          setUploading(true);
+          arquivo_url = await uploadFile(selectedFile);
+          arquivo_nome = selectedFile.name;
+          arquivo_tipo = selectedFile.type;
+          arquivo_tamanho = selectedFile.size;
+
+          if (documento) {
+            versao = documento.versao + 1;
+          }
+        }
+      } else {
+        // Modo URL: validar e limpar arquivo físico
+        if (arquivo_url_externa) {
+          try {
+            new URL(arquivo_url_externa);
+          } catch {
+            throw new Error('URL inválida. Informe um link completo (https://...)');
+          }
+        }
+        arquivo_url = undefined;
+        arquivo_nome = undefined;
+        arquivo_tipo = undefined;
+        arquivo_tamanho = undefined;
+        if (documento && documento.arquivo_url_externa !== arquivo_url_externa) {
           versao = documento.versao + 1;
         }
       }
@@ -211,10 +231,11 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
         tipo: formData.tipo,
         classificacao: formData.classificacao,
         tags: formData.tags.length > 0 ? formData.tags : null,
-        arquivo_url,
-        arquivo_nome,
-        arquivo_tipo,
-        arquivo_tamanho,
+        arquivo_url: arquivo_url ?? null,
+        arquivo_nome: arquivo_nome ?? null,
+        arquivo_tipo: arquivo_tipo ?? null,
+        arquivo_tamanho: arquivo_tamanho ?? null,
+        arquivo_url_externa,
         versao,
         requer_aprovacao: formData.requer_aprovacao,
         status: formData.requer_aprovacao ? 'pendente' : formData.status,
@@ -222,6 +243,7 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
         empresa_id: profileData.empresa_id,
         created_by: userData.user.id,
       };
+
 
       if (documento) {
         const { error } = await supabase
