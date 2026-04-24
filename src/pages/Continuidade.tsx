@@ -63,6 +63,19 @@ export default function Continuidade() {
     queryClient.invalidateQueries({ queryKey: ['continuidade-stats'] });
   };
 
+  // Insights executivos
+  const insights = useMemo(() => {
+    const hoje = new Date();
+    const em30dias = new Date(hoje.getTime() + 30 * 86400000);
+    const proximasRevisoes = planos
+      .filter((p: any) => p.proxima_revisao && new Date(p.proxima_revisao) <= em30dias)
+      .sort((a: any, b: any) => new Date(a.proxima_revisao).getTime() - new Date(b.proxima_revisao).getTime())
+      .slice(0, 5);
+    const semResponsavel = planos.filter((p: any) => !p.responsavel_id).length;
+    const semRTO = planos.filter((p: any) => p.rto_horas == null).length;
+    return { proximasRevisoes, semResponsavel, semRTO };
+  }, [planos]);
+
   const handleDelete = async () => {
     try {
       const { error } = await supabase.from('continuidade_planos').delete().eq('id', deleteConfirm.id);
