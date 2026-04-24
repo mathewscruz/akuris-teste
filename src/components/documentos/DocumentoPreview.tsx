@@ -95,9 +95,10 @@ export function DocumentoPreview({ open, onOpenChange, documento }: DocumentoPre
     }
   };
 
+  const isExternal = !!documento.arquivo_url_externa && !documento.arquivo_url;
   const isImage = documento.arquivo_tipo?.startsWith('image/');
-  const isPdf = documento.arquivo_tipo === 'application/pdf';
-  const canPreview = isImage || isPdf;
+  const isPdf = documento.arquivo_tipo === 'application/pdf' || (isExternal && /\.pdf($|\?)/i.test(documento.arquivo_url_externa || ''));
+  const canPreview = isImage || isPdf || isExternal;
 
   const getFileIcon = () => {
     if (isImage) return <Image className="h-8 w-8" />;
