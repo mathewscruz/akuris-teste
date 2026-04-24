@@ -709,8 +709,8 @@ export default function Assessment() {
       <AssessmentShell>
         <div className="flex items-center justify-center min-h-[80vh]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(250,80%,60%)] mx-auto mb-4"></div>
-            <p className="text-white/60 text-sm">Carregando questionário...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(250,80%,55%)] mx-auto mb-4"></div>
+            <p className="text-slate-600 text-sm">Carregando questionário...</p>
           </div>
         </div>
       </AssessmentShell>
@@ -722,11 +722,11 @@ export default function Assessment() {
     return (
       <AssessmentShell>
         <div className="flex items-center justify-center min-h-[80vh] p-4">
-          <Card className="w-full max-w-md bg-white/5 backdrop-blur-sm border-white/10 shadow-2xl">
+          <Card className="w-full max-w-md bg-white border-slate-200 shadow-xl">
             <CardContent className="pt-6 text-center">
-              <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2 text-white">Questionário não encontrado</h2>
-              <p className="text-white/50">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2 text-slate-900">Questionário não encontrado</h2>
+              <p className="text-slate-500">
                 O link pode ter expirado ou ser inválido.
               </p>
             </CardContent>
@@ -750,20 +750,20 @@ export default function Assessment() {
             </div>
             
             <div className="space-y-6 animate-fade-in">
-              <h2 className="text-3xl font-bold text-white">Questionário Enviado!</h2>
-              <p className="text-lg text-white/60 max-w-md mx-auto leading-relaxed">
+              <h2 className="text-3xl font-bold text-slate-900">Questionário Enviado!</h2>
+              <p className="text-lg text-slate-600 max-w-md mx-auto leading-relaxed">
                 Obrigado por responder ao questionário de due diligence. 
                 Suas respostas foram enviadas com sucesso e estão sendo analisadas pela equipe da {assessment.empresa.nome}.
               </p>
               
-              <div className="mt-8 p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
-                <div className="flex items-center justify-center space-x-3 text-emerald-400 mb-3">
+              <div className="mt-8 p-6 bg-white border border-slate-200 rounded-xl shadow-sm">
+                <div className="flex items-center justify-center space-x-3 text-emerald-600 mb-3">
                   <CheckCircle className="w-5 h-5" />
                   <span className="font-medium">Concluído com sucesso</span>
                 </div>
                 {assessment.data_conclusao && (
-                  <p className="text-sm text-white/40">
-                    <strong className="text-white/60">Concluído em:</strong>{' '}
+                  <p className="text-sm text-slate-500">
+                    <strong className="text-slate-700">Concluído em:</strong>{' '}
                     {new Date(assessment.data_conclusao).toLocaleString('pt-BR')}
                   </p>
                 )}
