@@ -37,6 +37,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const breadcrumbs = useBreadcrumb();
   const isMobile = useIsMobile();
+  const { t } = require('@/contexts/LanguageContext').useLanguage();
   
   // Timeout de sessão por inatividade
   useInactivityTimeout();
