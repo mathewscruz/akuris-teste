@@ -26,7 +26,7 @@ const userInitialsFrom = (name: string | null | undefined) => {
 
 export function AkurIAChatbot() {
   const { user, session, profile } = useAuth();
-  const { language } = useLanguage();
+  const { locale } = useLanguage();
   const location = useLocation();
 
   const [open, setOpen] = useState(false);
@@ -108,7 +108,7 @@ export function AkurIAChatbot() {
           body: JSON.stringify({
             messages: history,
             currentRoute: location.pathname,
-            locale: language,
+            locale: locale,
           }),
         });
 
@@ -190,7 +190,7 @@ export function AkurIAChatbot() {
         setIsLoading(false);
       }
     },
-    [input, isLoading, messages, session, location.pathname, language, appendMessage, updateLastAssistant]
+    [input, isLoading, messages, session, location.pathname, locale, appendMessage, updateLastAssistant]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
