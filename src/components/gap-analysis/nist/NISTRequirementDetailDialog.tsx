@@ -857,15 +857,8 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
               </ScrollArea>
             </div>
           )}
-
-          <DialogFooter className="px-6 py-4 border-t">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={saving || loading}>
-              {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Salvando...</> : 'Salvar Detalhes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </DialogShell>
 
       <PlanoAcaoDialog
         open={planoAcaoDialogOpen}
