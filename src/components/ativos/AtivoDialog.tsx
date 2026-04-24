@@ -1,13 +1,15 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Box, FileText, MapPin, Settings2, Calendar as CalendarIcon } from 'lucide-react';
 import LocalizacaoSelect from '@/components/ativos/LocalizacaoSelect';
 import { UserSelect } from '@/components/riscos/UserSelect';
+import { WizardDialog, WizardTab, WizardTabState } from '@/components/ui/wizard-dialog';
+import { WizardSummaryCard, WizardSummaryRow } from '@/components/ui/wizard-summary-card';
+import { FieldHelpTooltip } from '@/components/ui/field-help-tooltip';
 
 interface AtivoFormData {
   nome: string;
@@ -72,7 +74,7 @@ const tiposAtivo = [
   { value: 'equipamento_teste', label: 'Equipamento de Teste' },
   { value: 'equipamento_medico', label: 'Equipamento Médico' },
   { value: 'equipamento_laboratorio', label: 'Equipamento de Laboratório' },
-  { value: 'outros', label: 'Outros' }
+  { value: 'outros', label: 'Outros' },
 ];
 
 const criticidades = [
@@ -91,47 +93,76 @@ const statusOptions = [
 
 const valoresNegocio = ['alto', 'medio', 'baixo'];
 
-const AtivoDialog: React.FC<AtivoDialogProps> = ({
-  open,
-  onOpenChange,
-  formData,
-  setFormData,
-  onSubmit,
-  isEditing,
-}) => {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Editar Ativo' : 'Novo Ativo'}
-          </DialogTitle>
-          <DialogDescription>
-            {isEditing ? 'Atualize as informações do ativo' : 'Cadastre um novo ativo na plataforma'}
-          </DialogDescription>
-        </DialogHeader>
-        <ScrollArea className="max-h-[calc(90vh-140px)] pr-4">
-          <form onSubmit={onSubmit} className="space-y-4 px-1">
-            <div className="grid grid-cols-2 gap-4">
+const CRITICIDADE_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  critico: 'destructive',
+  alto: 'default',
+  medio: 'secondary',
+  baixo: 'outline',
+};
+
+const AtivoDialog: React.FC<AtivoDialogProps> = ({ open, onOpenChange, formData, setFormData, onSubmit, isEditing }) => {
+  const [activeTab, setActiveTab] = useState('identificacao');
+  const [initialSnapshot, setInitialSnapshot] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      setActiveTab('identificacao');
+      setInitialSnapshot(JSON.stringify(formData));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const isDirty = JSON.stringify(formData) !== initialSnapshot;
+
+  const handleSubmit = () => {
+    if (!formData.nome.trim() || !formData.tipo) {
+      setActiveTab('identificacao');
+      return;
+    }
+    // synthesize a fake form event
+    onSubmit({ preventDefault: () => {} } as React.FormEvent);
+  };
+
+  const update = (patch: Partial<AtivoFormData>) => setFormData((prev) => ({ ...prev, ...patch }));
+
+  const identState: WizardTabState = formData.nome && formData.tipo ? 'complete' : formData.nome || formData.tipo ? 'partial' : 'pending';
+  const localState: WizardTabState = formData.proprietario || formData.localizacao ? 'complete' : 'pending';
+  const classifState: WizardTabState = formData.criticidade ? 'complete' : 'pending';
+  const aquisState: WizardTabState = formData.data_aquisicao || formData.fornecedor || formData.versao ? 'complete' : 'pending';
+
+  const tipoLabel = tiposAtivo.find((t) => t.value === formData.tipo)?.label;
+
+  const tabs: WizardTab[] = useMemo(
+    () => [
+      {
+        id: 'identificacao',
+        label: 'Identificação',
+        icon: Box,
+        state: identState,
+        hint: 'Nome, tipo e descrição',
+        content: (
+          <div className="space-y-5 max-w-3xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="nome">Nome *</Label>
-                <Input
-                  id="nome"
-                  value={formData.nome}
-                  onChange={(e) => setFormData(prev => ({...prev, nome: e.target.value}))}
-                  required
-                />
+                <Label className="flex items-center gap-1">
+                  Nome <span className="text-destructive">*</span>
+                  <FieldHelpTooltip content="Nome único do ativo. Ex: 'Servidor de Produção SRV-01'." />
+                </Label>
+                <Input value={formData.nome} onChange={(e) => update({ nome: e.target.value })} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="tipo">Tipo *</Label>
-                <Select value={formData.tipo} onValueChange={(value) => setFormData(prev => ({...prev, tipo: value}))}>
+                <Label className="flex items-center gap-1">
+                  Tipo <span className="text-destructive">*</span>
+                  <FieldHelpTooltip content="Categoria principal do ativo (servidor, software, mobiliário, etc.)." />
+                </Label>
+                <Select value={formData.tipo} onValueChange={(v) => update({ tipo: v })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    {tiposAtivo.map((tipo) => (
-                      <SelectItem key={tipo.value} value={tipo.value}>
-                        {tipo.label}
+                    {tiposAtivo.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -140,162 +171,204 @@ const AtivoDialog: React.FC<AtivoDialogProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="descricao">Descrição</Label>
-              <Textarea
-                id="descricao"
-                value={formData.descricao}
-                onChange={(e) => setFormData(prev => ({...prev, descricao: e.target.value}))}
-                rows={3}
-              />
+              <Label>Descrição</Label>
+              <Textarea value={formData.descricao} onChange={(e) => update({ descricao: e.target.value })} rows={4} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="proprietario">Proprietário</Label>
+                <Label>Tags</Label>
+                <Input
+                  value={formData.tags}
+                  onChange={(e) => update({ tags: e.target.value })}
+                  placeholder="Ex: servidor, crítico, backup"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Quantidade</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={formData.quantidade}
+                  onChange={(e) => update({ quantidade: parseInt(e.target.value) || 1 })}
+                />
+              </div>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'localizacao',
+        label: 'Localização & Posse',
+        icon: MapPin,
+        state: localState,
+        hint: 'Onde está e quem é o dono',
+        content: (
+          <div className="space-y-5 max-w-3xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  Proprietário
+                  <FieldHelpTooltip content="Pessoa responsável pela manutenção, uso e decisões sobre o ativo." />
+                </Label>
                 <UserSelect
                   value={formData.proprietario}
-                  onValueChange={(value) => setFormData(prev => ({...prev, proprietario: value}))}
+                  onValueChange={(v) => update({ proprietario: v })}
                   placeholder="Selecionar proprietário..."
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="localizacao">Localização</Label>
-                <LocalizacaoSelect
-                  value={formData.localizacao}
-                  onValueChange={(value) => setFormData(prev => ({...prev, localizacao: value}))}
-                />
+                <Label>Localização</Label>
+                <LocalizacaoSelect value={formData.localizacao} onValueChange={(v) => update({ localizacao: v })} />
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="cliente">Cliente</Label>
-                <Input
-                  id="cliente"
-                  value={formData.cliente}
-                  onChange={(e) => setFormData(prev => ({...prev, cliente: e.target.value}))}
-                />
+                <Label>Cliente</Label>
+                <Input value={formData.cliente} onChange={(e) => update({ cliente: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="imei">IMEI</Label>
-                <Input
-                  id="imei"
-                  value={formData.imei}
-                  onChange={(e) => setFormData(prev => ({...prev, imei: e.target.value}))}
-                />
+                <Label>IMEI / Identificador</Label>
+                <Input value={formData.imei} onChange={(e) => update({ imei: e.target.value })} />
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
+          </div>
+        ),
+      },
+      {
+        id: 'classificacao',
+        label: 'Classificação',
+        icon: Settings2,
+        state: classifState,
+        hint: 'Criticidade e valor',
+        content: (
+          <div className="space-y-5 max-w-3xl">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="tags">Tags</Label>
-                <Input
-                  id="tags"
-                  value={formData.tags}
-                  onChange={(e) => setFormData(prev => ({...prev, tags: e.target.value}))}
-                  placeholder="Ex: servidor, crítico, backup (separadas por vírgula)"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="quantidade">Quantidade</Label>
-                <Input
-                  id="quantidade"
-                  type="number"
-                  min="1"
-                  value={formData.quantidade}
-                  onChange={(e) => setFormData(prev => ({...prev, quantidade: parseInt(e.target.value) || 1}))}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="criticidade">Criticidade</Label>
-                <Select value={formData.criticidade} onValueChange={(value) => setFormData(prev => ({...prev, criticidade: value}))}>
+                <Label className="flex items-center gap-1">
+                  Criticidade
+                  <FieldHelpTooltip content="Quanto a indisponibilidade deste ativo afeta o negócio." />
+                </Label>
+                <Select value={formData.criticidade} onValueChange={(v) => update({ criticidade: v })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {criticidades.map((crit) => (
-                      <SelectItem key={crit.value} value={crit.value}>
-                        {crit.label}
+                    {criticidades.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="valor_negocio">Valor de Negócio</Label>
-                <Select value={formData.valor_negocio} onValueChange={(value) => setFormData(prev => ({...prev, valor_negocio: value}))}>
+                <Label className="flex items-center gap-1">
+                  Valor de Negócio
+                  <FieldHelpTooltip content="Importância estratégica do ativo para os processos da organização." />
+                </Label>
+                <Select value={formData.valor_negocio} onValueChange={(v) => update({ valor_negocio: v })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
-                    {valoresNegocio.map((valor) => (
-                      <SelectItem key={valor} value={valor}>
-                        {valor.charAt(0).toUpperCase() + valor.slice(1)}
+                    {valoresNegocio.map((v) => (
+                      <SelectItem key={v} value={v}>
+                        {v.charAt(0).toUpperCase() + v.slice(1)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({...prev, status: value}))}>
+                <Label>Status</Label>
+                <Select value={formData.status} onValueChange={(v) => update({ status: v })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {statusOptions.map((status) => (
-                      <SelectItem key={status.value} value={status.value}>
-                        {status.label}
+                    {statusOptions.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
-
-            <div className="grid grid-cols-3 gap-4">
+          </div>
+        ),
+      },
+      {
+        id: 'aquisicao',
+        label: 'Aquisição',
+        icon: FileText,
+        state: aquisState,
+        hint: 'Fornecedor, data, versão',
+        content: (
+          <div className="space-y-5 max-w-3xl">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="data_aquisicao">Data de Aquisição</Label>
+                <Label className="flex items-center gap-1">
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  Data de Aquisição
+                </Label>
                 <Input
-                  id="data_aquisicao"
                   type="date"
                   value={formData.data_aquisicao}
-                  onChange={(e) => setFormData(prev => ({...prev, data_aquisicao: e.target.value}))}
+                  onChange={(e) => update({ data_aquisicao: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="fornecedor">Fornecedor</Label>
-                <Input
-                  id="fornecedor"
-                  value={formData.fornecedor}
-                  onChange={(e) => setFormData(prev => ({...prev, fornecedor: e.target.value}))}
-                />
+                <Label>Fornecedor</Label>
+                <Input value={formData.fornecedor} onChange={(e) => update({ fornecedor: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="versao">Versão</Label>
-                <Input
-                  id="versao"
-                  value={formData.versao}
-                  onChange={(e) => setFormData(prev => ({...prev, versao: e.target.value}))}
-                />
+                <Label>Versão</Label>
+                <Input value={formData.versao} onChange={(e) => update({ versao: e.target.value })} />
               </div>
             </div>
+          </div>
+        ),
+      },
+    ],
+    [formData, identState, localState, classifState, aquisState]
+  );
 
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {isEditing ? 'Atualizar' : 'Criar'} Ativo
-              </Button>
-            </div>
-          </form>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+  const summary = (
+    <WizardSummaryCard title="Resumo do Ativo">
+      <WizardSummaryRow label="Nome" value={formData.nome || <span className="text-muted-foreground italic">Sem nome</span>} highlight />
+      <WizardSummaryRow label="Tipo" value={tipoLabel || <span className="text-muted-foreground italic">—</span>} />
+      <WizardSummaryRow
+        label="Criticidade"
+        value={
+          formData.criticidade
+            ? <Badge variant={CRITICIDADE_VARIANT[formData.criticidade]} className="text-[10px] capitalize">{formData.criticidade}</Badge>
+            : <span className="text-muted-foreground italic">—</span>
+        }
+      />
+      <WizardSummaryRow label="Status" value={<span className="capitalize">{formData.status.replace('_', ' ')}</span>} />
+      <WizardSummaryRow label="Quantidade" value={formData.quantidade} />
+    </WizardSummaryCard>
+  );
+
+  return (
+    <WizardDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={isEditing ? 'Editar Ativo' : 'Novo Ativo'}
+      description="Preencha as seções para cadastrar o ativo na plataforma."
+      icon={Box}
+      tabs={tabs}
+      summary={summary}
+      activeTab={activeTab}
+      onActiveTabChange={setActiveTab}
+      onSubmit={handleSubmit}
+      submitLabel={isEditing ? 'Atualizar Ativo' : 'Criar Ativo'}
+      submitDisabled={!formData.nome.trim() || !formData.tipo}
+      isDirty={isDirty}
+      size="xl"
+    />
   );
 };
 
