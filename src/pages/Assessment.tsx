@@ -1051,39 +1051,39 @@ export default function Assessment() {
                   <Card
                     key={question.id}
                     className={cn(
-                      'border bg-white/5 backdrop-blur-sm transition-all duration-300 overflow-hidden animate-fade-in',
+                      'border bg-white transition-all duration-300 overflow-hidden animate-fade-in shadow-sm',
                       answered
-                        ? 'border-emerald-500/30 shadow-[0_0_0_1px_hsl(160,84%,39%,0.1),0_8px_24px_-12px_hsl(160,84%,39%,0.2)]'
-                        : 'border-white/10 hover:border-white/20'
+                        ? 'border-emerald-300 shadow-[0_0_0_1px_hsl(160,84%,39%,0.1),0_8px_24px_-12px_hsl(160,84%,39%,0.25)]'
+                        : 'border-slate-200 hover:border-slate-300'
                     )}
                     style={{ animationDelay: `${index * 60}ms` }}
                   >
                     <CardContent className="p-6 sm:p-7 space-y-5">
-                      {/* Question header (D - hierarchy fixed) */}
+                      {/* Question header */}
                       <div className="flex items-start gap-4">
                         {/* Number badge */}
                         <div className={cn(
                           'h-9 w-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 transition-colors',
                           answered
-                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                            : 'bg-white/5 text-white/60 border border-white/10'
+                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                            : 'bg-slate-100 text-slate-600 border border-slate-200'
                         )}>
                           {answered ? <Check className="h-4 w-4" /> : questionNumber}
                         </div>
 
                         <div className="flex-1 min-w-0 space-y-1.5">
                           <div className="flex items-start gap-2 flex-wrap">
-                            <h3 className="text-base sm:text-lg font-semibold text-white leading-snug">
+                            <h3 className="text-base sm:text-lg font-semibold text-slate-900 leading-snug">
                               {question.titulo || question.pergunta}
                             </h3>
                             {question.obrigatoria && (
-                              <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/20 mt-1">
+                              <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-200 mt-1">
                                 Obrigatória
                               </span>
                             )}
                           </div>
                           {question.descricao && (
-                            <p className="text-sm text-white/60 leading-relaxed">
+                            <p className="text-sm text-slate-600 leading-relaxed">
                               {question.descricao}
                             </p>
                           )}
@@ -1097,7 +1097,7 @@ export default function Assessment() {
                             value={responses[question.id] || ''}
                             onChange={(e) => handleResponseChange(question.id, e.target.value)}
                             placeholder="Digite sua resposta..."
-                            className="min-h-[120px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(250,80%,60%)]/50 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
+                            className="min-h-[120px] bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-[hsl(250,80%,60%)]/60 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
                           />
                         )}
 
