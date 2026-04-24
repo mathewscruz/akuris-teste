@@ -400,17 +400,20 @@ export default function Assessment() {
 
       const assessment = assessmentData[0];
 
-      let empresaData = { nome: 'Empresa', logo_url: null };
+      let empresaData: { nome: string; logo_url: string | null } = { nome: 'Empresa', logo_url: null };
       try {
-        const empresaResponse = await supabaseRequest(
-          `empresas?select=nome,logo_url&id=eq.${assessment.empresa_id}`,
-          { method: 'GET' }
-        );
-        if (empresaResponse && empresaResponse.length > 0) {
-          empresaData = empresaResponse[0];
+        const { data: empresaInfo, error: empresaErr } = await supabase
+          .rpc('get_assessment_empresa_info', { p_token: token });
+        if (!empresaErr && empresaInfo && empresaInfo.length > 0) {
+          empresaData = {
+            nome: empresaInfo[0].empresa_nome || 'Empresa',
+            logo_url: empresaInfo[0].empresa_logo_url || null,
+          };
+        } else if (empresaErr) {
+          assessmentLogger.warn('RPC empresa info erro:', empresaErr);
         }
       } catch (error) {
-        assessmentLogger.warn('Erro ao carregar dados da empresa, usando fallback:', error);
+        assessmentLogger.warn('Erro ao carregar dados da empresa via RPC:', error);
       }
 
       let templateData = { nome: 'Assessment', descricao: null };
