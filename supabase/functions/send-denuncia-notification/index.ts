@@ -13,8 +13,34 @@ const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const supabaseClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
     const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+
+    // Auth: this function is triggered post-submission. Accept either:
+    //   (a) a valid JWT from an admin/user of the same empresa, OR
+    //   (b) the SERVICE_ROLE_KEY as bearer (DB trigger / internal call)
+    const authHeader = req.headers.get('Authorization');
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const isServiceCall = token === serviceKey;
+    if (!isServiceCall) {
+      const authClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
+      const { data: userData, error: claimsError } = await authClient.auth.getUser(token);
+      if (claimsError || !userData?.user?.id) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+      }
+      const callerId = userData.user.id as string;
+      const { data: callerProfile } = await supabaseClient.from('profiles').select('empresa_id').eq('user_id', callerId).single();
+      const body = await req.clone().json();
+      if (!callerProfile?.empresa_id || callerProfile.empresa_id !== body.empresa_id) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+      }
+    }
+
     const { denuncia_id, empresa_id }: NotificationRequest = await req.json();
 
     const { data: denuncia, error: denunciaError } = await supabaseClient.from('denuncias').select(`*, categoria:denuncias_categorias(nome), empresa:empresas(nome, logo_url)`).eq('id', denuncia_id).single();

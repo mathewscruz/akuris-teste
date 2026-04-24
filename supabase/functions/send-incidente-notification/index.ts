@@ -17,9 +17,29 @@ const handler = async (req: Request): Promise<Response> => {
     if (!resendApiKey) return new Response(JSON.stringify({ error: "Email service not configured" }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
 
     const resend = new Resend(resendApiKey);
-    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    // Auth: require valid JWT
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const authClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
+    const { data: userData, error: claimsError } = await authClient.auth.getUser(token);
+    if (claimsError || !userData?.user?.id) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    }
+    const callerId = userData.user.id as string;
 
     const { incidente_id, titulo, descricao, gravidade, tipo, responsavel_id, empresa_id }: NotificationRequest = await req.json();
+
+    // Verify caller belongs to the same empresa
+    const { data: callerProfile } = await supabase.from('profiles').select('empresa_id').eq('user_id', callerId).single();
+    if (!callerProfile?.empresa_id || callerProfile.empresa_id !== empresa_id) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    }
 
     let companyName = "Akuris";
     const { data: empresaData } = await supabase.from("empresas").select("nome").eq("id", empresa_id).single();

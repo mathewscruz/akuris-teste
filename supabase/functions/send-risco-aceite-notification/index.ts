@@ -29,9 +29,28 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const resend = new Resend(resendApiKey);
-    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    // Auth: require valid JWT and matching empresa
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const authClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
+    const { data: userData, error: claimsError } = await authClient.auth.getUser(token);
+    if (claimsError || !userData?.user?.id) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    }
+    const callerId = userData.user.id as string;
 
     const { risco_id, risco_nome, aprovador_id, solicitante_id, empresa_id, tipo, comentario }: NotificationRequest = await req.json();
+
+    const { data: callerProfile } = await supabase.from('profiles').select('empresa_id').eq('user_id', callerId).single();
+    if (!callerProfile?.empresa_id || callerProfile.empresa_id !== empresa_id) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    }
 
     // Buscar dados do aprovador
     const { data: aprovador } = await supabase
