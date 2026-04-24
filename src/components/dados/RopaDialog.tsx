@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { DialogShell } from "@/components/ui/dialog-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -125,15 +125,15 @@ export function RopaDialog({ isOpen, onClose, onSave, ropa }: RopaDialogProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {ropa?.id ? "Editar Registro ROPA" : "Novo Registro ROPA"}
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="grid gap-4 py-4">
+    <DialogShell
+        open={isOpen}
+        onOpenChange={onClose}
+        title={`${ropa?.id ? "Editar" : "Novo"} Registro ROPA`}
+        icon={FileText}
+        size="xl"
+        onSubmit={handleSave}
+      >
+<div className="grid gap-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="nome_tratamento">Nome do Tratamento *</Label>
@@ -365,15 +365,6 @@ export function RopaDialog({ isOpen, onClose, onSave, ropa }: RopaDialogProps) {
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? "Salvando..." : "Salvar"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogShell>
   );
 }
