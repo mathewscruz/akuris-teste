@@ -1012,18 +1012,18 @@ export default function Assessment() {
 
           {/* === Main content === */}
           <main className="min-w-0">
-            {/* Mobile progress (C fallback) */}
-            <Card className="lg:hidden mb-4 bg-white/5 backdrop-blur-sm border-white/10">
+            {/* Mobile progress */}
+            <Card className="lg:hidden mb-4 bg-white border-slate-200 shadow-sm">
               <CardContent className="p-4">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-medium text-white/50">
+                  <span className="text-xs font-medium text-slate-500">
                     Página {currentPage + 1} de {totalPages}
                   </span>
-                  <span className="text-xs font-semibold text-white">{Math.round(progress)}%</span>
+                  <span className="text-xs font-semibold text-slate-900">{Math.round(progress)}%</span>
                 </div>
                 <Progress
                   value={progress}
-                  className="h-2 bg-white/10 [&>div]:bg-gradient-to-r [&>div]:from-[hsl(250,80%,60%)] [&>div]:to-[hsl(250,80%,50%)]"
+                  className="h-2 bg-slate-100 [&>div]:bg-gradient-to-r [&>div]:from-[hsl(250,80%,60%)] [&>div]:to-[hsl(250,80%,50%)]"
                 />
               </CardContent>
             </Card>
@@ -1031,12 +1031,12 @@ export default function Assessment() {
             {/* Page header */}
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-wider text-white/40 font-medium mb-1">
+                <p className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-1">
                   {assessment.template.nome}
                 </p>
-                <h2 className="text-xl sm:text-2xl font-bold text-white">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
                   Página {currentPage + 1}
-                  <span className="text-white/40 font-normal text-base ml-2">de {totalPages}</span>
+                  <span className="text-slate-400 font-normal text-base ml-2">de {totalPages}</span>
                 </h2>
               </div>
             </div>
