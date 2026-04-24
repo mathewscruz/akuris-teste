@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { ChevronRight } from "lucide-react"
 
-interface BreadcrumbItem {
+interface BreadcrumbItemType {
   label: string
   href?: string
 }
@@ -13,7 +13,7 @@ interface BreadcrumbItem {
 interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   title: string
   description?: string
-  breadcrumbs?: BreadcrumbItem[]
+  breadcrumbs?: BreadcrumbItemType[]
   badge?: {
     label: string
     variant?: "default" | "secondary" | "destructive" | "success" | "warning" | "info"
