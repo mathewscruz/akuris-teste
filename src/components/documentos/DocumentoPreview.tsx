@@ -11,6 +11,7 @@ interface Documento {
   id: string;
   nome: string;
   arquivo_url?: string;
+  arquivo_url_externa?: string;
   arquivo_nome?: string;
   arquivo_tipo?: string;
   arquivo_tamanho?: number;
@@ -33,8 +34,10 @@ export function DocumentoPreview({ open, onOpenChange, documento }: DocumentoPre
   React.useEffect(() => {
     if (open && documento.arquivo_url) {
       loadPreview();
+    } else if (open && documento.arquivo_url_externa) {
+      setPreviewUrl(documento.arquivo_url_externa);
     }
-  }, [open, documento.arquivo_url]);
+  }, [open, documento.arquivo_url, documento.arquivo_url_externa]);
 
   const loadPreview = async () => {
     if (!documento.arquivo_url) return;
@@ -92,9 +95,10 @@ export function DocumentoPreview({ open, onOpenChange, documento }: DocumentoPre
     }
   };
 
+  const isExternal = !!documento.arquivo_url_externa && !documento.arquivo_url;
   const isImage = documento.arquivo_tipo?.startsWith('image/');
-  const isPdf = documento.arquivo_tipo === 'application/pdf';
-  const canPreview = isImage || isPdf;
+  const isPdf = documento.arquivo_tipo === 'application/pdf' || (isExternal && /\.pdf($|\?)/i.test(documento.arquivo_url_externa || ''));
+  const canPreview = isImage || isPdf || isExternal;
 
   const getFileIcon = () => {
     if (isImage) return <Image className="h-8 w-8" />;
@@ -159,17 +163,9 @@ export function DocumentoPreview({ open, onOpenChange, documento }: DocumentoPre
             ) : canPreview && previewUrl ? (
               <div className="h-96 overflow-auto">
                 {isImage ? (
-                  <img 
-                    src={previewUrl} 
-                    alt={documento.nome}
-                    className="w-full h-auto"
-                  />
-                ) : isPdf ? (
-                  <iframe
-                    src={previewUrl}
-                    className="w-full h-full border-0"
-                    title={documento.nome}
-                  />
+                  <img src={previewUrl} alt={documento.nome} className="w-full h-auto" />
+                ) : (isPdf || isExternal) ? (
+                  <iframe src={previewUrl} className="w-full h-full border-0" title={documento.nome} />
                 ) : null}
               </div>
             ) : (

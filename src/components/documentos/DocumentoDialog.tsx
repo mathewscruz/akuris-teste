@@ -9,7 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { Upload, X, CalendarIcon, File } from 'lucide-react';
+import { Upload, X, CalendarIcon, File, Link2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -24,6 +25,7 @@ interface Documento {
   classificacao?: string;
   tags?: string[];
   arquivo_url?: string;
+  arquivo_url_externa?: string;
   arquivo_nome?: string;
   arquivo_tipo?: string;
   arquivo_tamanho?: number;
@@ -62,6 +64,8 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [arquivoModo, setArquivoModo] = useState<'upload' | 'url'>('upload');
+  const [arquivoUrlExterna, setArquivoUrlExterna] = useState('');
   const [formData, setFormData] = useState({
     nome: '',
     descricao: '',
@@ -110,6 +114,8 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
 
     setFormData(base);
     setSelectedFile(initialFile || null);
+    setArquivoUrlExterna(documento?.arquivo_url_externa || '');
+    setArquivoModo(documento?.arquivo_url_externa ? 'url' : 'upload');
     setNewTag('');
   }, [documento, open, initialFile, initialData]);
 
@@ -183,18 +189,38 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
       let arquivo_nome = documento?.arquivo_nome;
       let arquivo_tipo = documento?.arquivo_tipo;
       let arquivo_tamanho = documento?.arquivo_tamanho;
+      let arquivo_url_externa: string | null = arquivoUrlExterna.trim() || null;
       let versao = documento?.versao || 1;
 
-      // Upload do arquivo se um novo foi selecionado
-      if (selectedFile) {
-        setUploading(true);
-        arquivo_url = await uploadFile(selectedFile);
-        arquivo_nome = selectedFile.name;
-        arquivo_tipo = selectedFile.type;
-        arquivo_tamanho = selectedFile.size;
-        
-        // Se estiver editando, incrementar versão
-        if (documento) {
+      if (arquivoModo === 'upload') {
+        // limpar URL externa quando usar upload
+        arquivo_url_externa = null;
+
+        if (selectedFile) {
+          setUploading(true);
+          arquivo_url = await uploadFile(selectedFile);
+          arquivo_nome = selectedFile.name;
+          arquivo_tipo = selectedFile.type;
+          arquivo_tamanho = selectedFile.size;
+
+          if (documento) {
+            versao = documento.versao + 1;
+          }
+        }
+      } else {
+        // Modo URL: validar e limpar arquivo físico
+        if (arquivo_url_externa) {
+          try {
+            new URL(arquivo_url_externa);
+          } catch {
+            throw new Error('URL inválida. Informe um link completo (https://...)');
+          }
+        }
+        arquivo_url = undefined;
+        arquivo_nome = undefined;
+        arquivo_tipo = undefined;
+        arquivo_tamanho = undefined;
+        if (documento && documento.arquivo_url_externa !== arquivo_url_externa) {
           versao = documento.versao + 1;
         }
       }
@@ -205,10 +231,11 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
         tipo: formData.tipo,
         classificacao: formData.classificacao,
         tags: formData.tags.length > 0 ? formData.tags : null,
-        arquivo_url,
-        arquivo_nome,
-        arquivo_tipo,
-        arquivo_tamanho,
+        arquivo_url: arquivo_url ?? null,
+        arquivo_nome: arquivo_nome ?? null,
+        arquivo_tipo: arquivo_tipo ?? null,
+        arquivo_tamanho: arquivo_tamanho ?? null,
+        arquivo_url_externa,
         versao,
         requer_aprovacao: formData.requer_aprovacao,
         status: formData.requer_aprovacao ? 'pendente' : formData.status,
@@ -216,6 +243,7 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
         empresa_id: profileData.empresa_id,
         created_by: userData.user.id,
       };
+
 
       if (documento) {
         const { error } = await supabase
@@ -432,51 +460,65 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
           </div>
 
           <div className="space-y-2">
-            <Label>Arquivo</Label>
-            {documento?.arquivo_nome && !selectedFile && (
-              <div className="flex items-center gap-2 p-2 border rounded">
-                <File className="h-4 w-4" />
-                <span className="text-sm">{documento.arquivo_nome}</span>
-                <span className="text-xs text-muted-foreground">
-                  (v{documento.versao} - {formatFileSize(documento.arquivo_tamanho || 0)})
-                </span>
-              </div>
-            )}
-            <div className="flex gap-2">
-              <Input
-                ref={fileInputRef}
-                type="file"
-                onChange={handleFileSelect}
-                className="hidden"
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex-1"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                {selectedFile ? 'Trocar Arquivo' : documento ? 'Atualizar Arquivo' : 'Selecionar Arquivo'}
-              </Button>
-            </div>
-            {selectedFile && (
-              <div className="flex items-center gap-2 p-2 border rounded bg-muted">
-                <File className="h-4 w-4" />
-                <span className="text-sm">{selectedFile.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  ({formatFileSize(selectedFile.size)})
-                </span>
+            <Label>Anexo do Documento</Label>
+            <Tabs value={arquivoModo} onValueChange={(v) => setArquivoModo(v as 'upload' | 'url')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="upload"><Upload className="h-4 w-4 mr-2" />Upload de Arquivo</TabsTrigger>
+                <TabsTrigger value="url"><Link2 className="h-4 w-4 mr-2" />URL Externa</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="upload" className="space-y-2 mt-3">
+                {documento?.arquivo_nome && !selectedFile && (
+                  <div className="flex items-center gap-2 p-2 border rounded">
+                    <File className="h-4 w-4" />
+                    <span className="text-sm">{documento.arquivo_nome}</span>
+                    <span className="text-xs text-muted-foreground">
+                      (v{documento.versao} - {formatFileSize(documento.arquivo_tamanho || 0)})
+                    </span>
+                  </div>
+                )}
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png"
+                />
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedFile(null)}
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full"
                 >
-                  <X className="h-3 w-3" />
+                  <Upload className="h-4 w-4 mr-2" />
+                  {selectedFile ? 'Trocar Arquivo' : documento ? 'Atualizar Arquivo' : 'Selecionar Arquivo'}
                 </Button>
-              </div>
-            )}
+                {selectedFile && (
+                  <div className="flex items-center gap-2 p-2 border rounded bg-muted">
+                    <File className="h-4 w-4" />
+                    <span className="text-sm">{selectedFile.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({formatFileSize(selectedFile.size)})
+                    </span>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedFile(null)}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="url" className="space-y-2 mt-3">
+                <Input
+                  type="url"
+                  value={arquivoUrlExterna}
+                  onChange={(e) => setArquivoUrlExterna(e.target.value)}
+                  placeholder="https://drive.google.com/... ou https://sharepoint.com/..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Cole o link público ou compartilhado do documento (Google Drive, SharePoint, OneDrive, Dropbox, etc.)
+                </p>
+              </TabsContent>
+            </Tabs>
           </div>
 
           <DialogFooter>
