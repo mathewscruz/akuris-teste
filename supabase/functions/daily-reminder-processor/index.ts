@@ -16,6 +16,13 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Auth: require SERVICE_ROLE_KEY as bearer (cron / internal trigger only)
+    const authHeader = req.headers.get('Authorization');
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    if (!authHeader?.startsWith('Bearer ') || authHeader.replace('Bearer ', '') !== serviceKey) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    }
+
     console.log('Iniciando processamento diário de lembretes de convite')
     
     // Buscar todas as empresas com lembretes habilitados

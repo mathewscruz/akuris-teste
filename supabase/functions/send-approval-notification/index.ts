@@ -24,7 +24,43 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Auth: require valid JWT and verify caller belongs to the document's empresa
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const authClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
+      global: { headers: { Authorization: authHeader } }
+    });
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+    const callerId = claimsData.claims.sub as string;
+
     const { documento_id, aprovador_id, solicitante_id }: NotificationRequest = await req.json();
+
+    if (!documento_id || !aprovador_id || !solicitante_id) {
+      return new Response(JSON.stringify({ error: 'Parâmetros obrigatórios ausentes' }), {
+        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+
+    // Verify caller belongs to the same empresa as the document
+    const { data: callerProfile } = await supabase
+      .from('profiles').select('empresa_id').eq('user_id', callerId).single();
+    const { data: docCheck } = await supabase
+      .from('documentos').select('empresa_id').eq('id', documento_id).single();
+    if (!callerProfile?.empresa_id || !docCheck?.empresa_id || callerProfile.empresa_id !== docCheck.empresa_id) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403, headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
 
     console.log("Enviando notificação de aprovação:", { documento_id, aprovador_id, solicitante_id });
 
