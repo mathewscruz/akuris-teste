@@ -585,9 +585,9 @@ export default function PlanosAcao() {
                               Prazo: {formatDateOnly(item.prazo)}
                             </p>
                           )}
-                          {item.profiles?.nome_completo && (
+                          {item.profiles?.nome && (
                             <p className="text-xs text-muted-foreground mt-1">
-                              {item.profiles.nome_completo}
+                              {item.profiles.nome}
                             </p>
                           )}
                         </Card>
