@@ -15,9 +15,11 @@ import PageTransition from '@/components/PageTransition';
 import TrialBanner from '@/components/TrialBanner';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { PageSkeleton } from '@/components/ui/page-skeleton';
+import { ModuleLoadingSkeleton } from '@/components/ui/module-loading-skeleton';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
+import { prefetchAllRoutes } from '@/lib/route-prefetch';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { differenceInDays, parseISO } from 'date-fns';
 import { AlertTriangle, Lock, ArrowLeft } from 'lucide-react';
@@ -38,6 +40,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   
   // Timeout de sessão por inatividade
   useInactivityTimeout();
+
+  // Prefetch all module chunks during idle time after login,
+  // so navigating into any module is instant on first click.
+  React.useEffect(() => {
+    if (user) prefetchAllRoutes();
+  }, [user]);
 
   // Verificar se a empresa está inativa
   const isCompanyInactive = company && company.ativo === false;
@@ -218,7 +226,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           <main className="flex-1 p-4 md:p-6 overflow-auto overflow-x-hidden w-full max-w-full pb-20 md:pb-6">
             <ErrorBoundary>
-              <React.Suspense fallback={null}>
+              <React.Suspense fallback={<ModuleLoadingSkeleton />}>
                 <PageTransition routeKey={location.pathname}>
                   {children}
                 </PageTransition>
