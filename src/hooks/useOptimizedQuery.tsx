@@ -159,7 +159,7 @@ export function useOptimizedQuery<T>(
     if (refetchOnMount || isStale()) {
       executeQuery();
     }
-  }, [...dependencies, refetchOnMount]);
+  }, [...dependencies, refetchOnMount, isStale]);
 
   return {
     ...state,

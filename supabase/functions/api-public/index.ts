@@ -67,13 +67,21 @@ serve(async (req) => {
 
     // Rate limiting simples (baseado em janela de 1 minuto)
     const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
-    const { count: recentRequests } = await supabase
+    const { count: recentRequests, error: rateLimitError } = await supabase
       .from('api_request_logs')
       .select('*', { count: 'exact', head: true })
       .eq('api_key_id', keyData.id)
       .gte('created_at', oneMinuteAgo);
 
-    if ((recentRequests || 0) >= (keyData.rate_limit_por_minuto || 60)) {
+    if (rateLimitError) {
+      console.error('Rate limit check failed:', rateLimitError.message);
+      return new Response(
+        JSON.stringify({ error: 'Serviço temporariamente indisponível.' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if ((recentRequests ?? 0) >= (keyData.rate_limit_por_minuto || 60)) {
       return new Response(
         JSON.stringify({ error: 'Rate limit excedido. Tente novamente em instantes.' }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
