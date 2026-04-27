@@ -572,6 +572,7 @@ export const pt = {
     low: 'Baixos',
     noCritical: 'Sem Críticos',
     criticalRisks: 'Riscos Críticos',
+    complianceLine: 'Compliance',
     period: 'Período',
     summary: 'Resumo',
     error: 'Erro',

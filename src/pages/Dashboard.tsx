@@ -27,6 +27,7 @@ import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRadarChartData } from '@/hooks/useRadarChartData';
 import { useQueryClient } from '@tanstack/react-query';
+import { useHealthScoreTrend } from '@/hooks/useHealthScoreTrend';
 
 export default function Dashboard() {
   const { profile } = useAuth();
@@ -78,6 +79,7 @@ export default function Dashboard() {
     ? Math.round(radarData.reduce((sum, d) => sum + d.score, 0) / radarData.length)
     : 0;
   const activeIncidents = (incidentesStats.data?.abertos || 0) + (incidentesStats.data?.investigacao || 0);
+  const { delta: scoreDelta, direction: scoreDirection } = useHealthScoreTrend(healthScore, profile?.empresa_id);
 
   return (
     <TooltipProvider>
@@ -103,6 +105,8 @@ export default function Dashboard() {
           activeControls={controlesStats.data?.ativos || 0}
           complianceScore={gapStats.data?.averageCompliance || 0}
           userName={profile?.nome || 'Usuário'}
+          scoreDelta={scoreDelta}
+          scoreDirection={scoreDirection}
         />
 
         {/* KPI Pills */}

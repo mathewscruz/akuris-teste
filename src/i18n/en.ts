@@ -572,6 +572,7 @@ export const en = {
     low: 'Low',
     noCritical: 'No Critical',
     criticalRisks: 'Critical Risks',
+    complianceLine: 'Compliance',
     period: 'Period',
     summary: 'Summary',
     error: 'Error',
