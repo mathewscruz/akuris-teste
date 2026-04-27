@@ -68,6 +68,7 @@ interface Risco {
   status_aprovacao?: string;
   aprovador_id?: string;
   historico_aprovacao?: any;
+  data_envio_aprovacao?: string;
   created_by?: string;
   tratamentos_concluidos_count?: number;
 }
@@ -108,6 +109,8 @@ export function Riscos() {
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [viewMode, setViewMode] = useState<'table' | 'matrix'>('table');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [statusChangingId, setStatusChangingId] = useState<string | null>(null);
 
   // React Query for riscos
   const { data: riscos = [], isLoading: loading } = useQuery({
@@ -123,7 +126,7 @@ export function Riscos() {
           status, responsavel, controles_existentes,
           causas, consequencias, aceito, justificativa_aceite,
           created_at, data_proxima_revisao,
-          status_aprovacao, aprovador_id, historico_aprovacao,
+          status_aprovacao, aprovador_id, historico_aprovacao, data_envio_aprovacao,
           categoria:riscos_categorias(nome, cor),
           matriz:riscos_matrizes(nome)
         `)
@@ -287,34 +290,71 @@ export function Riscos() {
 
   const handleDelete = async () => {
     if (!riscoToDelete) return;
-
     try {
-      const { error } = await supabase
-        .from('riscos')
-        .delete()
-        .eq('id', riscoToDelete.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Risco excluído com sucesso!",
-      });
+      // Exclusão em lote quando id === 'bulk'
+      if (riscoToDelete.id === 'bulk') {
+        await handleBulkDelete();
+      } else {
+        const { error } = await supabase.from('riscos').delete().eq('id', riscoToDelete.id);
+        if (error) throw error;
+        toast({ title: 'Sucesso', description: 'Risco excluído com sucesso!' });
+        invalidateRiscos();
+      }
       setDeleteDialogOpen(false);
       setRiscoToDelete(null);
-      invalidateRiscos();
     } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: "Erro ao excluir risco: " + error.message,
-        variant: "destructive",
-      });
+      toast({ title: 'Erro', description: 'Erro ao excluir: ' + error.message, variant: 'destructive' });
     }
   };
 
   const openCreateDialog = () => {
     setEditingRisco(null);
     setRiscoDialogOpen(true);
+  };
+
+  const handleStatusChange = async (riscoId: string, novoStatus: string) => {
+    setStatusChangingId(riscoId);
+    try {
+      const { error } = await supabase
+        .from('riscos')
+        .update({ status: novoStatus })
+        .eq('id', riscoId);
+      if (error) throw error;
+      invalidateRiscos();
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } finally {
+      setStatusChangingId(null);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      const { error } = await supabase.from('riscos').delete().in('id', selectedIds);
+      if (error) throw error;
+      toast({ title: 'Sucesso', description: `${selectedIds.length} risco(s) excluído(s).` });
+      setSelectedIds([]);
+      invalidateRiscos();
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const handleBulkStatusChange = async (novoStatus: string) => {
+    if (selectedIds.length === 0) return;
+    try {
+      const { error } = await supabase
+        .from('riscos')
+        .update({ status: novoStatus })
+        .in('id', selectedIds);
+      if (error) throw error;
+      toast({ title: 'Sucesso', description: `Status alterado para ${formatStatus(novoStatus)} em ${selectedIds.length} risco(s).` });
+      setSelectedIds([]);
+      invalidateRiscos();
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
   };
 
   const handleDialogSuccess = () => {
@@ -377,13 +417,26 @@ export function Riscos() {
     return null;
   };
 
-  const getAprovacaoBadge = (status?: string) => {
-    switch (status) {
-      case 'aprovado': return <Badge className="bg-green-100 text-green-800 border-green-200 text-[10px] px-1.5 py-0">Aprovado</Badge>;
-      case 'rejeitado': return <Badge className="bg-red-100 text-red-800 border-red-200 text-[10px] px-1.5 py-0">Rejeitado</Badge>;
-      case 'pendente': return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-[10px] px-1.5 py-0">Pendente</Badge>;
-      default: return null;
+  const getAprovacaoBadge = (status?: string, dataEnvio?: string) => {
+    if (status === 'aprovado')
+      return <Badge className="bg-green-100 text-green-800 border-green-200 text-[10px] px-1.5 py-0">Aprovado</Badge>;
+    if (status === 'rejeitado')
+      return <Badge className="bg-red-100 text-red-800 border-red-200 text-[10px] px-1.5 py-0">Rejeitado</Badge>;
+    if (status === 'pendente') {
+      const dias = dataEnvio
+        ? differenceInDays(new Date(), new Date(dataEnvio))
+        : null;
+      const label = dias !== null && dias >= 0 ? `Pendente (${dias}d)` : 'Pendente';
+      const isUrgent = dias !== null && dias >= 3;
+      return (
+        <Badge
+          className={`${isUrgent ? 'bg-red-100 text-red-800 border-red-300' : 'bg-yellow-100 text-yellow-800 border-yellow-200'} text-[10px] px-1.5 py-0`}
+        >
+          {label}
+        </Badge>
+      );
     }
+    return null;
   };
 
   // Função para calcular variação percentual
@@ -513,6 +566,15 @@ export function Riscos() {
     );
   }
 
+  const STATUS_OPTIONS = [
+    { value: 'identificado',  label: 'Identificado'  },
+    { value: 'analisado',     label: 'Analisado'     },
+    { value: 'em_tratamento', label: 'Em Tratamento' },
+    { value: 'tratado',       label: 'Tratado'       },
+    { value: 'monitorado',    label: 'Monitorado'    },
+    { value: 'aceito',        label: 'Aceito'        },
+  ];
+
   const riscoColumns: Array<{
     key: string;
     label: string;
@@ -520,6 +582,26 @@ export function Riscos() {
     className?: string;
     render?: (value: any, risco: Risco) => React.ReactNode;
   }> = [
+    // Coluna de seleção (checkbox)
+    {
+      key: 'select',
+      label: '',
+      className: 'w-[40px]',
+      render: (_: any, risco: Risco) => (
+        <input
+          type="checkbox"
+          className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
+          checked={selectedIds.includes(risco.id)}
+          onChange={(e) => {
+            e.stopPropagation();
+            setSelectedIds(prev =>
+              e.target.checked ? [...prev, risco.id] : prev.filter(id => id !== risco.id)
+            );
+          }}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+    },
     {
       key: 'nome',
       label: 'Nome',
@@ -539,32 +621,67 @@ export function Riscos() {
       ) : <span className="text-muted-foreground text-sm">—</span>
     },
     {
-      // Coluna unificada: Nível Inicial → Residual na mesma célula
+      // Coluna unificada: Nível Inicial → Residual + alerta se em tratamento sem residual
       key: 'nivel_risco_inicial',
       label: 'Nível',
-      render: (_value: string, risco: Risco) => (
-        <div className="flex items-center gap-1 flex-wrap">
-          <Badge className={`${getNivelRiscoColor(risco.nivel_risco_inicial)} border whitespace-nowrap text-xs`}>
-            {risco.nivel_risco_inicial}
-          </Badge>
-          {risco.nivel_risco_residual ? (
-            <>
-              <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <Badge className={`${getNivelRiscoColor(risco.nivel_risco_residual)} border whitespace-nowrap text-xs`}>
-                {risco.nivel_risco_residual}
-              </Badge>
-            </>
-          ) : (
-            <span className="text-[10px] text-muted-foreground italic ml-1">sem residual</span>
-          )}
-        </div>
-      )
+      render: (_value: string, risco: Risco) => {
+        const semResidual = risco.status === 'em_tratamento' && !risco.nivel_risco_residual;
+        return (
+          <div className="flex items-center gap-1 flex-wrap">
+            <Badge className={`${getNivelRiscoColor(risco.nivel_risco_inicial)} border whitespace-nowrap text-xs`}>
+              {risco.nivel_risco_inicial}
+            </Badge>
+            {risco.nivel_risco_residual ? (
+              <>
+                <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <Badge className={`${getNivelRiscoColor(risco.nivel_risco_residual)} border whitespace-nowrap text-xs`}>
+                  {risco.nivel_risco_residual}
+                </Badge>
+              </>
+            ) : semResidual ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-warning cursor-help ml-0.5">
+                    <AlertTriangle className="h-3.5 w-3.5 inline text-yellow-500" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[200px] text-xs">
+                  Em tratamento há mais de 0 dias sem avaliação residual cadastrada
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <span className="text-[10px] text-muted-foreground italic ml-1">sem residual</span>
+            )}
+          </div>
+        );
+      }
     },
     {
+      // Status com dropdown inline para troca rápida
       key: 'status',
       label: 'Status',
-      render: (value: string) => (
-        <Badge className={`${getRiscoStatusColor(value)} border whitespace-nowrap`}>{formatStatus(value)}</Badge>
+      render: (value: string, risco: Risco) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Badge
+              className={`${getRiscoStatusColor(value)} border cursor-pointer hover:opacity-75 transition-opacity whitespace-nowrap select-none`}
+            >
+              {statusChangingId === risco.id ? '…' : formatStatus(value)}
+            </Badge>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-44">
+            {STATUS_OPTIONS.map(opt => (
+              <DropdownMenuItem
+                key={opt.value}
+                onClick={() => handleStatusChange(risco.id, opt.value)}
+                className={opt.value === value ? 'font-semibold' : ''}
+              >
+                {opt.label}
+                {opt.value === value && <span className="ml-auto text-primary">✓</span>}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )
     },
     {
@@ -572,7 +689,7 @@ export function Riscos() {
       label: 'Flags',
       render: (_value: any, risco: Risco) => {
         const tags: React.ReactNode[] = [];
-        const aprovBadge = getAprovacaoBadge(risco.status_aprovacao);
+        const aprovBadge = getAprovacaoBadge(risco.status_aprovacao, risco.data_envio_aprovacao);
         if (aprovBadge) tags.push(aprovBadge);
         if (risco.aceito) tags.push(
           <Badge key="aceito" className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] px-1.5 py-0">Aceito</Badge>
@@ -877,6 +994,68 @@ export function Riscos() {
           </div>
         </div>
 
+        {/* Barra de ações em lote — aparece quando há itens selecionados */}
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg border bg-primary/5 border-primary/20">
+            <span className="text-sm font-medium text-primary">
+              {selectedIds.length} risco{selectedIds.length > 1 ? 's' : ''} selecionado{selectedIds.length > 1 ? 's' : ''}
+            </span>
+            <div className="flex items-center gap-2 ml-auto flex-wrap">
+              {/* Alterar status em lote */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 text-xs">
+                    Alterar Status
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {STATUS_OPTIONS.map(opt => (
+                    <DropdownMenuItem key={opt.value} onClick={() => handleBulkStatusChange(opt.value)}>
+                      {opt.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Exportar selecionados */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => exportRiscosCSV(sortedRiscos.filter(r => selectedIds.includes(r.id)))}
+              >
+                <Download className="h-3.5 w-3.5 mr-1" />
+                Exportar
+              </Button>
+
+              {/* Excluir selecionados */}
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => {
+                  setRiscoToDelete({ id: 'bulk', nome: `${selectedIds.length} riscos selecionados` } as any);
+                  setDeleteDialogOpen(true);
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                Excluir
+              </Button>
+
+              {/* Desmarcar tudo */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setSelectedIds([])}
+              >
+                <X className="h-3.5 w-3.5 mr-1" />
+                Limpar
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Vista da Matriz */}
         {viewMode === 'matrix' && (
           <MatrizVisualizacao />
@@ -948,7 +1127,10 @@ export function Riscos() {
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           title="Excluir Risco"
-          description={`Tem certeza que deseja excluir o risco "${riscoToDelete?.nome}"? Esta ação não pode ser desfeita.`}
+          description={riscoToDelete?.id === 'bulk'
+            ? `Tem certeza que deseja excluir os ${selectedIds.length} riscos selecionados? Esta ação não pode ser desfeita.`
+            : `Tem certeza que deseja excluir o risco "${riscoToDelete?.nome}"? Esta ação não pode ser desfeita.`
+          }
           onConfirm={handleDelete}
         />
 

@@ -39,6 +39,7 @@ const riscoSchema = z.object({
   justificativa_aceite: z.string().optional(),
   aprovador_aceite: z.string().optional(),
   ativos_vinculados: z.array(z.string()).default([]),
+  controles_vinculados: z.array(z.string()).default([]),
   data_proxima_revisao: z.string().optional()
 });
 
@@ -67,6 +68,13 @@ interface Ativo {
   tipo: string;
 }
 
+interface Controle {
+  id: string;
+  nome: string;
+  codigo?: string | null;
+  criticidade?: string | null;
+}
+
 interface Props {
   risco?: any;
   onSuccess: () => void;
@@ -79,6 +87,7 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
   const [matrizes, setMatrizes] = useState<Matriz[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [ativos, setAtivos] = useState<Ativo[]>([]);
+  const [controles, setControles] = useState<Controle[]>([]);
   const [selectedMatriz, setSelectedMatriz] = useState<Matriz | null>(null);
   const [anexosAceite, setAnexosAceite] = useState<any[]>([]);
   
@@ -112,6 +121,7 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
       justificativa_aceite: '',
       aprovador_aceite: '',
       ativos_vinculados: [],
+      controles_vinculados: [],
       data_proxima_revisao: ''
     }
   });
@@ -149,6 +159,7 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
         justificativa_aceite: risco.justificativa_aceite || '',
         aprovador_aceite: risco.aprovador_aceite || '',
         ativos_vinculados: [],
+        controles_vinculados: [],
         data_proxima_revisao: risco.data_proxima_revisao || ''
       });
 
@@ -170,6 +181,7 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
       if (risco.id) {
         fetchAnexosAceite(risco.id);
         fetchAtivosVinculados(risco.id);
+        fetchControlesVinculados(risco.id);
       }
     }
   }, [risco, matrizes]);
@@ -194,7 +206,7 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
   const fetchData = async () => {
     if (!profile?.empresa_id) return;
     try {
-      const [matrizesRes, categoriasRes, ativosRes] = await Promise.all([
+      const [matrizesRes, categoriasRes, ativosRes, controlesRes] = await Promise.all([
         supabase.from('riscos_matrizes').select(`
           id,
           nome,
@@ -206,12 +218,18 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
           )
         `).eq('empresa_id', profile.empresa_id),
         supabase.from('riscos_categorias').select('id, nome, cor').eq('empresa_id', profile.empresa_id),
-        supabase.from('ativos').select('id, nome, tipo').eq('empresa_id', profile.empresa_id)
+        supabase.from('ativos').select('id, nome, tipo').eq('empresa_id', profile.empresa_id),
+        supabase.from('controles')
+          .select('id, nome, codigo, criticidade')
+          .eq('empresa_id', profile.empresa_id)
+          .eq('status', 'ativo')
+          .order('nome'),
       ]);
 
       if (matrizesRes.data) setMatrizes(matrizesRes.data);
       if (categoriasRes.data) setCategorias(categoriasRes.data);
       if (ativosRes.data) setAtivos(ativosRes.data);
+      if (controlesRes.data) setControles(controlesRes.data);
     } catch (error: any) {
       toast.error('Erro ao carregar dados: ' + error.message);
     }
@@ -249,12 +267,21 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
         .from('riscos_ativos')
         .select('ativo_id')
         .eq('risco_id', riscoId);
-
-      if (data) {
-        form.setValue('ativos_vinculados', data.map(av => av.ativo_id));
-      }
+      if (data) form.setValue('ativos_vinculados', data.map(av => av.ativo_id));
     } catch (error) {
       console.error('Erro ao buscar ativos vinculados:', error);
+    }
+  };
+
+  const fetchControlesVinculados = async (riscoId: string) => {
+    try {
+      const { data } = await supabase
+        .from('controles_riscos')
+        .select('controle_id')
+        .eq('risco_id', riscoId);
+      if (data) form.setValue('controles_vinculados', data.map(cv => cv.controle_id));
+    } catch (error) {
+      console.error('Erro ao buscar controles vinculados:', error);
     }
   };
 
@@ -431,14 +458,22 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
 
       // Atualizar vínculos com ativos
       await supabase.from('riscos_ativos').delete().eq('risco_id', riscoId);
-      
       if (data.ativos_vinculados.length > 0) {
-        const vinculos = data.ativos_vinculados.map(ativoId => ({
-          risco_id: riscoId,
-          ativo_id: ativoId
-        }));
+        await supabase.from('riscos_ativos').insert(
+          data.ativos_vinculados.map(ativoId => ({ risco_id: riscoId, ativo_id: ativoId }))
+        );
+      }
 
-        await supabase.from('riscos_ativos').insert(vinculos);
+      // Atualizar vínculos com controles (tabela controles_riscos)
+      await supabase.from('controles_riscos').delete().eq('risco_id', riscoId);
+      if (data.controles_vinculados.length > 0) {
+        await supabase.from('controles_riscos').insert(
+          data.controles_vinculados.map(controleId => ({
+            risco_id: riscoId,
+            controle_id: controleId,
+            tipo_vinculacao: 'mitigacao',
+          }))
+        );
       }
 
       // Registrar histórico de avaliação automaticamente
@@ -969,14 +1004,71 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
                 )}
               />
 
+              {/* Controles vinculados (relação estruturada) */}
+              <div className="space-y-2">
+                <FormLabel className="flex items-center gap-2">
+                  Controles Vinculados
+                  {form.watch('controles_vinculados')?.length > 0 && (
+                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                      {form.watch('controles_vinculados').length} selecionado{form.watch('controles_vinculados').length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </FormLabel>
+                <p className="text-xs text-muted-foreground -mt-1">Selecione os controles cadastrados que mitigam este risco</p>
+                <FormField
+                  control={form.control}
+                  name="controles_vinculados"
+                  render={({ field }) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-lg p-3 bg-muted/20">
+                      {controles.length === 0 ? (
+                        <p className="text-sm text-muted-foreground col-span-2 py-2">
+                          Nenhum controle ativo cadastrado. Crie controles em Governança → Controles.
+                        </p>
+                      ) : (
+                        controles.map((controle) => (
+                          <div key={controle.id} className="flex items-center space-x-2 p-1 rounded hover:bg-background transition-colors">
+                            <Checkbox
+                              id={`ctrl-${controle.id}`}
+                              checked={field.value.includes(controle.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  field.onChange([...field.value, controle.id]);
+                                } else {
+                                  field.onChange(field.value.filter((id) => id !== controle.id));
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor={`ctrl-${controle.id}`}
+                              className="text-sm leading-none cursor-pointer flex items-center gap-1.5"
+                            >
+                              {controle.codigo && (
+                                <span className="text-[10px] text-muted-foreground font-mono bg-muted px-1 rounded">
+                                  {controle.codigo}
+                                </span>
+                              )}
+                              <span className="font-medium">{controle.nome}</span>
+                            </label>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
                 name="controles_existentes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Controles Existentes</FormLabel>
+                    <FormLabel>Observações sobre controles <span className="text-muted-foreground font-normal">(texto livre)</span></FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Descreva os controles já implementados..." className="min-h-[80px]" {...field} />
+                      <Textarea
+                        placeholder="Descreva controles não cadastrados ou observações adicionais..."
+                        className="min-h-[80px]"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
