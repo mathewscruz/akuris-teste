@@ -8,6 +8,7 @@ import { RecentActivities } from '@/components/dashboard/RecentActivities';
 import { RiskScoreTimeline } from '@/components/dashboard/RiskScoreTimeline';
 import AlertsDetailDialog from '@/components/dashboard/AlertsDetailDialog';
 import { UpcomingExpirations } from '@/components/dashboard/UpcomingExpirations';
+import { ActionItems } from '@/components/dashboard/ActionItems';
 
 
 import { useTrendData } from '@/components/dashboard/TrendIndicators';
@@ -132,8 +133,11 @@ export default function Dashboard() {
           <div className="min-w-0 md:col-span-2 xl:col-span-1"><RiskScoreTimeline /></div>
         </div>
 
-        {/* Atividades Recentes full width */}
-        <RecentActivities />
+        {/* Action Items + Atividades Recentes */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-5 w-full">
+          <div className="min-w-0 xl:col-span-1"><ActionItems /></div>
+          <div className="min-w-0 xl:col-span-2"><RecentActivities /></div>
+        </div>
 
         {/* Dialog de alertas */}
         <AlertsDetailDialog

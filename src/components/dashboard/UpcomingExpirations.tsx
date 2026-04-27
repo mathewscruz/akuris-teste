@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, FileKey, KeyRound, Handshake, Shield, Loader2 } from 'lucide-react';
+import { Calendar, FileKey, KeyRound, Handshake, Shield, FileText, BookOpen, Loader2 } from 'lucide-react';
 import { formatDateOnly } from '@/lib/date-utils';
 import { differenceInDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -13,7 +13,7 @@ interface ExpirationItem {
   id: string;
   name: string;
   date: string;
-  type: 'contrato' | 'licenca' | 'chave' | 'controle';
+  type: 'contrato' | 'licenca' | 'chave' | 'controle' | 'documento' | 'politica';
   daysLeft: number;
 }
 
@@ -31,7 +31,7 @@ export function UpcomingExpirations() {
       limit60.setDate(limit60.getDate() + 60);
       const results: ExpirationItem[] = [];
 
-      const [contratos, licencas, chaves, controles] = await Promise.all([
+      const [contratos, licencas, chaves, controles, documentos, politicas] = await Promise.all([
         supabase.from('contratos').select('id, nome, data_fim')
           .eq('empresa_id', profile.empresa_id)
           .gte('data_fim', now.toISOString())
@@ -53,6 +53,19 @@ export function UpcomingExpirations() {
           .gte('proxima_avaliacao', now.toISOString())
           .lte('proxima_avaliacao', limit60.toISOString())
           .order('proxima_avaliacao').limit(5),
+        supabase.from('documentos').select('id, nome, data_vencimento')
+          .eq('empresa_id', profile.empresa_id)
+          .not('data_vencimento', 'is', null)
+          .gte('data_vencimento', now.toISOString())
+          .lte('data_vencimento', limit60.toISOString())
+          .order('data_vencimento').limit(5),
+        supabase.from('politicas').select('id, titulo, data_validade')
+          .eq('empresa_id', profile.empresa_id)
+          .not('data_validade', 'is', null)
+          .gte('data_validade', now.toISOString())
+          .lte('data_validade', limit60.toISOString())
+          .neq('status', 'arquivada')
+          .order('data_validade').limit(5),
       ]);
 
       contratos.data?.forEach(c => results.push({
@@ -71,6 +84,14 @@ export function UpcomingExpirations() {
         id: ct.id, name: ct.nome, date: ct.proxima_avaliacao!, type: 'controle',
         daysLeft: differenceInDays(new Date(ct.proxima_avaliacao!), now)
       }));
+      documentos.data?.forEach(d => results.push({
+        id: d.id, name: d.nome, date: d.data_vencimento!, type: 'documento',
+        daysLeft: differenceInDays(new Date(d.data_vencimento!), now)
+      }));
+      politicas.data?.forEach(p => results.push({
+        id: p.id, name: p.titulo, date: p.data_validade!, type: 'politica',
+        daysLeft: differenceInDays(new Date(p.data_validade!), now)
+      }));
 
       return results.sort((a, b) => a.daysLeft - b.daysLeft).slice(0, 8);
     },
@@ -79,10 +100,12 @@ export function UpcomingExpirations() {
   });
 
   const typeConfig = {
-    contrato: { icon: Handshake, label: t('expirations.contract'), route: '/contratos' },
-    licenca: { icon: FileKey, label: t('expirations.license'), route: '/ativos/licencas' },
-    chave: { icon: KeyRound, label: t('expirations.key'), route: '/ativos/chaves' },
-    controle: { icon: Shield, label: t('expirations.control'), route: '/governanca?tab=controles' },
+    contrato:  { icon: Handshake, label: t('expirations.contract'),  route: '/contratos' },
+    licenca:   { icon: FileKey,   label: t('expirations.license'),   route: '/ativos/licencas' },
+    chave:     { icon: KeyRound,  label: t('expirations.key'),       route: '/ativos/chaves' },
+    controle:  { icon: Shield,    label: t('expirations.control'),   route: '/governanca?tab=controles' },
+    documento: { icon: FileText,  label: t('expirations.document'),  route: '/documentos' },
+    politica:  { icon: BookOpen,  label: t('expirations.policy'),    route: '/politicas' },
   };
 
   const getDaysVariant = (days: number) => {
