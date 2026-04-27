@@ -50,6 +50,7 @@ interface DataTableProps<T> {
   sortDirection?: 'asc' | 'desc'
   onSort?: (field: string) => void
   className?: string
+  rowClassName?: (item: T, index: number) => string
   // Pagination props
   paginated?: boolean
   pageSize?: number
@@ -74,7 +75,8 @@ export function DataTable<T extends Record<string, any>>({
   className,
   paginated = false,
   pageSize: initialPageSize = 10,
-  pageSizeOptions = [10, 20, 50, 100]
+  pageSizeOptions = [10, 20, 50, 100],
+  rowClassName,
 }: DataTableProps<T>) {
   const { t } = useLanguage()
   const _searchPlaceholder = searchPlaceholder ?? t('common.searchPlaceholder')
@@ -259,7 +261,7 @@ export function DataTable<T extends Record<string, any>>({
               </TableRow>
             ) : (
               paginatedData.map((item, index) => (
-                <TableRow key={item.id || index} className="hover:bg-muted/50 transition-colors">
+                <TableRow key={item.id || index} className={cn("hover:bg-muted/50 transition-colors", rowClassName?.(item, index))}>
                   {columns.map((column) => (
                     <TableCell
                       key={String(column.key)}

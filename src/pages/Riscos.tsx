@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { Plus, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag, X, Clock, FileText, Download, MoreHorizontal, Edit, Trash2, History, ShieldCheck, Paperclip } from 'lucide-react';
+import { Plus, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag, X, Clock, FileText, Download, MoreHorizontal, Edit, Trash2, History, ShieldCheck, Paperclip, ChevronRight, LayoutList, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -36,6 +36,7 @@ import { TrilhaAuditoriaRiscos } from '@/components/riscos/TrilhaAuditoriaRiscos
 import { HistoricoAvaliacoesDialog } from '@/components/riscos/HistoricoAvaliacoesDialog';
 import { AprovacaoRiscoDialog } from '@/components/riscos/AprovacaoRiscoDialog';
 import { exportRiscosPDF, exportRiscosCSV } from '@/components/riscos/ExportRiscosPDF';
+import { MatrizVisualizacao } from '@/components/riscos/MatrizVisualizacao';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Risco {
@@ -67,7 +68,9 @@ interface Risco {
   status_aprovacao?: string;
   aprovador_id?: string;
   historico_aprovacao?: any;
+  data_envio_aprovacao?: string;
   created_by?: string;
+  tratamentos_concluidos_count?: number;
 }
 
 
@@ -105,6 +108,9 @@ export function Riscos() {
   
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [viewMode, setViewMode] = useState<'table' | 'matrix'>('table');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [statusChangingId, setStatusChangingId] = useState<string | null>(null);
 
   // React Query for riscos
   const { data: riscos = [], isLoading: loading } = useQuery({
@@ -120,7 +126,7 @@ export function Riscos() {
           status, responsavel, controles_existentes,
           causas, consequencias, aceito, justificativa_aceite,
           created_at, data_proxima_revisao,
-          status_aprovacao, aprovador_id, historico_aprovacao,
+          status_aprovacao, aprovador_id, historico_aprovacao, data_envio_aprovacao,
           categoria:riscos_categorias(nome, cor),
           matriz:riscos_matrizes(nome)
         `)
@@ -136,13 +142,26 @@ export function Riscos() {
       if (riscoIds.length > 0) {
         const { data: tratamentos } = await supabase
           .from('riscos_tratamentos')
-          .select('risco_id')
+          .select('risco_id, status')
           .in('risco_id', riscoIds);
-        
-        tratamentosCount = (tratamentos || []).reduce((acc, t) => {
-          acc[t.risco_id] = (acc[t.risco_id] || 0) + 1;
+
+        const countsMap = (tratamentos || []).reduce((acc, t) => {
+          if (!acc[t.risco_id]) acc[t.risco_id] = { total: 0, concluidos: 0 };
+          acc[t.risco_id].total++;
+          const s = (t.status || '').toLowerCase().trim();
+          if (s === 'concluído' || s === 'concluido' || s === 'concluída' || s === 'concluida') {
+            acc[t.risco_id].concluidos++;
+          }
           return acc;
-        }, {} as Record<string, number>);
+        }, {} as Record<string, { total: number; concluidos: number }>);
+
+        // Converte para o formato legado (número total) mais o novo campo de concluídos
+        tratamentosCount = Object.fromEntries(
+          Object.entries(countsMap).map(([id, v]) => [id, v.total])
+        ) as unknown as Record<string, number>;
+
+        // Armazena contagem de concluídos separadamente para uso nas colunas
+        (tratamentosCount as any).__concluidos = countsMap;
       }
       
       if (data && data.length > 0) {
@@ -168,14 +187,16 @@ export function Riscos() {
             profiles?.map(p => [p.user_id, { nome: p.nome, foto_url: p.foto_url }]) || []
           );
           
+          const concluidosMap = (tratamentosCount as any).__concluidos as Record<string, { total: number; concluidos: number }> | undefined;
           return normalizedData.map(risco => {
-            const profileData = (risco.responsavel && risco.responsavel.trim() !== '') 
-              ? profileMap.get(risco.responsavel) 
+            const profileData = (risco.responsavel && risco.responsavel.trim() !== '')
+              ? profileMap.get(risco.responsavel)
               : null;
             return {
               ...risco,
               responsavel_nome: profileData?.nome || null,
-              responsavel_foto: profileData?.foto_url || null
+              responsavel_foto: profileData?.foto_url || null,
+              tratamentos_concluidos_count: concluidosMap?.[risco.id]?.concluidos || 0,
             };
           });
         }
@@ -269,34 +290,71 @@ export function Riscos() {
 
   const handleDelete = async () => {
     if (!riscoToDelete) return;
-
     try {
-      const { error } = await supabase
-        .from('riscos')
-        .delete()
-        .eq('id', riscoToDelete.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Risco excluído com sucesso!",
-      });
+      // Exclusão em lote quando id === 'bulk'
+      if (riscoToDelete.id === 'bulk') {
+        await handleBulkDelete();
+      } else {
+        const { error } = await supabase.from('riscos').delete().eq('id', riscoToDelete.id);
+        if (error) throw error;
+        toast({ title: 'Sucesso', description: 'Risco excluído com sucesso!' });
+        invalidateRiscos();
+      }
       setDeleteDialogOpen(false);
       setRiscoToDelete(null);
-      invalidateRiscos();
     } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: "Erro ao excluir risco: " + error.message,
-        variant: "destructive",
-      });
+      toast({ title: 'Erro', description: 'Erro ao excluir: ' + error.message, variant: 'destructive' });
     }
   };
 
   const openCreateDialog = () => {
     setEditingRisco(null);
     setRiscoDialogOpen(true);
+  };
+
+  const handleStatusChange = async (riscoId: string, novoStatus: string) => {
+    setStatusChangingId(riscoId);
+    try {
+      const { error } = await supabase
+        .from('riscos')
+        .update({ status: novoStatus })
+        .eq('id', riscoId);
+      if (error) throw error;
+      invalidateRiscos();
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } finally {
+      setStatusChangingId(null);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      const { error } = await supabase.from('riscos').delete().in('id', selectedIds);
+      if (error) throw error;
+      toast({ title: 'Sucesso', description: `${selectedIds.length} risco(s) excluído(s).` });
+      setSelectedIds([]);
+      invalidateRiscos();
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const handleBulkStatusChange = async (novoStatus: string) => {
+    if (selectedIds.length === 0) return;
+    try {
+      const { error } = await supabase
+        .from('riscos')
+        .update({ status: novoStatus })
+        .in('id', selectedIds);
+      if (error) throw error;
+      toast({ title: 'Sucesso', description: `Status alterado para ${formatStatus(novoStatus)} em ${selectedIds.length} risco(s).` });
+      setSelectedIds([]);
+      invalidateRiscos();
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
   };
 
   const handleDialogSuccess = () => {
@@ -359,13 +417,26 @@ export function Riscos() {
     return null;
   };
 
-  const getAprovacaoBadge = (status?: string) => {
-    switch (status) {
-      case 'aprovado': return <Badge className="bg-green-100 text-green-800 border-green-200 text-[10px] px-1.5 py-0">Aprovado</Badge>;
-      case 'rejeitado': return <Badge className="bg-red-100 text-red-800 border-red-200 text-[10px] px-1.5 py-0">Rejeitado</Badge>;
-      case 'pendente': return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-[10px] px-1.5 py-0">Pendente</Badge>;
-      default: return null;
+  const getAprovacaoBadge = (status?: string, dataEnvio?: string) => {
+    if (status === 'aprovado')
+      return <Badge className="bg-green-100 text-green-800 border-green-200 text-[10px] px-1.5 py-0">Aprovado</Badge>;
+    if (status === 'rejeitado')
+      return <Badge className="bg-red-100 text-red-800 border-red-200 text-[10px] px-1.5 py-0">Rejeitado</Badge>;
+    if (status === 'pendente') {
+      const dias = dataEnvio
+        ? differenceInDays(new Date(), new Date(dataEnvio))
+        : null;
+      const label = dias !== null && dias >= 0 ? `Pendente (${dias}d)` : 'Pendente';
+      const isUrgent = dias !== null && dias >= 3;
+      return (
+        <Badge
+          className={`${isUrgent ? 'bg-red-100 text-red-800 border-red-300' : 'bg-yellow-100 text-yellow-800 border-yellow-200'} text-[10px] px-1.5 py-0`}
+        >
+          {label}
+        </Badge>
+      );
     }
+    return null;
   };
 
   // Função para calcular variação percentual
@@ -375,6 +446,87 @@ export function Riscos() {
     const rounded = Math.round(Math.abs(diff));
     if (rounded === 0) return undefined;
     return { value: rounded, direction: diff > 0 ? 'up' : 'down' };
+  };
+
+  // ─── Borda colorida por nível de risco ──────────────────────────────────
+  const getRiscoRowClass = (nivel: string): string => {
+    const n = (nivel || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    if (n.includes('critico') || n.includes('muito alto')) return 'border-l-[3px] border-l-destructive';
+    if (n.includes('alto'))                                 return 'border-l-[3px] border-l-orange-500';
+    if (n.includes('medio') || n.includes('moderado'))     return 'border-l-[3px] border-l-yellow-500';
+    if (n.includes('baixo'))                               return 'border-l-[3px] border-l-green-500';
+    return 'border-l-[3px] border-l-transparent';
+  };
+
+  // ─── Barra de distribuição por nível ────────────────────────────────────
+  const RiskDistributionBar = ({ riscos }: { riscos: Risco[] }) => {
+    const total = riscos.length;
+    if (total === 0) return null;
+
+    const segments = [
+      {
+        key: 'critico', label: 'Crítico/M.Alto',
+        color: 'bg-destructive',
+        count: riscos.filter(r => {
+          const n = (r.nivel_risco_inicial || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+          return n.includes('critico') || n.includes('muito alto');
+        }).length,
+      },
+      {
+        key: 'alto', label: 'Alto',
+        color: 'bg-orange-500',
+        count: riscos.filter(r => {
+          const n = (r.nivel_risco_inicial || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+          return n === 'alto';
+        }).length,
+      },
+      {
+        key: 'medio', label: 'Médio',
+        color: 'bg-yellow-500',
+        count: riscos.filter(r => {
+          const n = (r.nivel_risco_inicial || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+          return n.includes('medio') || n.includes('moderado');
+        }).length,
+      },
+      {
+        key: 'baixo', label: 'Baixo',
+        color: 'bg-green-500',
+        count: riscos.filter(r => {
+          const n = (r.nivel_risco_inicial || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+          return n.includes('baixo');
+        }).length,
+      },
+    ].filter(s => s.count > 0);
+
+    return (
+      <div className="space-y-1.5">
+        {/* Barra empilhada */}
+        <div className="flex h-3 rounded-full overflow-hidden gap-px">
+          {segments.map(s => (
+            <div
+              key={s.key}
+              className={`${s.color} transition-all duration-500`}
+              style={{ width: `${(s.count / total) * 100}%` }}
+              title={`${s.label}: ${s.count}`}
+            />
+          ))}
+        </div>
+        {/* Legenda inline */}
+        <div className="flex items-center gap-3 flex-wrap">
+          {segments.map(s => (
+            <div key={s.key} className="flex items-center gap-1">
+              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${s.color}`} />
+              <span className="text-xs text-muted-foreground">
+                {s.label}: <span className="font-semibold text-foreground">{s.count}</span>
+              </span>
+            </div>
+          ))}
+          <span className="text-xs text-muted-foreground ml-auto">
+            {total} total
+          </span>
+        </div>
+      </div>
+    );
   };
 
   // Mini sparkline SVG component
@@ -414,6 +566,15 @@ export function Riscos() {
     );
   }
 
+  const STATUS_OPTIONS = [
+    { value: 'identificado',  label: 'Identificado'  },
+    { value: 'analisado',     label: 'Analisado'     },
+    { value: 'em_tratamento', label: 'Em Tratamento' },
+    { value: 'tratado',       label: 'Tratado'       },
+    { value: 'monitorado',    label: 'Monitorado'    },
+    { value: 'aceito',        label: 'Aceito'        },
+  ];
+
   const riscoColumns: Array<{
     key: string;
     label: string;
@@ -421,6 +582,26 @@ export function Riscos() {
     className?: string;
     render?: (value: any, risco: Risco) => React.ReactNode;
   }> = [
+    // Coluna de seleção (checkbox)
+    {
+      key: 'select',
+      label: '',
+      className: 'w-[40px]',
+      render: (_: any, risco: Risco) => (
+        <input
+          type="checkbox"
+          className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
+          checked={selectedIds.includes(risco.id)}
+          onChange={(e) => {
+            e.stopPropagation();
+            setSelectedIds(prev =>
+              e.target.checked ? [...prev, risco.id] : prev.filter(id => id !== risco.id)
+            );
+          }}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+    },
     {
       key: 'nome',
       label: 'Nome',
@@ -434,48 +615,92 @@ export function Riscos() {
       label: 'Categoria',
       render: (value: any) => value ? (
         <div className="flex items-center gap-2">
-          {value.cor && <div className="w-3 h-3 rounded-full" style={{ backgroundColor: value.cor }} />}
+          {value.cor && <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: value.cor }} />}
           <span className="text-sm">{value.nome}</span>
         </div>
-      ) : '-'
+      ) : <span className="text-muted-foreground text-sm">—</span>
     },
     {
+      // Coluna unificada: Nível Inicial → Residual + alerta se em tratamento sem residual
       key: 'nivel_risco_inicial',
-      label: 'Nível Inicial',
-      render: (value: string) => (
-        <Badge className={`${getNivelRiscoColor(value)} border whitespace-nowrap`}>{value}</Badge>
-      )
+      label: 'Nível',
+      render: (_value: string, risco: Risco) => {
+        const semResidual = risco.status === 'em_tratamento' && !risco.nivel_risco_residual;
+        return (
+          <div className="flex items-center gap-1 flex-wrap">
+            <Badge className={`${getNivelRiscoColor(risco.nivel_risco_inicial)} border whitespace-nowrap text-xs`}>
+              {risco.nivel_risco_inicial}
+            </Badge>
+            {risco.nivel_risco_residual ? (
+              <>
+                <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <Badge className={`${getNivelRiscoColor(risco.nivel_risco_residual)} border whitespace-nowrap text-xs`}>
+                  {risco.nivel_risco_residual}
+                </Badge>
+              </>
+            ) : semResidual ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-warning cursor-help ml-0.5">
+                    <AlertTriangle className="h-3.5 w-3.5 inline text-yellow-500" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[200px] text-xs">
+                  Em tratamento há mais de 0 dias sem avaliação residual cadastrada
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <span className="text-[10px] text-muted-foreground italic ml-1">sem residual</span>
+            )}
+          </div>
+        );
+      }
     },
     {
-      key: 'nivel_risco_residual',
-      label: 'Nível Residual',
-      render: (value: string) => value ? (
-        <Badge className={`${getNivelRiscoColor(value)} border whitespace-nowrap`}>{value}</Badge>
-      ) : <Badge className="bg-muted text-muted-foreground border whitespace-nowrap">Não avaliado</Badge>
-    },
-    {
+      // Status com dropdown inline para troca rápida
       key: 'status',
       label: 'Status',
-      render: (value: string) => (
-        <Badge className={`${getRiscoStatusColor(value)} border whitespace-nowrap`}>{formatStatus(value)}</Badge>
+      render: (value: string, risco: Risco) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Badge
+              className={`${getRiscoStatusColor(value)} border cursor-pointer hover:opacity-75 transition-opacity whitespace-nowrap select-none`}
+            >
+              {statusChangingId === risco.id ? '…' : formatStatus(value)}
+            </Badge>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-44">
+            {STATUS_OPTIONS.map(opt => (
+              <DropdownMenuItem
+                key={opt.value}
+                onClick={() => handleStatusChange(risco.id, opt.value)}
+                className={opt.value === value ? 'font-semibold' : ''}
+              >
+                {opt.label}
+                {opt.value === value && <span className="ml-auto text-primary">✓</span>}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )
     },
     {
       key: 'tags',
-      label: 'Tags',
+      label: 'Flags',
       render: (_value: any, risco: Risco) => {
         const tags: React.ReactNode[] = [];
-        const aprovBadge = getAprovacaoBadge(risco.status_aprovacao);
+        const aprovBadge = getAprovacaoBadge(risco.status_aprovacao, risco.data_envio_aprovacao);
         if (aprovBadge) tags.push(aprovBadge);
-        if (risco.aceito) tags.push(<Badge key="aceito" className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] px-1.5 py-0">Aceito</Badge>);
+        if (risco.aceito) tags.push(
+          <Badge key="aceito" className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] px-1.5 py-0">Aceito</Badge>
+        );
         const revBadge = getRevisaoBadge(risco.data_proxima_revisao);
         if (revBadge) tags.push(revBadge);
 
-        if (tags.length === 0) return <span className="text-muted-foreground text-sm">-</span>;
-        
+        if (tags.length === 0) return <span className="text-muted-foreground text-sm">—</span>;
+
         const visible = tags.slice(0, 2);
         const extra = tags.length - 2;
-        
         return (
           <div className="flex items-center gap-1 flex-wrap">
             {visible}
@@ -488,27 +713,50 @@ export function Riscos() {
     },
     {
       key: 'tratamentos_count',
-      label: 'Tratam.',
-      className: 'text-center',
-      render: (value: number, risco: Risco) => (
-        <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => openTratamentosDialog(risco)}>
-          <Shield className="h-4 w-4" />
-          <Badge variant={value > 0 ? "default" : "outline"} className="ml-1">{value || 0}</Badge>
-        </Button>
-      )
+      label: 'Tratamentos',
+      className: 'w-[110px]',
+      render: (value: number, risco: Risco) => {
+        const total     = value || 0;
+        const concluidos = risco.tratamentos_concluidos_count || 0;
+        const pct       = total > 0 ? Math.round((concluidos / total) * 100) : 0;
+        const barColor  = pct === 100 ? 'bg-green-500' : pct > 0 ? 'bg-primary' : 'bg-muted-foreground/20';
+
+        return (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex flex-col items-center gap-0.5 h-auto py-1 px-2 w-full"
+            onClick={() => openTratamentosDialog(risco)}
+          >
+            <span className="text-xs font-medium text-foreground">
+              {total === 0 ? '—' : `${concluidos}/${total}`}
+            </span>
+            {total > 0 && (
+              <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            )}
+          </Button>
+        );
+      }
     },
     {
       key: 'responsavel',
       label: 'Resp.',
-      render: (value: string, risco: Risco) => {
+      render: (_value: string, risco: Risco) => {
         if (risco.responsavel_nome) {
           return (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Avatar className="h-8 w-8 cursor-pointer">
-                    {risco.responsavel_foto && <AvatarImage src={risco.responsavel_foto} alt={risco.responsavel_nome} />}
-                    <AvatarFallback className="bg-primary/10 text-primary">
+                  <Avatar className="h-7 w-7 cursor-pointer">
+                    {risco.responsavel_foto && (
+                      <AvatarImage src={risco.responsavel_foto} alt={risco.responsavel_nome} />
+                    )}
+                    <AvatarFallback className="bg-primary/10 text-primary text-[10px]">
                       {risco.responsavel_nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
@@ -518,14 +766,14 @@ export function Riscos() {
             </TooltipProvider>
           );
         }
-        return '-';
+        return <span className="text-muted-foreground text-sm">—</span>;
       }
     },
     {
       key: 'actions',
       label: 'Ações',
       className: 'w-[60px]',
-      render: (value: any, risco: Risco) => (
+      render: (_value: any, risco: Risco) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -534,28 +782,25 @@ export function Riscos() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => handleEdit(risco)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Editar
+              <Edit className="mr-2 h-4 w-4" />Editar
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => openTratamentosDialog(risco)}>
-              <Shield className="mr-2 h-4 w-4" />
-              Tratamentos ({risco.tratamentos_count || 0})
+              <Shield className="mr-2 h-4 w-4" />Tratamentos ({risco.tratamentos_count || 0})
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setAprovacaoRisco(risco)}>
-              <ShieldCheck className="mr-2 h-4 w-4" />
-              Aprovação
+              <ShieldCheck className="mr-2 h-4 w-4" />Aprovação
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setHistoricoRisco(risco)}>
-              <Clock className="mr-2 h-4 w-4" />
-              Histórico Avaliações
+              <Clock className="mr-2 h-4 w-4" />Histórico Avaliações
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setAuditRisco(risco)}>
-              <History className="mr-2 h-4 w-4" />
-              Trilha de Auditoria
+              <History className="mr-2 h-4 w-4" />Trilha de Auditoria
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => openDeleteDialog(risco)} className="text-destructive focus:text-destructive">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Excluir
+            <DropdownMenuItem
+              onClick={() => openDeleteDialog(risco)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />Excluir
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -674,9 +919,40 @@ export function Riscos() {
           })()}
         </div>
 
+        {/* Barra de distribuição por nível */}
+        {sortedRiscos.length > 0 && (
+          <Card className="rounded-lg border">
+            <CardContent className="px-4 py-3">
+              <RiskDistributionBar riscos={sortedRiscos} />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Toggle Lista / Matriz */}
+            <div className="flex items-center rounded-md border overflow-hidden">
+              <Button
+                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                size="sm"
+                className="rounded-none h-8 px-3"
+                onClick={() => setViewMode('table')}
+                title="Visualização em lista"
+              >
+                <LayoutList className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'matrix' ? 'default' : 'ghost'}
+                size="sm"
+                className="rounded-none h-8 px-3 border-l"
+                onClick={() => setViewMode('matrix')}
+                title="Visualização em matriz"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </div>
+
             {idsFilter.length > 0 && (
               <Badge variant="secondary" className="flex items-center gap-1 whitespace-nowrap">
                 Filtro da Matriz ({idsFilter.length})
@@ -696,12 +972,10 @@ export function Riscos() {
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={() => exportRiscosCSV(sortedRiscos)}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  Exportar CSV
+                  <FileText className="mr-2 h-4 w-4" />Exportar CSV
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => exportRiscosPDF(sortedRiscos, stats)}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  Exportar PDF
+                  <FileText className="mr-2 h-4 w-4" />Exportar PDF
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -711,7 +985,7 @@ export function Riscos() {
             </Button>
             <Button variant="outline" size="sm" onClick={() => setMatrizDialogOpen(true)} className="whitespace-nowrap">
               <Settings className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Matriz</span>
+              <span className="hidden sm:inline">Config. Matriz</span>
             </Button>
             <Button size="sm" onClick={openCreateDialog}>
               <Plus className="h-4 w-4 sm:mr-2" />
@@ -720,7 +994,75 @@ export function Riscos() {
           </div>
         </div>
 
-        {/* DataTable */}
+        {/* Barra de ações em lote — aparece quando há itens selecionados */}
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg border bg-primary/5 border-primary/20">
+            <span className="text-sm font-medium text-primary">
+              {selectedIds.length} risco{selectedIds.length > 1 ? 's' : ''} selecionado{selectedIds.length > 1 ? 's' : ''}
+            </span>
+            <div className="flex items-center gap-2 ml-auto flex-wrap">
+              {/* Alterar status em lote */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 text-xs">
+                    Alterar Status
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {STATUS_OPTIONS.map(opt => (
+                    <DropdownMenuItem key={opt.value} onClick={() => handleBulkStatusChange(opt.value)}>
+                      {opt.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Exportar selecionados */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => exportRiscosCSV(sortedRiscos.filter(r => selectedIds.includes(r.id)))}
+              >
+                <Download className="h-3.5 w-3.5 mr-1" />
+                Exportar
+              </Button>
+
+              {/* Excluir selecionados */}
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => {
+                  setRiscoToDelete({ id: 'bulk', nome: `${selectedIds.length} riscos selecionados` } as any);
+                  setDeleteDialogOpen(true);
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                Excluir
+              </Button>
+
+              {/* Desmarcar tudo */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setSelectedIds([])}
+              >
+                <X className="h-3.5 w-3.5 mr-1" />
+                Limpar
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Vista da Matriz */}
+        {viewMode === 'matrix' && (
+          <MatrizVisualizacao />
+        )}
+
+        {/* DataTable — só renderiza quando viewMode === 'table' */}
+        {viewMode === 'table' && (
         <Card className="rounded-lg border overflow-hidden">
           <CardContent className="p-0">
             <DataTable
@@ -735,6 +1077,7 @@ export function Riscos() {
               sortField={sortField}
               sortDirection={sortDirection}
               onSort={handleSort}
+              rowClassName={(risco: Risco) => getRiscoRowClass(risco.nivel_risco_inicial)}
               emptyState={{
                 icon: <AlertTriangle className="h-8 w-8" />,
                 title: searchTerm || statusFilter !== '' || nivelFilter !== '' || aceitoFilter !== ''
@@ -751,6 +1094,7 @@ export function Riscos() {
             />
           </CardContent>
         </Card>
+        )}
         
         {/* Dialogs */}
         <RiscoDialog
@@ -783,7 +1127,10 @@ export function Riscos() {
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           title="Excluir Risco"
-          description={`Tem certeza que deseja excluir o risco "${riscoToDelete?.nome}"? Esta ação não pode ser desfeita.`}
+          description={riscoToDelete?.id === 'bulk'
+            ? `Tem certeza que deseja excluir os ${selectedIds.length} riscos selecionados? Esta ação não pode ser desfeita.`
+            : `Tem certeza que deseja excluir o risco "${riscoToDelete?.nome}"? Esta ação não pode ser desfeita.`
+          }
           onConfirm={handleDelete}
         />
 
