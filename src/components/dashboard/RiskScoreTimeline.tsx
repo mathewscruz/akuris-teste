@@ -5,27 +5,60 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { useQuery } from '@tanstack/react-query';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, Legend,
+} from 'recharts';
 import { TrendingUp, TrendingDown, AlertTriangle, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-interface RiskData {
+interface ChartPoint {
   month: string;
   criticos: number;
   altos: number;
   medios: number;
   baixos: number;
+  compliance?: number | null;
 }
 
 type TimeRange = 'week' | 'month' | 'year';
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function buildPeriods(timeRange: TimeRange, now: Date) {
+  const periods: { end: Date; label: string }[] = [];
+
+  if (timeRange === 'week') {
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      d.setHours(23, 59, 59, 999);
+      periods.push({ end: d, label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) });
+    }
+  } else if (timeRange === 'month') {
+    for (let i = 3; i >= 0; i--) {
+      const endDate = new Date(now);
+      endDate.setDate(endDate.getDate() - i * 7);
+      periods.push({ end: endDate, label: `Sem ${4 - i}` });
+    }
+  } else {
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+      periods.push({ end: d, label: d.toLocaleDateString('pt-BR', { month: 'short' }) });
+    }
+  }
+  return periods;
+}
+
+// ─── Component ──────────────────────────────────────────────────────────────
 
 export function RiskScoreTimeline() {
   const { profile } = useAuth();
   const [timeRange, setTimeRange] = useState<TimeRange>('month');
   const { t } = useLanguage();
 
-  // Query única otimizada
-  const { data: riscos, isLoading } = useQuery({
+  // Riscos (existente)
+  const { data: riscos, isLoading: loadingRiscos } = useQuery({
     queryKey: ['riscos-timeline', profile?.empresa_id],
     queryFn: async () => {
       if (!profile?.empresa_id) return [];
@@ -40,45 +73,63 @@ export function RiskScoreTimeline() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Processar dados no cliente
+  // Histórico de compliance (gap_analysis_score_history)
+  const { data: complianceHistory } = useQuery({
+    queryKey: ['compliance-history-timeline', profile?.empresa_id],
+    queryFn: async () => {
+      if (!profile?.empresa_id) return [];
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+      const { data, error } = await supabase
+        .from('gap_analysis_score_history')
+        .select('recorded_at, score')
+        .eq('empresa_id', profile.empresa_id)
+        .gte('recorded_at', oneYearAgo.toISOString())
+        .order('recorded_at', { ascending: true });
+      if (error) return [];
+      return data || [];
+    },
+    enabled: !!profile?.empresa_id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const { chartData, totalCritical, trend } = useMemo(() => {
     if (!riscos || riscos.length === 0) {
       return { chartData: [], totalCritical: 0, trend: 'stable' as const };
     }
 
     const now = new Date();
-    let periods: { end: Date; label: string }[] = [];
+    const periods = buildPeriods(timeRange, now);
 
-    if (timeRange === 'week') {
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        date.setHours(23, 59, 59, 999);
-        periods.push({ end: date, label: date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) });
-      }
-    } else if (timeRange === 'month') {
-      for (let i = 3; i >= 0; i--) {
-        const endDate = new Date(now);
-        endDate.setDate(endDate.getDate() - (i * 7));
-        const startDate = new Date(endDate);
-        startDate.setDate(startDate.getDate() - 6);
-        periods.push({ end: endDate, label: `Sem ${4 - i}` });
-      }
-    } else {
-      for (let i = 11; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-        periods.push({ end: date, label: date.toLocaleDateString('pt-BR', { month: 'short' }) });
-      }
-    }
+    const processedData: ChartPoint[] = periods.map((period) => {
+      const riscosAte = riscos.filter((r) => new Date(r.created_at) <= period.end);
 
-    const processedData: RiskData[] = periods.map(period => {
-      const riscosAtePeriodo = riscos.filter(r => new Date(r.created_at) <= period.end);
+      // Compliance: média dos scores registrados até este período
+      let complianceAvg: number | null = null;
+      if (complianceHistory && complianceHistory.length > 0) {
+        const relevant = complianceHistory.filter(
+          (c) => new Date(c.recorded_at) <= period.end
+        );
+        if (relevant.length > 0) {
+          complianceAvg = Math.round(
+            relevant.reduce((sum, c) => sum + Number(c.score), 0) / relevant.length
+          );
+        }
+      }
+
       return {
         month: period.label,
-        criticos: riscosAtePeriodo.filter(r => r.nivel_risco_inicial === 'Crítico').length,
-        altos: riscosAtePeriodo.filter(r => r.nivel_risco_inicial === 'Alto' || r.nivel_risco_inicial === 'Muito Alto').length,
-        medios: riscosAtePeriodo.filter(r => r.nivel_risco_inicial === 'Médio' || r.nivel_risco_inicial === 'Moderado').length,
-        baixos: riscosAtePeriodo.filter(r => r.nivel_risco_inicial === 'Baixo' || r.nivel_risco_inicial === 'Muito Baixo').length
+        criticos: riscosAte.filter((r) => r.nivel_risco_inicial === 'Crítico').length,
+        altos: riscosAte.filter((r) =>
+          ['Alto', 'Muito Alto'].includes(r.nivel_risco_inicial)
+        ).length,
+        medios: riscosAte.filter((r) =>
+          ['Médio', 'Moderado'].includes(r.nivel_risco_inicial)
+        ).length,
+        baixos: riscosAte.filter((r) =>
+          ['Baixo', 'Muito Baixo'].includes(r.nivel_risco_inicial)
+        ).length,
+        compliance: complianceAvg,
       };
     });
 
@@ -90,28 +141,38 @@ export function RiskScoreTimeline() {
     return {
       chartData: processedData,
       totalCritical: current?.criticos || 0,
-      trend: currentTotal > previousTotal ? 'up' : currentTotal < previousTotal ? 'down' : 'stable'
+      trend:
+        currentTotal > previousTotal
+          ? ('up' as const)
+          : currentTotal < previousTotal
+          ? ('down' as const)
+          : ('stable' as const),
     };
-  }, [riscos, timeRange]);
+  }, [riscos, complianceHistory, timeRange]);
+
+  // Verifica se há dados de compliance para exibir a linha
+  const hasComplianceData = chartData.some((d) => d.compliance !== null);
 
   const customTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-card border rounded-lg p-3 shadow-md">
-          <p className="font-medium mb-2">{`${t('dashboard.period')}: ${label}`}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }} className="text-sm">{`${entry.name}: ${entry.value}`}</p>
-          ))}
-        </div>
-      );
-    }
-    return null;
+    if (!active || !payload || !payload.length) return null;
+    return (
+      <div className="bg-card border rounded-lg p-3 shadow-md">
+        <p className="font-medium mb-2">{`${t('dashboard.period')}: ${label}`}</p>
+        {payload.map((entry: any, i: number) => (
+          <p key={i} style={{ color: entry.color }} className="text-sm">
+            {`${entry.name}: ${entry.value}${entry.name === t('dashboard.complianceLine') ? '%' : ''}`}
+          </p>
+        ))}
+      </div>
+    );
   };
 
-  if (isLoading) {
+  if (loadingRiscos) {
     return (
       <Card>
-        <CardHeader><CardTitle>{t('dashboard.riskEvolution')}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>{t('dashboard.riskEvolution')}</CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="h-80 flex items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -144,6 +205,7 @@ export function RiskScoreTimeline() {
           </Badge>
         </div>
       </CardHeader>
+
       <CardContent className="flex-1 flex flex-col">
         <div className="h-52 sm:h-72 w-full overflow-hidden">
           <ResponsiveContainer width="100%" height="100%">
@@ -152,19 +214,84 @@ export function RiskScoreTimeline() {
               <XAxis dataKey="month" axisLine={false} tickLine={false} />
               <YAxis axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip content={customTooltip} />
-              
-              <Line type="monotone" dataKey="criticos" stroke="hsl(var(--destructive))" strokeWidth={3} name={t('dashboard.critical')} dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="altos" stroke="hsl(var(--warning))" strokeWidth={2} name={t('dashboard.high')} dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="medios" stroke="hsl(var(--primary))" strokeWidth={2} name={t('dashboard.medium')} dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="baixos" stroke="hsl(var(--muted-foreground))" strokeWidth={2} name={t('dashboard.low')} dot={{ r: 3 }} />
+              <Legend />
+
+              {/* Linhas de risco */}
+              <Line
+                type="monotone"
+                dataKey="criticos"
+                stroke="hsl(var(--destructive))"
+                strokeWidth={3}
+                name={t('dashboard.critical')}
+                dot={{ r: 3 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="altos"
+                stroke="hsl(var(--warning))"
+                strokeWidth={2}
+                name={t('dashboard.high')}
+                dot={{ r: 3 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="medios"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
+                name={t('dashboard.medium')}
+                dot={{ r: 3 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="baixos"
+                stroke="hsl(var(--muted-foreground))"
+                strokeWidth={2}
+                name={t('dashboard.low')}
+                dot={{ r: 3 }}
+              />
+
+              {/* Linha de compliance — só renderiza se houver dados históricos */}
+              {hasComplianceData && (
+                <Line
+                  type="monotone"
+                  dataKey="compliance"
+                  stroke="hsl(var(--success, 142 71% 45%))"
+                  strokeWidth={2}
+                  strokeDasharray="5 3"
+                  name={t('dashboard.complianceLine')}
+                  dot={{ r: 3 }}
+                  connectNulls
+                />
+              )}
             </LineChart>
           </ResponsiveContainer>
         </div>
+
         <div className="mt-auto grid grid-cols-2 sm:grid-cols-4 gap-4 text-center border-t pt-4">
-          <div><p className="text-lg font-bold text-destructive">{chartData[chartData.length - 1]?.criticos || 0}</p><p className="text-xs text-muted-foreground">{t('dashboard.critical')}</p></div>
-          <div><p className="text-lg font-bold text-warning">{chartData[chartData.length - 1]?.altos || 0}</p><p className="text-xs text-muted-foreground">{t('dashboard.high')}</p></div>
-          <div><p className="text-lg font-bold text-primary">{chartData[chartData.length - 1]?.medios || 0}</p><p className="text-xs text-muted-foreground">{t('dashboard.medium')}</p></div>
-          <div><p className="text-lg font-bold text-muted-foreground">{chartData[chartData.length - 1]?.baixos || 0}</p><p className="text-xs text-muted-foreground">{t('dashboard.low')}</p></div>
+          <div>
+            <p className="text-lg font-bold text-destructive">
+              {chartData[chartData.length - 1]?.criticos || 0}
+            </p>
+            <p className="text-xs text-muted-foreground">{t('dashboard.critical')}</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold text-warning">
+              {chartData[chartData.length - 1]?.altos || 0}
+            </p>
+            <p className="text-xs text-muted-foreground">{t('dashboard.high')}</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold text-primary">
+              {chartData[chartData.length - 1]?.medios || 0}
+            </p>
+            <p className="text-xs text-muted-foreground">{t('dashboard.medium')}</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold text-muted-foreground">
+              {chartData[chartData.length - 1]?.baixos || 0}
+            </p>
+            <p className="text-xs text-muted-foreground">{t('dashboard.low')}</p>
+          </div>
         </div>
       </CardContent>
     </Card>

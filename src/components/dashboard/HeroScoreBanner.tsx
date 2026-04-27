@@ -1,5 +1,5 @@
 import { HealthScoreGauge } from './HealthScoreGauge';
-import { Shield, AlertTriangle, Target, TrendingUp } from 'lucide-react';
+import { Shield, AlertTriangle, Target, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface HeroScoreBannerProps {
@@ -8,16 +8,57 @@ interface HeroScoreBannerProps {
   activeControls: number;
   complianceScore: number;
   userName: string;
+  scoreDelta?: number | null;
+  scoreDirection?: 'up' | 'down' | 'stable' | null;
 }
 
-export function HeroScoreBanner({ 
-  healthScore, 
-  criticalAlerts, 
-  activeControls, 
+function ScoreTrend({
+  delta,
+  direction,
+}: {
+  delta: number | null;
+  direction: 'up' | 'down' | 'stable' | null;
+}) {
+  if (delta === null || direction === null) return null;
+
+  if (direction === 'stable') {
+    return (
+      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+        <Minus className="h-3 w-3" />
+        <span>sem variação</span>
+      </span>
+    );
+  }
+
+  const isUp = direction === 'up';
+  return (
+    <span
+      className={`flex items-center gap-1 text-xs font-semibold ${
+        isUp ? 'text-green-500' : 'text-destructive'
+      }`}
+    >
+      {isUp ? (
+        <TrendingUp className="h-3 w-3" />
+      ) : (
+        <TrendingDown className="h-3 w-3" />
+      )}
+      {isUp ? '+' : ''}
+      {delta} pts
+    </span>
+  );
+}
+
+export function HeroScoreBanner({
+  healthScore,
+  criticalAlerts,
+  activeControls,
   complianceScore,
-  userName 
+  userName,
+  scoreDelta,
+  scoreDirection,
 }: HeroScoreBannerProps) {
   const { t } = useLanguage();
+
   const metrics = [
     {
       icon: AlertTriangle,
@@ -37,21 +78,32 @@ export function HeroScoreBanner({
       icon: Target,
       label: t('dashboard.compliance'),
       value: `${complianceScore}%`,
-      color: complianceScore >= 70 ? 'text-success' : complianceScore >= 50 ? 'text-warning' : 'text-destructive',
-      bgColor: complianceScore >= 70 ? 'bg-success/10' : complianceScore >= 50 ? 'bg-warning/10' : 'bg-destructive/10',
+      color:
+        complianceScore >= 70
+          ? 'text-success'
+          : complianceScore >= 50
+          ? 'text-warning'
+          : 'text-destructive',
+      bgColor:
+        complianceScore >= 70
+          ? 'bg-success/10'
+          : complianceScore >= 50
+          ? 'bg-warning/10'
+          : 'bg-destructive/10',
     },
   ];
 
   return (
     <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-primary/5 via-card to-accent/5 p-4 md:p-6 lg:p-8">
-      {/* Decorative elements */}
+      {/* Decorative blurs */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
-      
+
       <div className="relative flex flex-col lg:flex-row items-center gap-4 lg:gap-10">
-        {/* Gauge */}
-        <div className="shrink-0">
+        {/* Gauge + trend */}
+        <div className="shrink-0 flex flex-col items-center gap-1">
           <HealthScoreGauge score={healthScore} />
+          <ScoreTrend delta={scoreDelta ?? null} direction={scoreDirection ?? null} />
         </div>
 
         {/* Content */}
@@ -66,7 +118,7 @@ export function HeroScoreBanner({
           {/* Metrics row */}
           <div className="flex flex-wrap justify-center lg:justify-start gap-3">
             {metrics.map((metric) => (
-              <div 
+              <div
                 key={metric.label}
                 className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg border bg-card/80 backdrop-blur-sm"
               >
@@ -75,7 +127,9 @@ export function HeroScoreBanner({
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground leading-none">{metric.label}</p>
-                  <p className={`text-sm font-bold ${metric.color} leading-tight mt-0.5`}>{metric.value}</p>
+                  <p className={`text-sm font-bold ${metric.color} leading-tight mt-0.5`}>
+                    {metric.value}
+                  </p>
                 </div>
               </div>
             ))}

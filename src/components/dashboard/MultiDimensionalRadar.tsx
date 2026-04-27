@@ -4,13 +4,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useRadarChartData, RadarDataPoint } from "@/hooks/useRadarChartData";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { 
-  CheckCircle2, AlertCircle, XCircle, AlertTriangle, Shield, 
+import {
+  CheckCircle2, AlertCircle, XCircle, AlertTriangle, Shield,
   Monitor, Zap, Target, ClipboardCheck, FileText, MessageSquareWarning,
-  ChevronRight, Minus
+  ChevronRight, Minus, TrendingUp, TrendingDown,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuth } from "@/components/AuthProvider";
+import { useDimensionScoreTrend } from "@/hooks/useHealthScoreTrend";
 
 const iconMap: Record<string, React.ComponentType<any>> = {
   AlertTriangle, Shield, Monitor, Zap, Target, ClipboardCheck, FileText, MessageSquareWarning,
@@ -32,7 +34,37 @@ const getScoreTextColor = (score: number, hasData: boolean) => {
   return 'text-destructive';
 };
 
-const MaturityRow = ({ item, navigate, t }: { item: RadarDataPoint; navigate: any; t: any }) => {
+function DeltaBadge({ delta }: { delta: number | null | undefined }) {
+  if (delta === null || delta === undefined) return null;
+  if (delta === 0) return (
+    <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground ml-1">
+      <Minus className="h-2.5 w-2.5" />
+    </span>
+  );
+  const isUp = delta > 0;
+  return (
+    <span
+      className={`flex items-center gap-0.5 text-[10px] font-medium ml-1 ${
+        isUp ? 'text-green-500' : 'text-destructive'
+      }`}
+    >
+      {isUp ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+      {isUp ? '+' : ''}{delta}
+    </span>
+  );
+}
+
+const MaturityRow = ({
+  item,
+  navigate,
+  t,
+  delta,
+}: {
+  item: RadarDataPoint;
+  navigate: any;
+  t: any;
+  delta?: number | null;
+}) => {
   const Icon = iconMap[item.icon] || FileText;
   const colorClass = getScoreColor(item.score, item.hasData);
   const textColor = getScoreTextColor(item.score, item.hasData);
@@ -47,20 +79,25 @@ const MaturityRow = ({ item, navigate, t }: { item: RadarDataPoint; navigate: an
           <div className="flex-shrink-0 h-7 w-7 rounded-md bg-muted/80 flex items-center justify-center group-hover:bg-muted">
             <Icon className="h-3.5 w-3.5 text-foreground/70" />
           </div>
-          
+
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs font-medium text-foreground truncate">{item.subject}</span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-0.5">
                 {item.hasData ? (
-                  <span className={`text-xs font-bold ${textColor}`}>{item.score}%</span>
+                  <>
+                    <span className={`text-xs font-bold ${textColor}`}>{item.score}%</span>
+                    <DeltaBadge delta={delta} />
+                  </>
                 ) : (
-                  <span className="text-[10px] text-muted-foreground italic">{t('dashboard.noData') || 'Sem dados'}</span>
+                  <span className="text-[10px] text-muted-foreground italic">
+                    {t('dashboard.noData') || 'Sem dados'}
+                  </span>
                 )}
               </div>
             </div>
             <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-              <div 
+              <div
                 className={`h-full rounded-full transition-all duration-700 ease-out ${colorClass}`}
                 style={{ width: item.hasData ? `${Math.max(item.score, 2)}%` : '0%' }}
               />
@@ -80,6 +117,11 @@ const MaturityRow = ({ item, navigate, t }: { item: RadarDataPoint; navigate: an
             </p>
           ))}
         </div>
+        {delta !== null && delta !== undefined && (
+          <p className={`text-xs mt-1.5 font-medium ${delta > 0 ? 'text-green-500' : delta < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+            {delta > 0 ? `▲ +${delta} pts vs ontem` : delta < 0 ? `▼ ${delta} pts vs ontem` : '— sem variação'}
+          </p>
+        )}
       </TooltipContent>
     </Tooltip>
   );
@@ -89,26 +131,42 @@ export const MultiDimensionalRadar = () => {
   const { data, isLoading } = useRadarChartData();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { profile } = useAuth();
+
+  // Monta o mapa subject → score para o hook de tendência
+  const currentScores = useMemo(() => {
+    if (!data) return {};
+    return Object.fromEntries(data.map((d) => [d.subject, d.score]));
+  }, [data]);
+
+  const deltas = useDimensionScoreTrend(currentScores, profile?.empresa_id);
 
   const averageScore = useMemo(() => {
     if (!data || data.length === 0) return 0;
-    const withData = data.filter(d => d.hasData);
+    const withData = data.filter((d) => d.hasData);
     if (withData.length === 0) return 0;
     return Math.round(withData.reduce((sum, d) => sum + d.score, 0) / withData.length);
   }, [data]);
 
   const statusConfig = useMemo(() => {
-    if (averageScore >= 80) return { label: t('dashboard.excellent'), variant: 'success' as const, icon: CheckCircle2, color: 'text-green-500' };
-    if (averageScore >= 60) return { label: t('dashboard.good'), variant: 'default' as const, icon: CheckCircle2, color: 'text-primary' };
-    if (averageScore >= 40) return { label: t('dashboard.warning'), variant: 'warning' as const, icon: AlertCircle, color: 'text-yellow-500' };
+    if (averageScore >= 80)
+      return { label: t('dashboard.excellent'), variant: 'success' as const, icon: CheckCircle2, color: 'text-green-500' };
+    if (averageScore >= 60)
+      return { label: t('dashboard.good'), variant: 'default' as const, icon: CheckCircle2, color: 'text-primary' };
+    if (averageScore >= 40)
+      return { label: t('dashboard.warning'), variant: 'warning' as const, icon: AlertCircle, color: 'text-yellow-500' };
     return { label: t('dashboard.criticalStatus'), variant: 'destructive' as const, icon: XCircle, color: 'text-destructive' };
   }, [averageScore, t]);
 
   if (isLoading) {
     return (
       <Card>
-        <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
-        <CardContent><Skeleton className="h-[350px] w-full" /></CardContent>
+        <CardHeader>
+          <Skeleton className="h-6 w-48" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-[350px] w-full" />
+        </CardContent>
       </Card>
     );
   }
@@ -130,7 +188,13 @@ export const MultiDimensionalRadar = () => {
       <CardContent className="flex-1 pt-0 pb-3">
         <div className="space-y-0.5">
           {(data ?? []).map((item) => (
-            <MaturityRow key={item.subject} item={item} navigate={navigate} t={t} />
+            <MaturityRow
+              key={item.subject}
+              item={item}
+              navigate={navigate}
+              t={t}
+              delta={deltas[item.subject] ?? null}
+            />
           ))}
         </div>
       </CardContent>
